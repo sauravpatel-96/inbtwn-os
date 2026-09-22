@@ -32,7 +32,7 @@ export function fmtPortion(qty: number | null | undefined, base: BaseUnit): stri
 }
 
 export type MenuItem = MenuItemRow & {
-  recipe: { id: string; name: string; category: string } | null;
+  recipe: { id: string; name: string; category: string; active_version_id: string | null } | null;
 };
 
 export const menuItemsQuery = (eventId: string) =>
@@ -41,7 +41,7 @@ export const menuItemsQuery = (eventId: string) =>
     queryFn: async () => {
       const res = await supabase
         .from("event_menu_items")
-        .select("*, recipe:recipes(id, name, category)")
+        .select("*, recipe:recipes(id, name, category, active_version_id)")
         .eq("event_id", eventId)
         .order("sort_order")
         .order("created_at");
