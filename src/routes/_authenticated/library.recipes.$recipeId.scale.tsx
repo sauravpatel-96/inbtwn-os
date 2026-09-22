@@ -129,7 +129,7 @@ function ScalePage() {
   if (!recipe.data) return <EmptyNote>Recipe not found.</EmptyNote>;
   if (!v) return <EmptyNote>This recipe has no active version to scale.</EmptyNote>;
 
-  const big = result ? scaleBigQty(result.required, base) : null;
+  const big = result ? bigQty(result.required, base) : null;
   const trace = result
     ? buildTrace(
         result,
