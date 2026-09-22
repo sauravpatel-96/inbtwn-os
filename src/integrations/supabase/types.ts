@@ -238,7 +238,7 @@ export type Database = {
           event_id: string
           id?: string
           ingredient_id: string
-          organisation_id: string
+          organisation_id?: string
         }
         Update: {
           created_at?: string
