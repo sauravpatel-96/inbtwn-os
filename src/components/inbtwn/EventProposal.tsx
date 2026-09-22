@@ -209,24 +209,24 @@ export function EventProposal({ eventId, confirmed }: { eventId: string; confirm
                       Remove
                     </button>
                   </div>
-                  {confirmed ? (
-                    it.recipe_id ? (
-                      <button
-                        type="button"
-                        onClick={() => addToMenu(it.recipe_id as string, it.name)}
-                        className="tap mt-2 w-full border border-ink/25 bg-paper px-3 py-2 font-mono text-[11px] text-ink"
-                      >
-                        Add to event menu
-                      </button>
-                    ) : (
-                      <div className="mt-2 border border-flame/40 px-3 py-2 font-mono text-[10px] text-flame">
-                        Needs a Recipe Library recipe before production can be calculated.
-                      </div>
-                    )
+                  {confirmed && it.recipe_id ? (
+                    <button
+                      type="button"
+                      onClick={() => addToMenu(it.recipe_id as string, it.name)}
+                      className="tap mt-2 w-full border border-ink/25 bg-paper px-3 py-2 font-mono text-[11px] text-ink"
+                    >
+                      Add to event menu
+                    </button>
                   ) : null}
                 </div>
               ))}
             </div>
+            {confirmed && s.items.some((it) => !it.recipe_id) ? (
+              <div className="border-t border-ink/10 px-4 py-2.5 font-mono text-[10px] text-ink-soft">
+                Some dishes aren't linked to recipes yet. Link them before adding them to the operational menu for
+                production.
+              </div>
+            ) : null}
 
             <button
               type="button"

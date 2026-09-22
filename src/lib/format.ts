@@ -41,7 +41,8 @@ export function fmtMoney(
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: currency || DEFAULT_CURRENCY,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(n);
 }
 
