@@ -225,6 +225,52 @@ export type Database = {
           },
         ]
       }
+      event_shopping_checks: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          ingredient_id: string
+          organisation_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          ingredient_id: string
+          organisation_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          ingredient_id?: string
+          organisation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_shopping_checks_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_shopping_checks_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_shopping_checks_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           arrival_time: string | null
