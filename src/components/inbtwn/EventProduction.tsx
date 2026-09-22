@@ -4,9 +4,15 @@ import { Link } from "@tanstack/react-router";
 import { SectionHeading, TornCard, EmptyNote, GhostButton } from "@/components/inbtwn/bits";
 import { graphQuery } from "@/lib/recipe-queries";
 import { menuItemsQuery, portionLabel, fmtPortion, type MenuItem, type PortionSize } from "@/lib/menu-queries";
-import { versionBuffersQuery, fmtProdQty, collectIngredients, type TotalLine } from "@/lib/production";
+import {
+  versionBuffersQuery,
+  fmtProdQty,
+  bigProdQty,
+  collectIngredients,
+  type TotalLine,
+} from "@/lib/production";
 import { buildTrace, scaleVersion, type ComponentLine, type ScaleResult } from "@/lib/recipe-calc";
-import { bigQty, fmtCost, fmtQty, type BaseUnit } from "@/lib/units";
+import { fmtCost, fmtQty, type BaseUnit } from "@/lib/units";
 
 type Dish = {
   item: MenuItem;
@@ -67,7 +73,7 @@ function ComponentRow({ c }: { c: ComponentLine }) {
 function DishCard({ dish, guests }: { dish: Dish; guests: number }) {
   const [showTrace, setShowTrace] = useState(false);
   const r = dish.result;
-  const big = r ? bigQty(dish.base === "each" ? Math.ceil(r.required) : r.required, dish.base) : null;
+  const big = r ? bigProdQty(r.required, dish.base) : null;
 
   const trace = useMemo(() => {
     if (!r) return [];
@@ -178,6 +184,7 @@ function DishCard({ dish, guests }: { dish: Dish; guests: number }) {
 }
 
 export function EventProduction({ eventId, guestCount }: { eventId: string; guestCount: number | null }) {
+  const [showTotals, setShowTotals] = useState(false);
   const menu = useQuery(menuItemsQuery(eventId));
   const graph = useQuery(graphQuery);
   const buffers = useQuery(versionBuffersQuery);
@@ -253,11 +260,37 @@ export function EventProduction({ eventId, guestCount }: { eventId: string; gues
       </div>
 
       <div className="mt-4">
-        <SectionHeading title="Total ingredient requirements" />
+        <SectionHeading
+          title="Total ingredient requirements"
+          action={
+            showTotals && totals.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setShowTotals(false)}
+                className="tap font-mono text-[11px] text-ink underline decoration-ink/30 underline-offset-4"
+              >
+                Collapse
+              </button>
+            ) : undefined
+          }
+        />
         {totals.length === 0 ? (
           <EmptyNote>No ingredient requirements yet.</EmptyNote>
+        ) : !showTotals ? (
+          <TornCard className="flex items-center justify-between gap-4 px-4 py-3 shadow-card">
+            <span className="font-mono text-[12px]">
+              {totals.length} {totals.length === 1 ? "ingredient" : "ingredients"}
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowTotals(true)}
+              className="tap shrink-0 font-mono text-[11px] text-ink underline decoration-ink/30 underline-offset-4"
+            >
+              View all
+            </button>
+          </TornCard>
         ) : (
-          <TornCard className="px-4 py-2 pb-5 shadow-card">
+          <TornCard className="px-4 pb-5 pt-2 shadow-card">
             {totals.map((t) => (
               <div
                 key={t.ingredientId}
@@ -265,15 +298,16 @@ export function EventProduction({ eventId, guestCount }: { eventId: string; gues
               >
                 <span className="text-[14px]">{t.name}</span>
                 <span className="text-right font-mono text-[13px]">
-                  {fmtProdQty(t.usable, t.baseUnit)} usable
+                  {fmtProdQty(t.usable, t.baseUnit)}
                   {t.hasYield ? (
                     <span className="block text-ink-soft">{fmtProdQty(t.raw, t.baseUnit)} raw requirement</span>
                   ) : null}
                 </span>
               </div>
             ))}
-            <div className="pt-3 font-mono text-[10px] text-ink-soft">
-              Theoretical requirements only — not a shopping list.
+            <div className="space-y-1 pt-4 font-mono text-[10px] leading-relaxed text-ink-soft">
+              <p>Quantities shown are usable production requirements.</p>
+              <p>Theoretical requirements only — not a shopping list.</p>
             </div>
           </TornCard>
         )}

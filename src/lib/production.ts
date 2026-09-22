@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { ScaleResult } from "./recipe-calc";
-import { fmtQty, type BaseUnit } from "./units";
+import type { BaseUnit } from "./units";
 
 /** Default buffer percentage per recipe version (recipe-version safe). */
 export const versionBuffersQuery = queryOptions({
@@ -15,10 +15,36 @@ export const versionBuffersQuery = queryOptions({
   },
 });
 
-/** Display rounding only: count-based quantities round up to the next whole item. */
+function trim(n: number, decimalPlaces: number): string {
+  if (decimalPlaces === 0) return String(Math.round(n));
+  return n.toFixed(decimalPlaces).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+/**
+ * Kitchen-friendly production display rounding only. The unrounded canonical
+ * quantity remains in the calculation result and ingredient consolidation.
+ */
 export function fmtProdQty(baseQty: number | null | undefined, base: BaseUnit): string {
   if (baseQty === null || baseQty === undefined || Number.isNaN(baseQty)) return "—";
-  return fmtQty(base === "each" ? Math.ceil(baseQty) : baseQty, base);
+  if (base === "each") return `${Math.ceil(baseQty)} each`;
+
+  const absolute = Math.abs(baseQty);
+  const step = absolute < 100 ? 1 : absolute < 1000 ? 5 : 50;
+  const rounded = Math.round(baseQty / step) * step;
+  if (Math.abs(rounded) >= 1000) {
+    return `${trim(rounded / 1000, 2)} ${base === "g" ? "kg" : "L"}`;
+  }
+  return `${trim(rounded, 0)} ${base}`;
+}
+
+/** Split practical production formatting for the large MAKE readout. */
+export function bigProdQty(baseQty: number, base: BaseUnit): { value: string; unit: string } {
+  const formatted = fmtProdQty(baseQty, base);
+  const splitAt = formatted.lastIndexOf(" ");
+  return {
+    value: formatted.slice(0, splitAt),
+    unit: formatted.slice(splitAt + 1).toUpperCase(),
+  };
 }
 
 export type TotalLine = {
