@@ -33,7 +33,7 @@ export function buildAttention(events: EventWithClient[]): Attention[] {
     if (!reasons.length) continue;
     const until = daysUntil(e.event_date);
     const urgency = until === null ? 50 : Math.max(0, until);
-    list.push({ event: e, reason: reasons[0], urgency });
+    list.push({ event: e, reason: reasons[0] ?? "Needs attention", urgency });
   }
   return list.sort((a, b) => a.urgency - b.urgency);
 }
