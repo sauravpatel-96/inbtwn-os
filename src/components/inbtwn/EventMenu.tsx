@@ -39,9 +39,10 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
 
   const list = recipes.data ?? [];
   const filtered = useMemo(() => {
+    const candidates = list.filter((r) => r.category !== "Component");
     const q = search.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(
+    if (!q) return candidates;
+    return candidates.filter(
       (r) => r.name.toLowerCase().includes(q) || (r.category ?? "").toLowerCase().includes(q),
     );
   }, [list, search]);
