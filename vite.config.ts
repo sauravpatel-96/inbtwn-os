@@ -11,5 +11,13 @@ export default defineConfig({
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    router: {
+      // Keep route components in the stable application module graph. Safari can cache a
+      // failed dynamic route import without issuing another request, leaving a blank page
+      // even after the deployment and document have been refreshed.
+      codeSplittingOptions: {
+        defaultBehavior: [],
+      },
+    },
   },
 });
