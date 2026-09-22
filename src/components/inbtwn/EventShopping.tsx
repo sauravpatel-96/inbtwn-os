@@ -80,7 +80,8 @@ function ShoppingRow({
 
 export function EventShopping({ eventId, guestCount }: { eventId: string; guestCount: number | null }) {
   const qc = useQueryClient();
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>("tobuy");
+  const [showMissing, setShowMissing] = useState(false);
   const menu = useQuery(menuItemsQuery(eventId));
   const graph = useQuery(graphQuery);
   const buffers = useQuery(versionBuffersQuery);
@@ -214,14 +215,27 @@ export function EventShopping({ eventId, guestCount }: { eventId: string; guestC
               <span className="font-mono text-[15px]">{fmtCost(knownCost)}</span>
             </div>
             {missingCost.length ? (
-              <div className="mt-2 bg-flame/10 px-3 py-2 font-mono text-[11px] text-flame">
-                Total incomplete — no cost recorded for: {missingCost.map((l) => l.name).join(", ")}
+              <div className="mt-2 border border-ink/15 px-3 py-2">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-mono text-[11px] text-flame">
+                    Costs missing for {missingCost.length} ingredient
+                    {missingCost.length === 1 ? "" : "s"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowMissing((o) => !o)}
+                    className="tap label-mono shrink-0 border border-ink/30 px-2 py-1 text-[10px]"
+                  >
+                    {showMissing ? "Hide" : "Review"}
+                  </button>
+                </div>
+                {showMissing ? (
+                  <div className="mt-2 font-mono text-[11px] leading-relaxed text-ink-soft">
+                    {missingCost.map((l) => l.name).join(", ")}
+                  </div>
+                ) : null}
               </div>
             ) : null}
-            <p className="mt-3 font-mono text-[10px] leading-relaxed text-ink-soft">
-              Purchase quantities account for each ingredient's usable yield. Display quantities are
-              rounded for practical shopping; calculations use full precision.
-            </p>
           </TornCard>
         </div>
       ) : null}
