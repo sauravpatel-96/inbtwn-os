@@ -35,11 +35,13 @@ export function QuickAddSheet({
   onOpenChange: (o: boolean) => void;
 }) {
   const navigate = useNavigate();
-  const go = (to: "/events/new" | "/library/clients/new") => {
+  const go = (
+    to: "/events/new" | "/library/clients/new" | "/library/recipes/new" | "/library/ingredients/new",
+  ) => {
     onOpenChange(false);
     navigate({ to });
   };
-  const later = ["Expense", "Task", "Purchase", "Recipe"];
+  const later = ["Expense", "Task", "Purchase"];
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="bg-paper border-ink/10">
