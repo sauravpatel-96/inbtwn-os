@@ -64,8 +64,24 @@ export function QuickAddSheet({
               <div className="mt-2 font-semibold">New Client</div>
               <div className="font-mono text-[11px] text-ink-soft">Add to Library</div>
             </button>
+            <button
+              onClick={() => go("/library/recipes/new")}
+              className="torn tap bg-cream px-4 py-4 text-left shadow-card active:translate-y-px"
+            >
+              <div className="font-display text-[22px] leading-none text-ink">+</div>
+              <div className="mt-2 font-semibold">New Recipe</div>
+              <div className="font-mono text-[11px] text-ink-soft">Scalable recipe</div>
+            </button>
+            <button
+              onClick={() => go("/library/ingredients/new")}
+              className="torn tap bg-cream px-4 py-4 text-left shadow-card active:translate-y-px"
+            >
+              <div className="font-display text-[22px] leading-none text-ink">+</div>
+              <div className="mt-2 font-semibold">New Ingredient</div>
+              <div className="font-mono text-[11px] text-ink-soft">Yield &amp; cost</div>
+            </button>
           </div>
-          <div className="mt-4 grid grid-cols-4 gap-2">
+          <div className="mt-4 grid grid-cols-3 gap-2">
             {later.map((l) => (
               <div
                 key={l}
