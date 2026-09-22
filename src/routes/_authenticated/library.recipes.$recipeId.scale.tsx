@@ -240,7 +240,7 @@ function ScalePage() {
 
           <div className="mt-5">
             <SectionHeading title="Ingredients" />
-            <TornCard className="px-4 py-2 shadow-card">
+            <TornCard straightBottom className="px-4 py-2 pb-4 shadow-card">
               {result.ingredients.length === 0 && result.components.length === 0 ? (
                 <div className="py-3 font-mono text-[12px] text-ink-soft">Nothing in this version yet.</div>
               ) : null}
@@ -251,9 +251,9 @@ function ScalePage() {
                     {i.prepNote ? <div className="font-mono text-[11px] text-ink-soft">{i.prepNote}</div> : null}
                   </div>
                   <div className="text-right">
-                    <div className="font-mono text-[15px]">{fmtQty(i.usable, i.baseUnit)} usable</div>
+                    <div className="font-mono text-[15px]">{fmtScaleQty(i.usable, i.baseUnit)} usable</div>
                     {i.yieldPct !== 100 ? (
-                      <div className="font-mono text-[12px] text-ink-soft">{fmtQty(i.raw, i.baseUnit)} raw required</div>
+                      <div className="font-mono text-[12px] text-ink-soft">{fmtScaleQty(i.raw, i.baseUnit)} raw required</div>
                     ) : null}
                   </div>
                 </div>
