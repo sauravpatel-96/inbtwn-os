@@ -9,62 +9,56 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAskRouteImport } from './routes/_authenticated/ask'
-import { Route as AuthenticatedLibraryIndexRouteImport } from './routes/_authenticated/library.index'
+import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events.index'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
-import { Route as AuthenticatedLibraryRecipesIndexRouteImport } from './routes/_authenticated/library.recipes.index'
-import { Route as AuthenticatedLibraryIngredientsIndexRouteImport } from './routes/_authenticated/library.ingredients.index'
-import { Route as AuthenticatedLibraryClientsIndexRouteImport } from './routes/_authenticated/library.clients.index'
+import { Route as AuthenticatedLibraryIndexRouteImport } from './routes/_authenticated/library.index'
 import { Route as AuthenticatedEventsEventIdIndexRouteImport } from './routes/_authenticated/events.$eventId.index'
-import { Route as AuthenticatedLibraryRecipesNewRouteImport } from './routes/_authenticated/library.recipes.new'
-import { Route as AuthenticatedLibraryIngredientsNewRouteImport } from './routes/_authenticated/library.ingredients.new'
-import { Route as AuthenticatedLibraryClientsNewRouteImport } from './routes/_authenticated/library.clients.new'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events.$eventId.edit'
-import { Route as AuthenticatedLibraryRecipesRecipeIdIndexRouteImport } from './routes/_authenticated/library.recipes.$recipeId.index'
-import { Route as AuthenticatedLibraryIngredientsIngredientIdIndexRouteImport } from './routes/_authenticated/library.ingredients.$ingredientId.index'
+import { Route as AuthenticatedLibraryClientsIndexRouteImport } from './routes/_authenticated/library.clients.index'
+import { Route as AuthenticatedLibraryClientsNewRouteImport } from './routes/_authenticated/library.clients.new'
+import { Route as AuthenticatedLibraryIngredientsIndexRouteImport } from './routes/_authenticated/library.ingredients.index'
+import { Route as AuthenticatedLibraryIngredientsNewRouteImport } from './routes/_authenticated/library.ingredients.new'
+import { Route as AuthenticatedLibraryRecipesIndexRouteImport } from './routes/_authenticated/library.recipes.index'
+import { Route as AuthenticatedLibraryRecipesNewRouteImport } from './routes/_authenticated/library.recipes.new'
 import { Route as AuthenticatedLibraryClientsClientIdIndexRouteImport } from './routes/_authenticated/library.clients.$clientId.index'
-import { Route as AuthenticatedLibraryRecipesRecipeIdVersionsRouteImport } from './routes/_authenticated/library.recipes.$recipeId.versions'
-import { Route as AuthenticatedLibraryRecipesRecipeIdScaleRouteImport } from './routes/_authenticated/library.recipes.$recipeId.scale'
-import { Route as AuthenticatedLibraryRecipesRecipeIdProfilesRouteImport } from './routes/_authenticated/library.recipes.$recipeId.profiles'
-import { Route as AuthenticatedLibraryRecipesRecipeIdEditRouteImport } from './routes/_authenticated/library.recipes.$recipeId.edit'
-import { Route as AuthenticatedLibraryIngredientsIngredientIdEditRouteImport } from './routes/_authenticated/library.ingredients.$ingredientId.edit'
 import { Route as AuthenticatedLibraryClientsClientIdEditRouteImport } from './routes/_authenticated/library.clients.$clientId.edit'
+import { Route as AuthenticatedLibraryIngredientsIngredientIdIndexRouteImport } from './routes/_authenticated/library.ingredients.$ingredientId.index'
+import { Route as AuthenticatedLibraryIngredientsIngredientIdEditRouteImport } from './routes/_authenticated/library.ingredients.$ingredientId.edit'
+import { Route as AuthenticatedLibraryRecipesRecipeIdIndexRouteImport } from './routes/_authenticated/library.recipes.$recipeId.index'
+import { Route as AuthenticatedLibraryRecipesRecipeIdEditRouteImport } from './routes/_authenticated/library.recipes.$recipeId.edit'
+import { Route as AuthenticatedLibraryRecipesRecipeIdProfilesRouteImport } from './routes/_authenticated/library.recipes.$recipeId.profiles'
+import { Route as AuthenticatedLibraryRecipesRecipeIdScaleRouteImport } from './routes/_authenticated/library.recipes.$recipeId.scale'
+import { Route as AuthenticatedLibraryRecipesRecipeIdVersionsRouteImport } from './routes/_authenticated/library.recipes.$recipeId.versions'
 
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
-  id: '/today',
-  path: '/today',
-  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAskRoute = AuthenticatedAskRouteImport.update({
   id: '/ask',
   path: '/ask',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedLibraryIndexRoute =
-  AuthenticatedLibraryIndexRouteImport.update({
-    id: '/library/',
-    path: '/library/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedEventsIndexRoute =
   AuthenticatedEventsIndexRouteImport.update({
     id: '/events/',
@@ -76,22 +70,10 @@ const AuthenticatedEventsNewRoute = AuthenticatedEventsNewRouteImport.update({
   path: '/events/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedLibraryRecipesIndexRoute =
-  AuthenticatedLibraryRecipesIndexRouteImport.update({
-    id: '/library/recipes/',
-    path: '/library/recipes/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedLibraryIngredientsIndexRoute =
-  AuthenticatedLibraryIngredientsIndexRouteImport.update({
-    id: '/library/ingredients/',
-    path: '/library/ingredients/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedLibraryClientsIndexRoute =
-  AuthenticatedLibraryClientsIndexRouteImport.update({
-    id: '/library/clients/',
-    path: '/library/clients/',
+const AuthenticatedLibraryIndexRoute =
+  AuthenticatedLibraryIndexRouteImport.update({
+    id: '/library/',
+    path: '/library/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEventsEventIdIndexRoute =
@@ -100,16 +82,16 @@ const AuthenticatedEventsEventIdIndexRoute =
     path: '/events/$eventId/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedLibraryRecipesNewRoute =
-  AuthenticatedLibraryRecipesNewRouteImport.update({
-    id: '/library/recipes/new',
-    path: '/library/recipes/new',
+const AuthenticatedEventsEventIdEditRoute =
+  AuthenticatedEventsEventIdEditRouteImport.update({
+    id: '/events/$eventId/edit',
+    path: '/events/$eventId/edit',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedLibraryIngredientsNewRoute =
-  AuthenticatedLibraryIngredientsNewRouteImport.update({
-    id: '/library/ingredients/new',
-    path: '/library/ingredients/new',
+const AuthenticatedLibraryClientsIndexRoute =
+  AuthenticatedLibraryClientsIndexRouteImport.update({
+    id: '/library/clients/',
+    path: '/library/clients/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedLibraryClientsNewRoute =
@@ -118,22 +100,28 @@ const AuthenticatedLibraryClientsNewRoute =
     path: '/library/clients/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedEventsEventIdEditRoute =
-  AuthenticatedEventsEventIdEditRouteImport.update({
-    id: '/events/$eventId/edit',
-    path: '/events/$eventId/edit',
+const AuthenticatedLibraryIngredientsIndexRoute =
+  AuthenticatedLibraryIngredientsIndexRouteImport.update({
+    id: '/library/ingredients/',
+    path: '/library/ingredients/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedLibraryRecipesRecipeIdIndexRoute =
-  AuthenticatedLibraryRecipesRecipeIdIndexRouteImport.update({
-    id: '/library/recipes/$recipeId/',
-    path: '/library/recipes/$recipeId/',
+const AuthenticatedLibraryIngredientsNewRoute =
+  AuthenticatedLibraryIngredientsNewRouteImport.update({
+    id: '/library/ingredients/new',
+    path: '/library/ingredients/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedLibraryIngredientsIngredientIdIndexRoute =
-  AuthenticatedLibraryIngredientsIngredientIdIndexRouteImport.update({
-    id: '/library/ingredients/$ingredientId/',
-    path: '/library/ingredients/$ingredientId/',
+const AuthenticatedLibraryRecipesIndexRoute =
+  AuthenticatedLibraryRecipesIndexRouteImport.update({
+    id: '/library/recipes/',
+    path: '/library/recipes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibraryRecipesNewRoute =
+  AuthenticatedLibraryRecipesNewRouteImport.update({
+    id: '/library/recipes/new',
+    path: '/library/recipes/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedLibraryClientsClientIdIndexRoute =
@@ -142,28 +130,16 @@ const AuthenticatedLibraryClientsClientIdIndexRoute =
     path: '/library/clients/$clientId/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedLibraryRecipesRecipeIdVersionsRoute =
-  AuthenticatedLibraryRecipesRecipeIdVersionsRouteImport.update({
-    id: '/library/recipes/$recipeId/versions',
-    path: '/library/recipes/$recipeId/versions',
+const AuthenticatedLibraryClientsClientIdEditRoute =
+  AuthenticatedLibraryClientsClientIdEditRouteImport.update({
+    id: '/library/clients/$clientId/edit',
+    path: '/library/clients/$clientId/edit',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedLibraryRecipesRecipeIdScaleRoute =
-  AuthenticatedLibraryRecipesRecipeIdScaleRouteImport.update({
-    id: '/library/recipes/$recipeId/scale',
-    path: '/library/recipes/$recipeId/scale',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedLibraryRecipesRecipeIdProfilesRoute =
-  AuthenticatedLibraryRecipesRecipeIdProfilesRouteImport.update({
-    id: '/library/recipes/$recipeId/profiles',
-    path: '/library/recipes/$recipeId/profiles',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedLibraryRecipesRecipeIdEditRoute =
-  AuthenticatedLibraryRecipesRecipeIdEditRouteImport.update({
-    id: '/library/recipes/$recipeId/edit',
-    path: '/library/recipes/$recipeId/edit',
+const AuthenticatedLibraryIngredientsIngredientIdIndexRoute =
+  AuthenticatedLibraryIngredientsIngredientIdIndexRouteImport.update({
+    id: '/library/ingredients/$ingredientId/',
+    path: '/library/ingredients/$ingredientId/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedLibraryIngredientsIngredientIdEditRoute =
@@ -172,10 +148,34 @@ const AuthenticatedLibraryIngredientsIngredientIdEditRoute =
     path: '/library/ingredients/$ingredientId/edit',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedLibraryClientsClientIdEditRoute =
-  AuthenticatedLibraryClientsClientIdEditRouteImport.update({
-    id: '/library/clients/$clientId/edit',
-    path: '/library/clients/$clientId/edit',
+const AuthenticatedLibraryRecipesRecipeIdIndexRoute =
+  AuthenticatedLibraryRecipesRecipeIdIndexRouteImport.update({
+    id: '/library/recipes/$recipeId/',
+    path: '/library/recipes/$recipeId/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibraryRecipesRecipeIdEditRoute =
+  AuthenticatedLibraryRecipesRecipeIdEditRouteImport.update({
+    id: '/library/recipes/$recipeId/edit',
+    path: '/library/recipes/$recipeId/edit',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibraryRecipesRecipeIdProfilesRoute =
+  AuthenticatedLibraryRecipesRecipeIdProfilesRouteImport.update({
+    id: '/library/recipes/$recipeId/profiles',
+    path: '/library/recipes/$recipeId/profiles',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibraryRecipesRecipeIdScaleRoute =
+  AuthenticatedLibraryRecipesRecipeIdScaleRouteImport.update({
+    id: '/library/recipes/$recipeId/scale',
+    path: '/library/recipes/$recipeId/scale',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibraryRecipesRecipeIdVersionsRoute =
+  AuthenticatedLibraryRecipesRecipeIdVersionsRouteImport.update({
+    id: '/library/recipes/$recipeId/versions',
+    path: '/library/recipes/$recipeId/versions',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
@@ -349,11 +349,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -363,19 +363,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/today': {
-      id: '/_authenticated/today'
-      path: '/today'
-      fullPath: '/today'
-      preLoaderRoute: typeof AuthenticatedTodayRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ask': {
       id: '/_authenticated/ask'
@@ -384,11 +377,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAskRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/library/': {
-      id: '/_authenticated/library/'
-      path: '/library'
-      fullPath: '/library/'
-      preLoaderRoute: typeof AuthenticatedLibraryIndexRouteImport
+    '/_authenticated/today': {
+      id: '/_authenticated/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof AuthenticatedTodayRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/events/': {
@@ -405,25 +398,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/library/recipes/': {
-      id: '/_authenticated/library/recipes/'
-      path: '/library/recipes'
-      fullPath: '/library/recipes/'
-      preLoaderRoute: typeof AuthenticatedLibraryRecipesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/library/ingredients/': {
-      id: '/_authenticated/library/ingredients/'
-      path: '/library/ingredients'
-      fullPath: '/library/ingredients/'
-      preLoaderRoute: typeof AuthenticatedLibraryIngredientsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/library/clients/': {
-      id: '/_authenticated/library/clients/'
-      path: '/library/clients'
-      fullPath: '/library/clients/'
-      preLoaderRoute: typeof AuthenticatedLibraryClientsIndexRouteImport
+    '/_authenticated/library/': {
+      id: '/_authenticated/library/'
+      path: '/library'
+      fullPath: '/library/'
+      preLoaderRoute: typeof AuthenticatedLibraryIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/events/$eventId/': {
@@ -433,18 +412,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsEventIdIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/library/recipes/new': {
-      id: '/_authenticated/library/recipes/new'
-      path: '/library/recipes/new'
-      fullPath: '/library/recipes/new'
-      preLoaderRoute: typeof AuthenticatedLibraryRecipesNewRouteImport
+    '/_authenticated/events/$eventId/edit': {
+      id: '/_authenticated/events/$eventId/edit'
+      path: '/events/$eventId/edit'
+      fullPath: '/events/$eventId/edit'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdEditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/library/ingredients/new': {
-      id: '/_authenticated/library/ingredients/new'
-      path: '/library/ingredients/new'
-      fullPath: '/library/ingredients/new'
-      preLoaderRoute: typeof AuthenticatedLibraryIngredientsNewRouteImport
+    '/_authenticated/library/clients/': {
+      id: '/_authenticated/library/clients/'
+      path: '/library/clients'
+      fullPath: '/library/clients/'
+      preLoaderRoute: typeof AuthenticatedLibraryClientsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/library/clients/new': {
@@ -454,25 +433,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLibraryClientsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/events/$eventId/edit': {
-      id: '/_authenticated/events/$eventId/edit'
-      path: '/events/$eventId/edit'
-      fullPath: '/events/$eventId/edit'
-      preLoaderRoute: typeof AuthenticatedEventsEventIdEditRouteImport
+    '/_authenticated/library/ingredients/': {
+      id: '/_authenticated/library/ingredients/'
+      path: '/library/ingredients'
+      fullPath: '/library/ingredients/'
+      preLoaderRoute: typeof AuthenticatedLibraryIngredientsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/library/recipes/$recipeId/': {
-      id: '/_authenticated/library/recipes/$recipeId/'
-      path: '/library/recipes/$recipeId'
-      fullPath: '/library/recipes/$recipeId/'
-      preLoaderRoute: typeof AuthenticatedLibraryRecipesRecipeIdIndexRouteImport
+    '/_authenticated/library/ingredients/new': {
+      id: '/_authenticated/library/ingredients/new'
+      path: '/library/ingredients/new'
+      fullPath: '/library/ingredients/new'
+      preLoaderRoute: typeof AuthenticatedLibraryIngredientsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/library/ingredients/$ingredientId/': {
-      id: '/_authenticated/library/ingredients/$ingredientId/'
-      path: '/library/ingredients/$ingredientId'
-      fullPath: '/library/ingredients/$ingredientId/'
-      preLoaderRoute: typeof AuthenticatedLibraryIngredientsIngredientIdIndexRouteImport
+    '/_authenticated/library/recipes/': {
+      id: '/_authenticated/library/recipes/'
+      path: '/library/recipes'
+      fullPath: '/library/recipes/'
+      preLoaderRoute: typeof AuthenticatedLibraryRecipesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/recipes/new': {
+      id: '/_authenticated/library/recipes/new'
+      path: '/library/recipes/new'
+      fullPath: '/library/recipes/new'
+      preLoaderRoute: typeof AuthenticatedLibraryRecipesNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/library/clients/$clientId/': {
@@ -482,32 +468,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLibraryClientsClientIdIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/library/recipes/$recipeId/versions': {
-      id: '/_authenticated/library/recipes/$recipeId/versions'
-      path: '/library/recipes/$recipeId/versions'
-      fullPath: '/library/recipes/$recipeId/versions'
-      preLoaderRoute: typeof AuthenticatedLibraryRecipesRecipeIdVersionsRouteImport
+    '/_authenticated/library/clients/$clientId/edit': {
+      id: '/_authenticated/library/clients/$clientId/edit'
+      path: '/library/clients/$clientId/edit'
+      fullPath: '/library/clients/$clientId/edit'
+      preLoaderRoute: typeof AuthenticatedLibraryClientsClientIdEditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/library/recipes/$recipeId/scale': {
-      id: '/_authenticated/library/recipes/$recipeId/scale'
-      path: '/library/recipes/$recipeId/scale'
-      fullPath: '/library/recipes/$recipeId/scale'
-      preLoaderRoute: typeof AuthenticatedLibraryRecipesRecipeIdScaleRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/library/recipes/$recipeId/profiles': {
-      id: '/_authenticated/library/recipes/$recipeId/profiles'
-      path: '/library/recipes/$recipeId/profiles'
-      fullPath: '/library/recipes/$recipeId/profiles'
-      preLoaderRoute: typeof AuthenticatedLibraryRecipesRecipeIdProfilesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/library/recipes/$recipeId/edit': {
-      id: '/_authenticated/library/recipes/$recipeId/edit'
-      path: '/library/recipes/$recipeId/edit'
-      fullPath: '/library/recipes/$recipeId/edit'
-      preLoaderRoute: typeof AuthenticatedLibraryRecipesRecipeIdEditRouteImport
+    '/_authenticated/library/ingredients/$ingredientId/': {
+      id: '/_authenticated/library/ingredients/$ingredientId/'
+      path: '/library/ingredients/$ingredientId'
+      fullPath: '/library/ingredients/$ingredientId/'
+      preLoaderRoute: typeof AuthenticatedLibraryIngredientsIngredientIdIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/library/ingredients/$ingredientId/edit': {
@@ -517,11 +489,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLibraryIngredientsIngredientIdEditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/library/clients/$clientId/edit': {
-      id: '/_authenticated/library/clients/$clientId/edit'
-      path: '/library/clients/$clientId/edit'
-      fullPath: '/library/clients/$clientId/edit'
-      preLoaderRoute: typeof AuthenticatedLibraryClientsClientIdEditRouteImport
+    '/_authenticated/library/recipes/$recipeId/': {
+      id: '/_authenticated/library/recipes/$recipeId/'
+      path: '/library/recipes/$recipeId'
+      fullPath: '/library/recipes/$recipeId/'
+      preLoaderRoute: typeof AuthenticatedLibraryRecipesRecipeIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/recipes/$recipeId/edit': {
+      id: '/_authenticated/library/recipes/$recipeId/edit'
+      path: '/library/recipes/$recipeId/edit'
+      fullPath: '/library/recipes/$recipeId/edit'
+      preLoaderRoute: typeof AuthenticatedLibraryRecipesRecipeIdEditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/recipes/$recipeId/profiles': {
+      id: '/_authenticated/library/recipes/$recipeId/profiles'
+      path: '/library/recipes/$recipeId/profiles'
+      fullPath: '/library/recipes/$recipeId/profiles'
+      preLoaderRoute: typeof AuthenticatedLibraryRecipesRecipeIdProfilesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/recipes/$recipeId/scale': {
+      id: '/_authenticated/library/recipes/$recipeId/scale'
+      path: '/library/recipes/$recipeId/scale'
+      fullPath: '/library/recipes/$recipeId/scale'
+      preLoaderRoute: typeof AuthenticatedLibraryRecipesRecipeIdScaleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/recipes/$recipeId/versions': {
+      id: '/_authenticated/library/recipes/$recipeId/versions'
+      path: '/library/recipes/$recipeId/versions'
+      fullPath: '/library/recipes/$recipeId/versions'
+      preLoaderRoute: typeof AuthenticatedLibraryRecipesRecipeIdVersionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
