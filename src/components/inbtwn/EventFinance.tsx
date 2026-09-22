@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Field, TextInput, TextArea, SelectInput, PrimaryButton, GhostButton, SectionHeading, EmptyNote } from "@/components/inbtwn/bits";
+import { Field, TextInput, TextArea, SelectInput, PrimaryButton, GhostButton, SectionHeading } from "@/components/inbtwn/bits";
 import { fmtMoney, fmtDateLong, todayISO } from "@/lib/format";
 import type { EventRow, ClientRow } from "@/lib/queries";
 import { clientDisplayName } from "@/lib/format";
@@ -965,8 +965,4 @@ function CostsPanel({
       </p>
     </Panel>
   );
-}
-
-export function _unusedEmptyNote() {
-  return <EmptyNote>—</EmptyNote>;
 }
