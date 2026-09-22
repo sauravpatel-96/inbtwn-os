@@ -18,13 +18,20 @@ const moduleRecoveryScript = `
 (() => {
   const failurePattern = /Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module|Loading chunk [^ ]+ failed/i;
   const recoveryKey = "__inbtwn_module_reload__:" + window.location.pathname;
+  const recoveryParam = "__inbtwn_module_retry";
 
   const recover = (message) => {
     if (!failurePattern.test(String(message || ""))) return;
     const lastAttempt = Number(window.sessionStorage.getItem(recoveryKey) || 0);
-    if (Date.now() - lastAttempt < 30000) return;
-    window.sessionStorage.setItem(recoveryKey, String(Date.now()));
-    window.location.reload();
+    const now = Date.now();
+    if (now - lastAttempt < 60000) return;
+    window.sessionStorage.setItem(recoveryKey, String(now));
+
+    // Safari can retain a failed module in its module map and skip the network
+    // entirely on a normal reload. A unique document URL forces a fresh module graph.
+    const recoveryUrl = new URL(window.location.href);
+    recoveryUrl.searchParams.set(recoveryParam, String(now));
+    window.location.replace(recoveryUrl.toString());
   };
 
   window.addEventListener("error", (event) => {
@@ -146,6 +153,14 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("__inbtwn_module_retry")) {
+      url.searchParams.delete("__inbtwn_module_retry");
+      window.history.replaceState(window.history.state, "", url.toString());
+    }
+  }, []);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
