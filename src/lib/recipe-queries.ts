@@ -116,7 +116,7 @@ export const graphQuery = queryOptions({
       supabase
         .from("recipe_versions")
         .select(
-          "id, recipe_id, version_number, base_yield_quantity, base_yield_unit, default_portion_quantity, recipe:recipes(name), recipe_ingredients(id, ingredient_id, quantity, prep_note, sort_order), recipe_components(id, child_recipe_version_id, quantity, sort_order)",
+          "id, recipe_id, version_number, base_yield_quantity, base_yield_unit, default_portion_quantity, recipe:recipes!recipe_versions_recipe_id_fkey(name), recipe_ingredients(id, ingredient_id, quantity, prep_note, sort_order), recipe_components!recipe_components_parent_recipe_version_id_fkey(id, child_recipe_version_id, quantity, sort_order)",
         ),
     ]);
     if (ings.error) throw new Error(ings.error.message);
