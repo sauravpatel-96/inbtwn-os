@@ -83,9 +83,9 @@ export function ClientForm({
   const set = <K extends keyof ClientFormValues>(k: K, val: ClientFormValues[K]) =>
     setV((s) => ({ ...s, [k]: val }));
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const submit = async (e?: FormEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     const parsed = schema.safeParse(v);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Check the form");
@@ -106,8 +106,9 @@ export function ClientForm({
 
   const isCompany = v.client_type !== "individual";
 
+  const Wrapper: "form" | "div" = compact ? "div" : "form";
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4">
+    <Wrapper {...(compact ? {} : { onSubmit: submit })} className="flex flex-col gap-4">
       <Field label="Client type">
         <SelectInput value={v.client_type} onChange={(e) => set("client_type", e.target.value as ClientType)}>
           {CLIENT_TYPES.map((t) => (
@@ -148,7 +149,7 @@ export function ClientForm({
         </>
       ) : null}
       {compact ? (
-        <PrimaryButton type="submit" disabled={busy}>
+        <PrimaryButton type="button" onClick={() => submit()} disabled={busy}>
           {busy ? "Saving…" : submitLabel}
         </PrimaryButton>
       ) : (
@@ -158,6 +159,6 @@ export function ClientForm({
           </PrimaryButton>
         </StickyActions>
       )}
-    </form>
+    </Wrapper>
   );
 }
