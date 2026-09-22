@@ -17,7 +17,7 @@ export function EventCard({ event, tilt = 0 }: { event: EventWithClient; tilt?: 
       to="/events/$eventId"
       params={{ eventId: event.id }}
       className={`torn block bg-cream px-3.5 py-3.5 text-ink active:bg-panel ${
-        tilt === -1 ? "-rotate-[0.5deg]" : tilt === 1 ? "rotate-[0.5deg]" : ""
+        ""
       }`}
     >
       <div className="flex items-start justify-between gap-2">

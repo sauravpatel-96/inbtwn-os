@@ -43,12 +43,10 @@ function TodayPage() {
 
       <div className="mb-6 flex gap-3">
         <Link to="/events" search={{ f: "enquiries" }} className="relative torn flex-1 bg-cream px-3.5 pb-3 pt-3.5 text-ink">
-          <span className="tape absolute -top-1.5 left-4 h-3 w-10 rotate-[-4deg]" />
           <div className="font-display text-[34px] leading-none">{enquiries}</div>
           <div className="label-mono mt-1 text-ink-soft">Enquiries</div>
         </Link>
         <Link to="/events" search={{ f: "quotes" }} className="relative torn flex-1 bg-cream px-3.5 pb-3 pt-3.5 text-ink">
-          <span className="tape absolute -top-1.5 right-4 h-3 w-10 rotate-[3deg]" />
           <div className="font-display text-[34px] leading-none text-flame">{quotes}</div>
           <div className="label-mono mt-1 text-ink-soft">In quotes</div>
         </Link>
