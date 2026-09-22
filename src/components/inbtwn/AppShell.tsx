@@ -80,7 +80,7 @@ export function QuickAddSheet({
   );
 }
 
-export function AppShell({ children, orgName }: { children: ReactNode; orgName?: string }) {
+export function AppShell({ children, orgName }: { children: ReactNode; orgName?: string | undefined }) {
   const [quickOpen, setQuickOpen] = useState(false);
   const navigate = useNavigate();
 

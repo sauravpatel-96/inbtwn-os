@@ -41,8 +41,8 @@ function AuthenticatedLayout() {
   if (!profile.data) {
     return (
       <Onboarding
-        defaultOrg={(user.user_metadata?.organisation_name as string | undefined) ?? ""}
-        defaultName={(user.user_metadata?.full_name as string | undefined) ?? ""}
+        defaultOrg={(user.user_metadata?.['organisation_name'] as string | undefined) ?? ""}
+        defaultName={(user.user_metadata?.['full_name'] as string | undefined) ?? ""}
       />
     );
   }
@@ -69,7 +69,7 @@ function Onboarding({ defaultOrg, defaultName }: { defaultOrg: string; defaultNa
     setBusy(true);
     const { error } = await supabase.rpc("setup_organisation", {
       _org_name: orgName.trim(),
-      _user_name: name.trim() || undefined,
+      ...(name.trim() ? { _user_name: name.trim() } : {}),
     });
     setBusy(false);
     if (error) {

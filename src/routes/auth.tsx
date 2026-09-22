@@ -62,7 +62,7 @@ function AuthPage() {
         if (data.session) {
           const { error: rpcErr } = await supabase.rpc("setup_organisation", {
             _org_name: orgName.trim(),
-            _user_name: name.trim() || undefined,
+            ...(name.trim() ? { _user_name: name.trim() } : {}),
           });
           if (rpcErr && !/already exists/i.test(rpcErr.message)) throw rpcErr;
           navigate({ to: "/today", replace: true });

@@ -62,7 +62,7 @@ export function TornCard({
   ...rest
 }: {
   children: ReactNode;
-  className?: string;
+  className?: string | undefined;
   tilt?: -1 | 0 | 1;
   as?: "div" | "button";
 } & Record<string, unknown>) {
@@ -127,8 +127,8 @@ export function Field({
   children,
 }: {
   label: string;
-  hint?: string;
-  required?: boolean;
+  hint?: string | undefined;
+  required?: boolean | undefined;
   children: ReactNode;
 }) {
   return (
@@ -167,7 +167,7 @@ export function Chip({
   active?: boolean;
   children: ReactNode;
   onClick?: () => void;
-  className?: string;
+  className?: string | undefined;
 }) {
   return (
     <button
