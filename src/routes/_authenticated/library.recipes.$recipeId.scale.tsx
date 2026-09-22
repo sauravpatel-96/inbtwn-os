@@ -48,16 +48,12 @@ function fmtScaleQty(baseQty: number | null | undefined, base: BaseUnit): string
   return fmtQty(qty, base);
 }
 
-function scaleBigQty(baseQty: number, base: BaseUnit): { value: string; unit: string } {
-  return bigQty(displayQuantity(baseQty, base) ?? baseQty, base);
-}
-
 function ComponentBlock({ c, depth = 0 }: { c: ComponentLine; depth?: number }) {
   return (
     <div className={depth ? "ml-3 border-l border-ink/10 pl-3" : ""}>
       <div className="flex items-baseline justify-between py-2">
         <span className="text-[14px] font-semibold">{c.name}</span>
-        <span className="font-mono text-[13px]">{fmtScaleQty(c.required, c.baseUnit)}</span>
+        <span className="font-mono text-[13px]">{fmtQty(c.required, c.baseUnit)}</span>
       </div>
       <div className="ml-3 border-l border-ink/10 pl-3">
         {c.result.ingredients.map((i) => (
@@ -66,7 +62,7 @@ function ComponentBlock({ c, depth = 0 }: { c: ComponentLine; depth?: number }) 
             <span className="text-right font-mono text-[12px]">
               {fmtScaleQty(i.usable, i.baseUnit)}
               {i.yieldPct !== 100 ? (
-                <span className="block text-ink-soft">{fmtScaleQty(i.raw, i.baseUnit)} raw</span>
+                <span className="block text-ink-soft">{fmtQty(i.raw, i.baseUnit)} raw</span>
               ) : null}
             </span>
           </div>
