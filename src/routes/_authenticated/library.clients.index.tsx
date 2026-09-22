@@ -49,7 +49,7 @@ function ClientsPage() {
           </Link>
         }
       />
-      <div className="torn mb-4 flex items-center gap-2.5 bg-cream px-3.5 py-1 -rotate-[0.4deg]">
+      <div className="torn mb-4 flex items-center gap-2.5 bg-cream px-3.5 py-1">
         <span className="font-display text-[18px] leading-none text-ink-soft">?</span>
         <TextInput
           type="search"
@@ -74,7 +74,7 @@ function ClientsPage() {
                 key={c.id}
                 to="/library/clients/$clientId"
                 params={{ clientId: c.id }}
-                className={`torn flex items-center gap-3 bg-cream px-3.5 py-3 text-ink ${i % 2 ? "rotate-[0.4deg]" : "-rotate-[0.4deg]"}`}
+                className={`torn flex items-center gap-3 bg-cream px-3.5 py-3 text-ink `}
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">

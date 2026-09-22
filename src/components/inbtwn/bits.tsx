@@ -73,8 +73,8 @@ export function TornCard({
       className={cn(
         straightBottom ? "torn-straight-bottom" : "torn",
         "block w-full bg-cream text-left text-ink",
-        tilt === -1 && "-rotate-[0.5deg]",
-        tilt === 1 && "rotate-[0.5deg]",
+        
+        
         className,
       )}
       {...rest}

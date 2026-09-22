@@ -42,13 +42,11 @@ function TodayPage() {
       <PageTitle title="Today" aside="service board" />
 
       <div className="mb-6 flex gap-3">
-        <Link to="/events" search={{ f: "enquiries" }} className="relative torn flex-1 -rotate-1 bg-cream px-3.5 pb-3 pt-3.5 text-ink">
-          <span className="tape absolute -top-1.5 left-4 h-3 w-10 rotate-[-4deg]" />
+        <Link to="/events" search={{ f: "enquiries" }} className="relative torn flex-1 bg-cream px-3.5 pb-3 pt-3.5 text-ink">
           <div className="font-display text-[34px] leading-none">{enquiries}</div>
           <div className="label-mono mt-1 text-ink-soft">Enquiries</div>
         </Link>
-        <Link to="/events" search={{ f: "quotes" }} className="relative torn flex-1 rotate-1 bg-cream px-3.5 pb-3 pt-3.5 text-ink">
-          <span className="tape absolute -top-1.5 right-4 h-3 w-10 rotate-[3deg]" />
+        <Link to="/events" search={{ f: "quotes" }} className="relative torn flex-1 bg-cream px-3.5 pb-3 pt-3.5 text-ink">
           <div className="font-display text-[34px] leading-none text-flame">{quotes}</div>
           <div className="label-mono mt-1 text-ink-soft">In quotes</div>
         </Link>
@@ -73,7 +71,7 @@ function TodayPage() {
               key={a.event.id}
               to="/events/$eventId"
               params={{ eventId: a.event.id }}
-              className={`torn flex flex-col gap-1 bg-cream px-3.5 py-3 text-ink ${i % 2 ? "rotate-[0.6deg]" : "-rotate-[0.6deg]"}`}
+              className={`torn flex flex-col gap-1 bg-cream px-3.5 py-3 text-ink `}
             >
               <div className="flex items-center justify-between">
                 <span className="label-mono text-flame">Action</span>

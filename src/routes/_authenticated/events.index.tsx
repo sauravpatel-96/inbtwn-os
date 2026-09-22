@@ -83,7 +83,7 @@ function EventsPage() {
     <div>
       <PageTitle title="Events" aside={events.data ? `${events.data.length} on the board` : undefined} />
 
-      <div className="torn mb-3 flex items-center gap-2.5 bg-cream px-3.5 py-1 -rotate-[0.4deg]">
+      <div className="torn mb-3 flex items-center gap-2.5 bg-cream px-3.5 py-1">
         <span className="font-display text-[18px] leading-none text-ink-soft">?</span>
         <TextInput
           type="search"
