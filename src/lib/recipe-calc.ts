@@ -223,7 +223,9 @@ export function buildTrace(
         `  yield ${num(i.yieldPct)}% → ${num(i.usable)} ÷ ${num(i.yieldPct / 100)} = ${num(i.raw)}${i.baseUnit} raw`,
       );
     if (i.cost !== null)
-      lines.push(`  cost ${num(i.raw)} × ${fmtCost(i.unitCost ?? 0)} = ${fmtCost(i.cost)}`);
+      lines.push(
+        `  cost ${num(i.raw)}${i.baseUnit} × £${(i.unitCost ?? 0).toFixed(6)}/${i.baseUnit} = ${fmtCost(i.cost)}`,
+      );
   }
   for (const c of result.components) {
     lines.push(
