@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
@@ -52,7 +52,41 @@ type CompLine = {
   unit: DisplayUnit;
 };
 
+type IngredientPick = { id: string; name: string; base_unit: string };
+type ComponentPick = { id: string; name: string; active_version_id: string | null; base: BaseUnit };
+
+type IngredientDraft = {
+  search: string;
+  selected: IngredientPick | null;
+  qty: string;
+  unit: DisplayUnit;
+  prep_note: string;
+};
+
+type ComponentDraft = {
+  search: string;
+  selected: ComponentPick | null;
+  qty: string;
+  unit: DisplayUnit;
+};
+
 const uid = () => Math.random().toString(36).slice(2);
+const defaultUnitFor = (base: BaseUnit): DisplayUnit => base;
+
+const emptyIngredientDraft = (): IngredientDraft => ({
+  search: "",
+  selected: null,
+  qty: "",
+  unit: "g",
+  prep_note: "",
+});
+
+const emptyComponentDraft = (): ComponentDraft => ({
+  search: "",
+  selected: null,
+  qty: "",
+  unit: "g",
+});
 
 export function RecipeEditor({
   recipe,
@@ -94,7 +128,9 @@ export function RecipeEditor({
   const [pickIng, setPickIng] = useState(false);
   const [pickComp, setPickComp] = useState(false);
   const [newIng, setNewIng] = useState(false);
-  const [search, setSearch] = useState("");
+  const [ingredientDraft, setIngredientDraft] = useState<IngredientDraft>(() => emptyIngredientDraft());
+  const [componentDraft, setComponentDraft] = useState<ComponentDraft>(() => emptyComponentDraft());
+  const savedScrollY = useRef<number | null>(null);
 
   const [ingLines, setIngLines] = useState<IngLine[]>([]);
   const [compLines, setCompLines] = useState<CompLine[]>([]);
@@ -145,9 +181,9 @@ export function RecipeEditor({
   }
 
   const filteredIngredients = useMemo(() => {
-    const t = search.trim().toLowerCase();
+    const t = ingredientDraft.search.trim().toLowerCase();
     return (ingredients.data ?? []).filter((i) => !t || i.name.toLowerCase().includes(t));
-  }, [ingredients.data, search]);
+  }, [ingredients.data, ingredientDraft.search]);
 
   /** Recipes that may be used as a component without creating a cycle. */
   const componentCandidates = useMemo(() => {
@@ -170,23 +206,111 @@ export function RecipeEditor({
     return list.filter((r) => !containsMe(r.id));
   }, [recipes.data, graph.data, recipe]);
 
-  const addIngredient = (i: { id: string; name: string; base_unit: string }) => {
-    const b = i.base_unit as BaseUnit;
-    setIngLines((l) => [
-      ...l,
-      { key: uid(), ingredient_id: i.id, name: i.name, base: b, qty: "", unit: b === "each" ? "each" : b, prep_note: "" },
-    ]);
-    setPickIng(false);
-    setSearch("");
+  const filteredComponents = useMemo(() => {
+    const t = componentDraft.search.trim().toLowerCase();
+    return componentCandidates.filter((r) => !t || r.name.toLowerCase().includes(t));
+  }, [componentCandidates, componentDraft.search]);
+
+  const rememberScroll = () => {
+    if (typeof window === "undefined") return;
+    savedScrollY.current = window.scrollY;
   };
 
-  const addComponent = (r: { id: string; name: string; active_version_id: string | null; base: BaseUnit }) => {
-    if (!r.active_version_id) return;
+  const restoreScroll = () => {
+    if (typeof window === "undefined") return;
+    const y = savedScrollY.current;
+    if (y === null) return;
+    savedScrollY.current = null;
+    window.requestAnimationFrame(() => window.scrollTo(0, y));
+  };
+
+  const openIngredientPicker = () => {
+    rememberScroll();
+    setIngredientDraft(emptyIngredientDraft());
+    setPickIng(true);
+  };
+
+  const closeIngredientPicker = () => {
+    setPickIng(false);
+    setIngredientDraft(emptyIngredientDraft());
+    restoreScroll();
+  };
+
+  const openComponentPicker = () => {
+    rememberScroll();
+    setComponentDraft(emptyComponentDraft());
+    setPickComp(true);
+  };
+
+  const closeComponentPicker = () => {
+    setPickComp(false);
+    setComponentDraft(emptyComponentDraft());
+    restoreScroll();
+  };
+
+  const selectIngredient = (i: IngredientPick) => {
+    const b = i.base_unit as BaseUnit;
+    setIngredientDraft((draft) => ({
+      ...draft,
+      selected: i,
+      unit: defaultUnitFor(b),
+    }));
+  };
+
+  const addIngredientDraft = (mode: "close" | "another") => {
+    const selected = ingredientDraft.selected;
+    if (!selected) return void toast.error("Choose an ingredient first");
+    if (!(Number(ingredientDraft.qty) > 0)) return void toast.error("Enter a quantity");
+    const b = selected.base_unit as BaseUnit;
+    setIngLines((l) => [
+      ...l,
+      {
+        key: uid(),
+        ingredient_id: selected.id,
+        name: selected.name,
+        base: b,
+        qty: ingredientDraft.qty,
+        unit: ingredientDraft.unit,
+        prep_note: ingredientDraft.prep_note,
+      },
+    ]);
+    if (mode === "another") {
+      setIngredientDraft(emptyIngredientDraft());
+      return;
+    }
+    closeIngredientPicker();
+  };
+
+  const selectComponent = (r: ComponentPick) => {
+    setComponentDraft((draft) => ({
+      ...draft,
+      selected: r,
+      unit: defaultUnitFor(r.base),
+    }));
+  };
+
+  const addComponentDraft = (mode: "close" | "another") => {
+    const selected = componentDraft.selected;
+    if (!selected || !selected.active_version_id) return void toast.error("Choose a sub-recipe first");
+    if (!(Number(componentDraft.qty) > 0)) return void toast.error("Enter a quantity");
+    const versionId = selected.active_version_id;
     setCompLines((l) => [
       ...l,
-      { key: uid(), version_id: r.active_version_id!, recipe_id: r.id, name: r.name, base: r.base, qty: "", unit: r.base === "each" ? "each" : r.base },
+      {
+        key: uid(),
+        version_id: versionId,
+        recipe_id: selected.id,
+        name: selected.name,
+        base: selected.base,
+        qty: componentDraft.qty,
+        unit: componentDraft.unit,
+      },
     ]);
-    setPickComp(false);
+    if (mode === "another") {
+      setComponentDraft(emptyComponentDraft());
+      return;
+    }
+    closeComponentPicker();
   };
 
   const move = <T extends { key: string }>(arr: T[], idx: number, dir: -1 | 1): T[] => {
@@ -387,7 +511,7 @@ export function RecipeEditor({
         <SectionHeading
           title="Ingredients"
           action={
-            <button type="button" onClick={() => setPickIng(true)} className="font-mono text-[12px] underline">
+            <button type="button" onClick={openIngredientPicker} className="font-mono text-[12px] underline">
               + Add
             </button>
           }
@@ -449,7 +573,7 @@ export function RecipeEditor({
         <SectionHeading
           title="Components (sub-recipes)"
           action={
-            <button type="button" onClick={() => setPickComp(true)} className="font-mono text-[12px] underline">
+            <button type="button" onClick={openComponentPicker} className="font-mono text-[12px] underline">
               + Add
             </button>
           }
@@ -518,40 +642,124 @@ export function RecipeEditor({
       </StickyActions>
 
       {/* Ingredient picker */}
-      <Drawer open={pickIng} onOpenChange={setPickIng}>
+      <Drawer
+        open={pickIng}
+        onOpenChange={(open) => {
+          if (!open) closeIngredientPicker();
+        }}
+        shouldScaleBackground={false}
+      >
         <DrawerContent className="bg-paper border-ink/10">
-          <div className="mx-auto max-h-[75vh] w-full max-w-md overflow-y-auto px-5 pb-safe pt-2">
+          <div className="mx-auto flex max-h-[88vh] w-full max-w-md flex-col px-5 pb-safe pt-2">
             <DrawerTitle className="font-display text-[24px] leading-none">Add ingredient</DrawerTitle>
-            <div className="mt-3 space-y-2">
-              <TextInput placeholder="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
-              <GhostButton onClick={() => { setPickIng(false); setNewIng(true); }} className="w-full">
+            <div className="mt-3 space-y-3 overflow-y-auto pb-3">
+              <Field label="Ingredient">
+                <TextInput
+                  placeholder="Search ingredients"
+                  value={ingredientDraft.search}
+                  onChange={(e) => setIngredientDraft((draft) => ({ ...draft, search: e.target.value }))}
+                />
+              </Field>
+              <GhostButton onClick={() => { setPickIng(false); setNewIng(true); }} className="w-full" type="button">
                 + Create ingredient
               </GhostButton>
-              {filteredIngredients.map((i) => (
-                <button
-                  key={i.id}
-                  type="button"
-                  onClick={() => addIngredient(i)}
-                  className="tap flex w-full items-center justify-between rounded-sm bg-cream px-3 py-2.5 text-left"
-                >
-                  <span className="text-[14px]">{i.name}</span>
-                  <span className="font-mono text-[11px] text-ink-soft">{i.base_unit}</span>
-                </button>
-              ))}
+              <div className="max-h-[180px] space-y-2 overflow-y-auto pr-1">
+                {filteredIngredients.length === 0 ? <EmptyNote>No ingredients found.</EmptyNote> : null}
+                {filteredIngredients.map((i) => {
+                  const selected = ingredientDraft.selected?.id === i.id;
+                  return (
+                    <button
+                      key={i.id}
+                      type="button"
+                      onClick={() => selectIngredient(i)}
+                      className={`tap flex w-full items-center justify-between rounded-sm px-3 py-2.5 text-left ${selected ? "bg-ink text-cream" : "bg-cream text-ink"}`}
+                    >
+                      <span className="text-[14px]">{i.name}</span>
+                      <span className={`font-mono text-[11px] ${selected ? "text-cream/80" : "text-ink-soft"}`}>{i.base_unit}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {ingredientDraft.selected ? (
+                <div className="torn space-y-3 bg-cream px-3 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-semibold text-[14px]">{ingredientDraft.selected.name}</div>
+                      <div className="font-mono text-[11px] text-ink-soft">Measured in {ingredientDraft.selected.base_unit}</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="font-mono text-[11px] text-flame underline"
+                      onClick={() => setIngredientDraft((draft) => ({ ...draft, selected: null, qty: "", prep_note: "" }))}
+                    >
+                      Change
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-[1fr_92px] gap-2">
+                    <Field label="Quantity" required>
+                      <TextInput
+                        type="number"
+                        inputMode="decimal"
+                        value={ingredientDraft.qty}
+                        onChange={(e) => setIngredientDraft((draft) => ({ ...draft, qty: e.target.value }))}
+                        placeholder="0"
+                      />
+                    </Field>
+                    <Field label="Unit">
+                      <SelectInput
+                        value={ingredientDraft.unit}
+                        onChange={(e) => setIngredientDraft((draft) => ({ ...draft, unit: e.target.value as DisplayUnit }))}
+                      >
+                        {unitsFor(ingredientDraft.selected.base_unit as BaseUnit).map((u) => (
+                          <option key={u}>{u}</option>
+                        ))}
+                      </SelectInput>
+                    </Field>
+                  </div>
+                  <Field label="Prep note">
+                    <TextInput
+                      value={ingredientDraft.prep_note}
+                      onChange={(e) => setIngredientDraft((draft) => ({ ...draft, prep_note: e.target.value }))}
+                      placeholder="diced, toasted, soaked…"
+                    />
+                  </Field>
+                </div>
+              ) : null}
+            </div>
+            <div className="-mx-5 mt-auto grid grid-cols-2 gap-2 border-t border-ink/10 bg-paper/95 px-5 py-3">
+              <GhostButton type="button" onClick={closeIngredientPicker}>
+                Cancel
+              </GhostButton>
+              <PrimaryButton type="button" onClick={() => addIngredientDraft("close")}>
+                Add ingredient
+              </PrimaryButton>
+              <GhostButton type="button" onClick={() => addIngredientDraft("another")} className="col-span-2">
+                Add & add another
+              </GhostButton>
             </div>
           </div>
         </DrawerContent>
       </Drawer>
 
       {/* Inline ingredient creation — recipe state is preserved */}
-      <Drawer open={newIng} onOpenChange={setNewIng}>
+      <Drawer
+        open={newIng}
+        onOpenChange={(open) => {
+          setNewIng(open);
+          if (!open) setPickIng(true);
+        }}
+        shouldScaleBackground={false}
+      >
         <DrawerContent className="bg-paper border-ink/10">
           <div className="mx-auto max-h-[85vh] w-full max-w-md overflow-y-auto px-5 pb-safe pt-2">
             <DrawerTitle className="font-display text-[24px] leading-none">New ingredient</DrawerTitle>
             <div className="mt-3">
               <IngredientForm
                 compact
-                onCancel={() => setNewIng(false)}
+                onCancel={() => {
+                  setNewIng(false);
+                  setPickIng(true);
+                }}
                 onSaved={async (row) => {
                   await qc.invalidateQueries({ queryKey: ["ingredients"] });
                   await qc.invalidateQueries({ queryKey: ["recipe-graph"] });
@@ -560,9 +768,10 @@ export function RecipeEditor({
                     .select("id, name, base_unit")
                     .eq("id", row.id)
                     .maybeSingle();
-                  if (fresh.data) addIngredient(fresh.data);
+                  if (fresh.data) selectIngredient(fresh.data);
                   setNewIng(false);
-                  toast.success("Ingredient added");
+                  setPickIng(true);
+                  toast.success("Ingredient ready");
                 }}
               />
             </div>
@@ -571,30 +780,96 @@ export function RecipeEditor({
       </Drawer>
 
       {/* Component picker */}
-      <Drawer open={pickComp} onOpenChange={setPickComp}>
+      <Drawer
+        open={pickComp}
+        onOpenChange={(open) => {
+          if (!open) closeComponentPicker();
+        }}
+        shouldScaleBackground={false}
+      >
         <DrawerContent className="bg-paper border-ink/10">
-          <div className="mx-auto max-h-[75vh] w-full max-w-md overflow-y-auto px-5 pb-safe pt-2">
+          <div className="mx-auto flex max-h-[88vh] w-full max-w-md flex-col px-5 pb-safe pt-2">
             <DrawerTitle className="font-display text-[24px] leading-none">Add sub-recipe</DrawerTitle>
-            <div className="mt-3 space-y-2">
+            <div className="mt-3 space-y-3 overflow-y-auto pb-3">
+              <Field label="Sub-recipe">
+                <TextInput
+                  placeholder="Search recipes"
+                  value={componentDraft.search}
+                  onChange={(e) => setComponentDraft((draft) => ({ ...draft, search: e.target.value }))}
+                />
+              </Field>
               {componentCandidates.length === 0 ? (
                 <EmptyNote>No other recipes available to use as a component.</EmptyNote>
               ) : null}
-              {componentCandidates.map((r) => {
-                const b = (r.active_version?.base_yield_unit as BaseUnit) ?? "g";
-                return (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => addComponent({ id: r.id, name: r.name, active_version_id: r.active_version_id, base: b })}
-                    className="tap flex w-full items-center justify-between rounded-sm bg-cream px-3 py-2.5 text-left"
-                  >
-                    <span className="text-[14px]">{r.name}</span>
-                    <span className="font-mono text-[11px] text-ink-soft">
-                      {r.active_version ? fmtQty(Number(r.active_version.base_yield_quantity), b) : ""}
-                    </span>
-                  </button>
-                );
-              })}
+              {componentCandidates.length > 0 && filteredComponents.length === 0 ? <EmptyNote>No recipes found.</EmptyNote> : null}
+              <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
+                {filteredComponents.map((r) => {
+                  const b = (r.active_version?.base_yield_unit as BaseUnit) ?? "g";
+                  const selected = componentDraft.selected?.id === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => selectComponent({ id: r.id, name: r.name, active_version_id: r.active_version_id, base: b })}
+                      className={`tap flex w-full items-center justify-between rounded-sm px-3 py-2.5 text-left ${selected ? "bg-ink text-cream" : "bg-cream text-ink"}`}
+                    >
+                      <span className="text-[14px]">{r.name}</span>
+                      <span className={`font-mono text-[11px] ${selected ? "text-cream/80" : "text-ink-soft"}`}>
+                        {r.active_version ? fmtQty(Number(r.active_version.base_yield_quantity), b) : ""}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {componentDraft.selected ? (
+                <div className="torn space-y-3 bg-cream px-3 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-semibold text-[14px]">{componentDraft.selected.name}</div>
+                      <div className="font-mono text-[11px] text-ink-soft">Required amount</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="font-mono text-[11px] text-flame underline"
+                      onClick={() => setComponentDraft((draft) => ({ ...draft, selected: null, qty: "" }))}
+                    >
+                      Change
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-[1fr_92px] gap-2">
+                    <Field label="Quantity" required>
+                      <TextInput
+                        type="number"
+                        inputMode="decimal"
+                        value={componentDraft.qty}
+                        onChange={(e) => setComponentDraft((draft) => ({ ...draft, qty: e.target.value }))}
+                        placeholder="0"
+                      />
+                    </Field>
+                    <Field label="Unit">
+                      <SelectInput
+                        value={componentDraft.unit}
+                        onChange={(e) => setComponentDraft((draft) => ({ ...draft, unit: e.target.value as DisplayUnit }))}
+                      >
+                        {unitsFor(componentDraft.selected.base).map((u) => (
+                          <option key={u}>{u}</option>
+                        ))}
+                      </SelectInput>
+                    </Field>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            <div className="-mx-5 mt-auto grid grid-cols-2 gap-2 border-t border-ink/10 bg-paper/95 px-5 py-3">
+              <GhostButton type="button" onClick={closeComponentPicker}>
+                Cancel
+              </GhostButton>
+              <PrimaryButton type="button" onClick={() => addComponentDraft("close")}>
+                Add sub-recipe
+              </PrimaryButton>
+              <GhostButton type="button" onClick={() => addComponentDraft("another")} className="col-span-2">
+                Add & add another
+              </GhostButton>
             </div>
           </div>
         </DrawerContent>
