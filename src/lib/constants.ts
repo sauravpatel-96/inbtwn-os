@@ -102,3 +102,52 @@ export const DIETARY_TYPES = [
 export const DIETARY_SEVERITIES = ["preference", "intolerance", "allergy", "severe"];
 
 export const DEFAULT_CURRENCY = "GBP";
+
+/* ---------- Build 2: recipe engine ---------- */
+
+export const INGREDIENT_CATEGORIES = [
+  "Meat",
+  "Fish & Seafood",
+  "Produce",
+  "Dairy",
+  "Dry Goods",
+  "Spices",
+  "Sauces & Condiments",
+  "Bakery",
+  "Frozen",
+  "Drinks",
+  "Consumables",
+  "Other",
+];
+
+export const RECIPE_CATEGORIES = [
+  "Main",
+  "Side",
+  "Starter",
+  "Canapé",
+  "Sauce",
+  "Dressing",
+  "Marinade",
+  "Dessert",
+  "Bread",
+  "Rice",
+  "Salad",
+  "Component",
+  "Other",
+];
+
+export const CUISINES = [
+  "Indian",
+  "Korean",
+  "Japanese",
+  "Thai",
+  "Chinese",
+  "Mediterranean",
+  "Middle Eastern",
+  "Italian",
+  "Mexican",
+  "Modern British",
+  "Caribbean",
+  "African",
+  "Other",
+];

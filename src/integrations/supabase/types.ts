@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      allergens: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           billing_address: string | null
@@ -229,6 +253,120 @@ export type Database = {
           },
         ]
       }
+      ingredient_allergens: {
+        Row: {
+          allergen_id: string
+          created_at: string
+          id: string
+          ingredient_id: string
+          organisation_id: string
+        }
+        Insert: {
+          allergen_id: string
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          organisation_id?: string
+        }
+        Update: {
+          allergen_id?: string
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          organisation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_allergens_allergen_id_fkey"
+            columns: ["allergen_id"]
+            isOneToOne: false
+            referencedRelation: "allergens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_allergens_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_allergens_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingredients: {
+        Row: {
+          active: boolean
+          base_unit: Database["public"]["Enums"]["base_unit"]
+          category: string
+          cost_price: number | null
+          cost_quantity: number | null
+          cost_unit: string | null
+          created_at: string
+          current_unit_cost: number | null
+          default_supplier_id: string | null
+          id: string
+          is_demo: boolean
+          name: string
+          notes: string | null
+          organisation_id: string
+          track_inventory: boolean
+          updated_at: string
+          yield_percentage: number
+        }
+        Insert: {
+          active?: boolean
+          base_unit?: Database["public"]["Enums"]["base_unit"]
+          category?: string
+          cost_price?: number | null
+          cost_quantity?: number | null
+          cost_unit?: string | null
+          created_at?: string
+          current_unit_cost?: number | null
+          default_supplier_id?: string | null
+          id?: string
+          is_demo?: boolean
+          name: string
+          notes?: string | null
+          organisation_id?: string
+          track_inventory?: boolean
+          updated_at?: string
+          yield_percentage?: number
+        }
+        Update: {
+          active?: boolean
+          base_unit?: Database["public"]["Enums"]["base_unit"]
+          category?: string
+          cost_price?: number | null
+          cost_quantity?: number | null
+          cost_unit?: string | null
+          created_at?: string
+          current_unit_cost?: number | null
+          default_supplier_id?: string | null
+          id?: string
+          is_demo?: boolean
+          name?: string
+          notes?: string | null
+          organisation_id?: string
+          track_inventory?: boolean
+          updated_at?: string
+          yield_percentage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredients_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organisations: {
         Row: {
           created_at: string
@@ -294,6 +432,296 @@ export type Database = {
           },
         ]
       }
+      recipe_components: {
+        Row: {
+          child_recipe_version_id: string
+          created_at: string
+          id: string
+          organisation_id: string
+          parent_recipe_version_id: string
+          quantity: number
+          sort_order: number
+          unit: Database["public"]["Enums"]["base_unit"]
+        }
+        Insert: {
+          child_recipe_version_id: string
+          created_at?: string
+          id?: string
+          organisation_id?: string
+          parent_recipe_version_id: string
+          quantity: number
+          sort_order?: number
+          unit: Database["public"]["Enums"]["base_unit"]
+        }
+        Update: {
+          child_recipe_version_id?: string
+          created_at?: string
+          id?: string
+          organisation_id?: string
+          parent_recipe_version_id?: string
+          quantity?: number
+          sort_order?: number
+          unit?: Database["public"]["Enums"]["base_unit"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_components_child_recipe_version_id_fkey"
+            columns: ["child_recipe_version_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_components_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_components_parent_recipe_version_id_fkey"
+            columns: ["parent_recipe_version_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_ingredients: {
+        Row: {
+          created_at: string
+          id: string
+          ingredient_id: string
+          organisation_id: string
+          prep_note: string | null
+          quantity: number
+          recipe_version_id: string
+          sort_order: number
+          unit: Database["public"]["Enums"]["base_unit"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          organisation_id?: string
+          prep_note?: string | null
+          quantity: number
+          recipe_version_id: string
+          sort_order?: number
+          unit: Database["public"]["Enums"]["base_unit"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          organisation_id?: string
+          prep_note?: string | null
+          quantity?: number
+          recipe_version_id?: string
+          sort_order?: number
+          unit?: Database["public"]["Enums"]["base_unit"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_version_id_fkey"
+            columns: ["recipe_version_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_production_profiles: {
+        Row: {
+          active: boolean
+          buffer_percentage: number
+          created_at: string
+          expected_uptake_percentage: number
+          id: string
+          name: string
+          organisation_id: string
+          quantity_per_guest: number
+          recipe_id: string
+          service_style: string | null
+          unit: Database["public"]["Enums"]["base_unit"]
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          buffer_percentage?: number
+          created_at?: string
+          expected_uptake_percentage?: number
+          id?: string
+          name: string
+          organisation_id?: string
+          quantity_per_guest: number
+          recipe_id: string
+          service_style?: string | null
+          unit: Database["public"]["Enums"]["base_unit"]
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          buffer_percentage?: number
+          created_at?: string
+          expected_uptake_percentage?: number
+          id?: string
+          name?: string
+          organisation_id?: string
+          quantity_per_guest?: number
+          recipe_id?: string
+          service_style?: string | null
+          unit?: Database["public"]["Enums"]["base_unit"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_production_profiles_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_production_profiles_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_versions: {
+        Row: {
+          base_yield_quantity: number
+          base_yield_unit: Database["public"]["Enums"]["base_unit"]
+          change_notes: string | null
+          created_at: string
+          default_buffer_percentage: number
+          default_portion_quantity: number | null
+          default_portion_unit: Database["public"]["Enums"]["base_unit"] | null
+          id: string
+          method: string | null
+          organisation_id: string
+          recipe_id: string
+          version_number: number
+        }
+        Insert: {
+          base_yield_quantity: number
+          base_yield_unit?: Database["public"]["Enums"]["base_unit"]
+          change_notes?: string | null
+          created_at?: string
+          default_buffer_percentage?: number
+          default_portion_quantity?: number | null
+          default_portion_unit?: Database["public"]["Enums"]["base_unit"] | null
+          id?: string
+          method?: string | null
+          organisation_id?: string
+          recipe_id: string
+          version_number?: number
+        }
+        Update: {
+          base_yield_quantity?: number
+          base_yield_unit?: Database["public"]["Enums"]["base_unit"]
+          change_notes?: string | null
+          created_at?: string
+          default_buffer_percentage?: number
+          default_portion_quantity?: number | null
+          default_portion_unit?: Database["public"]["Enums"]["base_unit"] | null
+          id?: string
+          method?: string | null
+          organisation_id?: string
+          recipe_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_versions_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_versions_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          active: boolean
+          active_version_id: string | null
+          category: string
+          created_at: string
+          cuisine: string | null
+          description: string | null
+          id: string
+          is_demo: boolean
+          name: string
+          organisation_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          active_version_id?: string | null
+          category?: string
+          created_at?: string
+          cuisine?: string | null
+          description?: string | null
+          id?: string
+          is_demo?: boolean
+          name: string
+          organisation_id?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          active_version_id?: string | null
+          category?: string
+          created_at?: string
+          cuisine?: string | null
+          description?: string | null
+          id?: string
+          is_demo?: boolean
+          name?: string
+          organisation_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipes_active_version_fkey"
+            columns: ["active_version_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipes_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -309,6 +737,7 @@ export type Database = {
     }
     Enums: {
       app_role: "owner" | "manager" | "staff"
+      base_unit: "g" | "ml" | "each"
       client_type: "individual" | "corporate" | "agency" | "venue" | "other"
       event_source:
         | "togather"
@@ -459,6 +888,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["owner", "manager", "staff"],
+      base_unit: ["g", "ml", "each"],
       client_type: ["individual", "corporate", "agency", "venue", "other"],
       event_source: [
         "togather",
