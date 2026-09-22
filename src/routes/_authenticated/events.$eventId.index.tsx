@@ -12,6 +12,7 @@ import { Dietaries } from "@/components/inbtwn/Dietaries";
 import { EventMenu } from "@/components/inbtwn/EventMenu";
 import { EventProduction } from "@/components/inbtwn/EventProduction";
 import { EventShopping } from "@/components/inbtwn/EventShopping";
+import { EventPacking } from "@/components/inbtwn/EventPacking";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -261,6 +262,8 @@ function EventDetailPage() {
           <EventProduction eventId={eventId} guestCount={e.guest_count} />
         ) : s === "shopping" ? (
           <EventShopping eventId={eventId} guestCount={e.guest_count} />
+        ) : s === "packing" ? (
+          <EventPacking eventId={eventId} guestCount={e.guest_count} />
         ) : (
           <div className="torn bg-cream px-5 py-8 text-center">
             <div className="font-display text-[22px] leading-none">{SECTION_LABEL[s]}</div>

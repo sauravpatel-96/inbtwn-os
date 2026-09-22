@@ -225,6 +225,96 @@ export type Database = {
           },
         ]
       }
+      event_packing_checks: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          item_key: string
+          organisation_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          item_key: string
+          organisation_id?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          item_key?: string
+          organisation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_packing_checks_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_packing_checks_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_packing_items: {
+        Row: {
+          category: string
+          created_at: string
+          event_id: string
+          id: string
+          name: string
+          organisation_id: string
+          quantity: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          event_id: string
+          id?: string
+          name: string
+          organisation_id?: string
+          quantity?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          name?: string
+          organisation_id?: string
+          quantity?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_packing_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_packing_items_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_shopping_checks: {
         Row: {
           created_at: string
