@@ -130,7 +130,10 @@ function DemoDataPrompt() {
     setBusy(true);
     const { error } = await supabase.rpc("load_demo_data");
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Demo data loaded — look for the Demo tag.");
     qc.invalidateQueries({ queryKey: ["events"] });
     qc.invalidateQueries({ queryKey: ["clients"] });

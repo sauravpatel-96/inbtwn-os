@@ -13,7 +13,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAskRouteImport } from './routes/_authenticated/ask'
+import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
+import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events.index'
 import { Route as AuthenticatedLibraryIndexRouteImport } from './routes/_authenticated/library.index'
+import { Route as AuthenticatedLibraryClientsIndexRouteImport } from './routes/_authenticated/library.clients.index'
+import { Route as AuthenticatedLibraryClientsNewRouteImport } from './routes/_authenticated/library.clients.new'
+import { Route as AuthenticatedLibraryClientsClientIdIndexRouteImport } from './routes/_authenticated/library.clients.$clientId.index'
+import { Route as AuthenticatedLibraryClientsClientIdEditRouteImport } from './routes/_authenticated/library.clients.$clientId.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,10 +40,45 @@ const AuthenticatedAskRoute = AuthenticatedAskRouteImport.update({
   path: '/ask',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEventsIndexRoute =
+  AuthenticatedEventsIndexRouteImport.update({
+    id: '/events/',
+    path: '/events/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLibraryIndexRoute =
   AuthenticatedLibraryIndexRouteImport.update({
     id: '/library/',
     path: '/library/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibraryClientsIndexRoute =
+  AuthenticatedLibraryClientsIndexRouteImport.update({
+    id: '/library/clients/',
+    path: '/library/clients/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibraryClientsNewRoute =
+  AuthenticatedLibraryClientsNewRouteImport.update({
+    id: '/library/clients/new',
+    path: '/library/clients/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibraryClientsClientIdIndexRoute =
+  AuthenticatedLibraryClientsClientIdIndexRouteImport.update({
+    id: '/library/clients/$clientId/',
+    path: '/library/clients/$clientId/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibraryClientsClientIdEditRoute =
+  AuthenticatedLibraryClientsClientIdEditRouteImport.update({
+    id: '/library/clients/$clientId/edit',
+    path: '/library/clients/$clientId/edit',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
@@ -45,13 +86,25 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/ask': typeof AuthenticatedAskRoute
+  '/today': typeof AuthenticatedTodayRoute
+  '/events/': typeof AuthenticatedEventsIndexRoute
   '/library/': typeof AuthenticatedLibraryIndexRoute
+  '/library/clients/new': typeof AuthenticatedLibraryClientsNewRoute
+  '/library/clients/': typeof AuthenticatedLibraryClientsIndexRoute
+  '/library/clients/$clientId/edit': typeof AuthenticatedLibraryClientsClientIdEditRoute
+  '/library/clients/$clientId/': typeof AuthenticatedLibraryClientsClientIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/ask': typeof AuthenticatedAskRoute
+  '/today': typeof AuthenticatedTodayRoute
+  '/events': typeof AuthenticatedEventsIndexRoute
   '/library': typeof AuthenticatedLibraryIndexRoute
+  '/library/clients/new': typeof AuthenticatedLibraryClientsNewRoute
+  '/library/clients': typeof AuthenticatedLibraryClientsIndexRoute
+  '/library/clients/$clientId/edit': typeof AuthenticatedLibraryClientsClientIdEditRoute
+  '/library/clients/$clientId': typeof AuthenticatedLibraryClientsClientIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,20 +112,52 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/ask': typeof AuthenticatedAskRoute
+  '/_authenticated/today': typeof AuthenticatedTodayRoute
+  '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
   '/_authenticated/library/': typeof AuthenticatedLibraryIndexRoute
+  '/_authenticated/library/clients/new': typeof AuthenticatedLibraryClientsNewRoute
+  '/_authenticated/library/clients/': typeof AuthenticatedLibraryClientsIndexRoute
+  '/_authenticated/library/clients/$clientId/edit': typeof AuthenticatedLibraryClientsClientIdEditRoute
+  '/_authenticated/library/clients/$clientId/': typeof AuthenticatedLibraryClientsClientIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/ask' | '/library/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/ask'
+    | '/today'
+    | '/events/'
+    | '/library/'
+    | '/library/clients/new'
+    | '/library/clients/'
+    | '/library/clients/$clientId/edit'
+    | '/library/clients/$clientId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/ask' | '/library'
+  to:
+    | '/'
+    | '/auth'
+    | '/ask'
+    | '/today'
+    | '/events'
+    | '/library'
+    | '/library/clients/new'
+    | '/library/clients'
+    | '/library/clients/$clientId/edit'
+    | '/library/clients/$clientId'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/ask'
+    | '/_authenticated/today'
+    | '/_authenticated/events/'
     | '/_authenticated/library/'
+    | '/_authenticated/library/clients/new'
+    | '/_authenticated/library/clients/'
+    | '/_authenticated/library/clients/$clientId/edit'
+    | '/_authenticated/library/clients/$clientId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -111,6 +196,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAskRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/today': {
+      id: '/_authenticated/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof AuthenticatedTodayRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/events/': {
+      id: '/_authenticated/events/'
+      path: '/events'
+      fullPath: '/events/'
+      preLoaderRoute: typeof AuthenticatedEventsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/library/': {
       id: '/_authenticated/library/'
       path: '/library'
@@ -118,17 +217,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLibraryIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/library/clients/': {
+      id: '/_authenticated/library/clients/'
+      path: '/library/clients'
+      fullPath: '/library/clients/'
+      preLoaderRoute: typeof AuthenticatedLibraryClientsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/clients/new': {
+      id: '/_authenticated/library/clients/new'
+      path: '/library/clients/new'
+      fullPath: '/library/clients/new'
+      preLoaderRoute: typeof AuthenticatedLibraryClientsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/clients/$clientId/': {
+      id: '/_authenticated/library/clients/$clientId/'
+      path: '/library/clients/$clientId'
+      fullPath: '/library/clients/$clientId/'
+      preLoaderRoute: typeof AuthenticatedLibraryClientsClientIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/clients/$clientId/edit': {
+      id: '/_authenticated/library/clients/$clientId/edit'
+      path: '/library/clients/$clientId/edit'
+      fullPath: '/library/clients/$clientId/edit'
+      preLoaderRoute: typeof AuthenticatedLibraryClientsClientIdEditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAskRoute: typeof AuthenticatedAskRoute
+  AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
+  AuthenticatedEventsIndexRoute: typeof AuthenticatedEventsIndexRoute
   AuthenticatedLibraryIndexRoute: typeof AuthenticatedLibraryIndexRoute
+  AuthenticatedLibraryClientsNewRoute: typeof AuthenticatedLibraryClientsNewRoute
+  AuthenticatedLibraryClientsIndexRoute: typeof AuthenticatedLibraryClientsIndexRoute
+  AuthenticatedLibraryClientsClientIdEditRoute: typeof AuthenticatedLibraryClientsClientIdEditRoute
+  AuthenticatedLibraryClientsClientIdIndexRoute: typeof AuthenticatedLibraryClientsClientIdIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAskRoute: AuthenticatedAskRoute,
+  AuthenticatedTodayRoute: AuthenticatedTodayRoute,
+  AuthenticatedEventsIndexRoute: AuthenticatedEventsIndexRoute,
   AuthenticatedLibraryIndexRoute: AuthenticatedLibraryIndexRoute,
+  AuthenticatedLibraryClientsNewRoute: AuthenticatedLibraryClientsNewRoute,
+  AuthenticatedLibraryClientsIndexRoute: AuthenticatedLibraryClientsIndexRoute,
+  AuthenticatedLibraryClientsClientIdEditRoute:
+    AuthenticatedLibraryClientsClientIdEditRoute,
+  AuthenticatedLibraryClientsClientIdIndexRoute:
+    AuthenticatedLibraryClientsClientIdIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

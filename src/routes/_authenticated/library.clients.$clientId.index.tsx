@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/library/clients/$clientId/
   component: ClientDetailPage,
 });
 
-function Row({ label, value, href }: { label: string; value: string | null | undefined; href?: string }) {
+function Row({ label, value, href }: { label: string; value: string | null | undefined; href?: string | undefined }) {
   if (!value) return null;
   return (
     <div className="flex items-baseline justify-between gap-3 border-b border-ink/10 py-2.5 last:border-0">

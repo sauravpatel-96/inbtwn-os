@@ -52,7 +52,7 @@ function matches(e: EventWithClient, f: Filter): boolean {
 
 function EventsPage() {
   const { f = "all" } = Route.useSearch();
-  const navigate = useNavigate({ from: "/events" });
+  const navigate = useNavigate({ from: "/events/" });
   const events = useQuery(eventsQuery);
   const [q, setQ] = useState("");
 
