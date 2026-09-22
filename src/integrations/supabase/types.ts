@@ -636,6 +636,275 @@ export type Database = {
           },
         ]
       }
+      event_quote_charges: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          organisation_id: string
+          quote_id: string
+          show_on_quote: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description: string
+          id?: string
+          organisation_id?: string
+          quote_id: string
+          show_on_quote?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          organisation_id?: string
+          quote_id?: string
+          show_on_quote?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_quote_charges_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_quote_charges_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "event_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_quote_items: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          organisation_id: string
+          quote_id: string
+          section_id: string
+          sort_order: number
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          organisation_id?: string
+          quote_id: string
+          section_id: string
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          organisation_id?: string
+          quote_id?: string
+          section_id?: string
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_quote_items_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "event_quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_quote_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "event_quote_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_quote_sections: {
+        Row: {
+          created_at: string
+          id: string
+          included: boolean
+          name: string
+          organisation_id: string
+          quote_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          included?: boolean
+          name: string
+          organisation_id?: string
+          quote_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          included?: boolean
+          name?: string
+          organisation_id?: string
+          quote_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_quote_sections_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_quote_sections_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "event_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_quotes: {
+        Row: {
+          card_fee_enabled: boolean
+          card_fee_percentage: number | null
+          catering_label: string
+          client_name: string | null
+          client_notes: string | null
+          created_at: string
+          cuisine: string | null
+          event_date: string | null
+          event_id: string
+          event_name: string | null
+          event_type: string | null
+          guest_count: number | null
+          id: string
+          introduction: string | null
+          organisation_id: string
+          price_per_head: number | null
+          pricing_option_id: string | null
+          sent_at: string | null
+          service_style: string | null
+          status: string
+          terms: string | null
+          title: string | null
+          updated_at: string
+          vat_enabled: boolean
+          vat_rate: number
+          venue: string | null
+          whats_included: string | null
+        }
+        Insert: {
+          card_fee_enabled?: boolean
+          card_fee_percentage?: number | null
+          catering_label?: string
+          client_name?: string | null
+          client_notes?: string | null
+          created_at?: string
+          cuisine?: string | null
+          event_date?: string | null
+          event_id: string
+          event_name?: string | null
+          event_type?: string | null
+          guest_count?: number | null
+          id?: string
+          introduction?: string | null
+          organisation_id?: string
+          price_per_head?: number | null
+          pricing_option_id?: string | null
+          sent_at?: string | null
+          service_style?: string | null
+          status?: string
+          terms?: string | null
+          title?: string | null
+          updated_at?: string
+          vat_enabled?: boolean
+          vat_rate?: number
+          venue?: string | null
+          whats_included?: string | null
+        }
+        Update: {
+          card_fee_enabled?: boolean
+          card_fee_percentage?: number | null
+          catering_label?: string
+          client_name?: string | null
+          client_notes?: string | null
+          created_at?: string
+          cuisine?: string | null
+          event_date?: string | null
+          event_id?: string
+          event_name?: string | null
+          event_type?: string | null
+          guest_count?: number | null
+          id?: string
+          introduction?: string | null
+          organisation_id?: string
+          price_per_head?: number | null
+          pricing_option_id?: string | null
+          sent_at?: string | null
+          service_style?: string | null
+          status?: string
+          terms?: string | null
+          title?: string | null
+          updated_at?: string
+          vat_enabled?: boolean
+          vat_rate?: number
+          venue?: string | null
+          whats_included?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_quotes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_quotes_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_quotes_pricing_option_id_fkey"
+            columns: ["pricing_option_id"]
+            isOneToOne: false
+            referencedRelation: "event_pricing_options"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_shopping_checks: {
         Row: {
           created_at: string
