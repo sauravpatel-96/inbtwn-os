@@ -40,27 +40,31 @@ function ShoppingRow({
   const [open, setOpen] = useState(false);
   const canExplain = line.yieldPct !== 100;
   return (
-    <div className="border-b border-ink/10 py-2.5 last:border-0">
-      <div className="flex items-start gap-3">
+    <div className="border-b border-ink/10 last:border-0">
+      <div className="flex items-center">
         <button
           type="button"
           onClick={onToggle}
           aria-pressed={collected}
           aria-label={`${collected ? "Uncollect" : "Collect"} ${line.name}`}
-          className={`tap mt-0.5 flex size-7 shrink-0 items-center justify-center border text-[13px] ${
-            collected ? "border-ink bg-ink text-cream" : "border-ink/30 bg-paper"
-          }`}
+          className="tap -ml-2 flex size-11 shrink-0 items-center justify-center"
         >
-          {collected ? "✓" : ""}
+          <span
+            className={`flex size-[22px] items-center justify-center border text-[12px] leading-none ${
+              collected ? "border-ink bg-ink text-cream" : "border-ink/40 bg-paper"
+            }`}
+          >
+            {collected ? "✓" : ""}
+          </span>
         </button>
         <button
           type="button"
           onClick={() => canExplain && setOpen((o) => !o)}
-          className={`flex min-h-[28px] flex-1 items-baseline justify-between gap-3 text-left ${
+          className={`flex min-h-[40px] flex-1 items-center justify-between gap-3 py-1 text-left ${
             canExplain ? "tap" : "cursor-default"
           } ${collected ? "text-ink-soft line-through opacity-60" : ""}`}
         >
-          <span className="text-[14px]">
+          <span className="text-[14px] leading-tight">
             {line.name}
             {canExplain ? <span className="ml-1.5 font-mono text-[10px] text-ink-soft">ⓘ</span> : null}
           </span>
@@ -76,7 +80,8 @@ function ShoppingRow({
 
 export function EventShopping({ eventId, guestCount }: { eventId: string; guestCount: number | null }) {
   const qc = useQueryClient();
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>("tobuy");
+  const [showMissing, setShowMissing] = useState(false);
   const menu = useQuery(menuItemsQuery(eventId));
   const graph = useQuery(graphQuery);
   const buffers = useQuery(versionBuffersQuery);
@@ -210,14 +215,27 @@ export function EventShopping({ eventId, guestCount }: { eventId: string; guestC
               <span className="font-mono text-[15px]">{fmtCost(knownCost)}</span>
             </div>
             {missingCost.length ? (
-              <div className="mt-2 bg-flame/10 px-3 py-2 font-mono text-[11px] text-flame">
-                Total incomplete — no cost recorded for: {missingCost.map((l) => l.name).join(", ")}
+              <div className="mt-2 border border-ink/15 px-3 py-2">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-mono text-[11px] text-flame">
+                    Costs missing for {missingCost.length} ingredient
+                    {missingCost.length === 1 ? "" : "s"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowMissing((o) => !o)}
+                    className="tap label-mono shrink-0 border border-ink/30 px-2 py-1 text-[10px]"
+                  >
+                    {showMissing ? "Hide" : "Review"}
+                  </button>
+                </div>
+                {showMissing ? (
+                  <div className="mt-2 font-mono text-[11px] leading-relaxed text-ink-soft">
+                    {missingCost.map((l) => l.name).join(", ")}
+                  </div>
+                ) : null}
               </div>
             ) : null}
-            <p className="mt-3 font-mono text-[10px] leading-relaxed text-ink-soft">
-              Purchase quantities account for each ingredient's usable yield. Display quantities are
-              rounded for practical shopping; calculations use full precision.
-            </p>
           </TornCard>
         </div>
       ) : null}

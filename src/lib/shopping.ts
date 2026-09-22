@@ -45,7 +45,8 @@ export function collectPurchases(
 }
 
 function trim(n: number, dp: number): string {
-  return n.toFixed(dp).replace(/\.?0+$/, "");
+  if (dp === 0) return String(Math.round(n));
+  return n.toFixed(dp).replace(/0+$/, "").replace(/\.$/, "");
 }
 
 /**
