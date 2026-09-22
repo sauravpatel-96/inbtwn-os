@@ -44,6 +44,13 @@ const schema = z.object({
   source_reference: z.string().trim().max(100),
   client_id: z.string().min(1, "Choose or create a client"),
   budget: z.string().trim().refine((s) => s === "" || /^\d+(\.\d{1,2})?$/.test(s), "Budget must be a number"),
+  budget_min: z.string().trim().refine((s) => s === "" || /^\d+(\.\d{1,2})?$/.test(s), "Minimum budget must be a number"),
+  budget_max: z.string().trim().refine((s) => s === "" || /^\d+(\.\d{1,2})?$/.test(s), "Maximum budget must be a number"),
+  budget_flexible: z.boolean(),
+  power_access: z.string(),
+  water_access: z.string(),
+  venue_setup_notes: z.string().trim().max(2000),
+  logistics_notes: z.string().trim().max(2000),
   event_type: z.string().trim().max(100),
   cuisine: z.string().trim().max(100),
   service_style: z.string().trim().max(100),
@@ -72,6 +79,13 @@ function toPayload(v: Values): EventInsert {
     source_reference: nn(v.source_reference),
     client_id: v.client_id,
     budget: v.budget ? Number(v.budget) : null,
+    budget_min: v.budget_min ? Number(v.budget_min) : null,
+    budget_max: v.budget_max ? Number(v.budget_max) : null,
+    budget_flexible: v.budget_flexible,
+    power_access: v.power_access || null,
+    water_access: v.water_access || null,
+    venue_setup_notes: nn(v.venue_setup_notes),
+    logistics_notes: nn(v.logistics_notes),
     currency: DEFAULT_CURRENCY,
     event_type: nn(v.event_type),
     cuisine: nn(v.cuisine),
@@ -97,6 +111,13 @@ function fromRow(e: EventRow): Values {
     source_reference: e.source_reference ?? "",
     client_id: e.client_id ?? "",
     budget: e.budget != null ? String(e.budget) : "",
+    budget_min: e.budget_min != null ? String(e.budget_min) : "",
+    budget_max: e.budget_max != null ? String(e.budget_max) : "",
+    budget_flexible: Boolean(e.budget_flexible),
+    power_access: e.power_access ?? "",
+    water_access: e.water_access ?? "",
+    venue_setup_notes: e.venue_setup_notes ?? "",
+    logistics_notes: e.logistics_notes ?? "",
     event_type: e.event_type ?? "",
     cuisine: e.cuisine ?? "",
     service_style: e.service_style ?? "",
@@ -120,6 +141,13 @@ const empty: Values = {
   source_reference: "",
   client_id: "",
   budget: "",
+  budget_min: "",
+  budget_max: "",
+  budget_flexible: false,
+  power_access: "",
+  water_access: "",
+  venue_setup_notes: "",
+  logistics_notes: "",
   event_type: "",
   cuisine: "",
   service_style: "",
@@ -249,6 +277,16 @@ export function EventForm({
         </div>
       </Field>
 
+      {v.source === "togather" ? (
+        <Field label="Togather Request ID" hint="optional">
+          <TextInput
+            value={v.source_reference}
+            onChange={(e) => set("source_reference", e.target.value)}
+            placeholder="RNKUPKK0"
+          />
+        </Field>
+      ) : null}
+
       {/* Client */}
       <div className="torn bg-cream px-4 py-4">
         <SectionHeading
@@ -280,7 +318,7 @@ export function EventForm({
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3">
-            <Field label={`Budget (${DEFAULT_CURRENCY})`}>
+            <Field label={`Budget (${DEFAULT_CURRENCY})`} hint="single">
               <TextInput
                 type="number"
                 inputMode="decimal"
@@ -299,6 +337,76 @@ export function EventForm({
               />
             </Field>
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Budget min">
+              <TextInput
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="0.01"
+                value={v.budget_min}
+                onChange={(e) => set("budget_min", e.target.value)}
+                placeholder="648"
+              />
+            </Field>
+            <Field label="Budget max">
+              <TextInput
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="0.01"
+                value={v.budget_max}
+                onChange={(e) => set("budget_max", e.target.value)}
+                placeholder="1008"
+              />
+            </Field>
+          </div>
+          <Field label="Budget flexible">
+            <div className="flex gap-2">
+              <Chip active={v.budget_flexible} onClick={() => set("budget_flexible", true)}>
+                Yes
+              </Chip>
+              <Chip active={!v.budget_flexible} onClick={() => set("budget_flexible", false)}>
+                No
+              </Chip>
+            </div>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Power access">
+              <SelectInput value={v.power_access} onChange={(e) => set("power_access", e.target.value)}>
+                <option value="">Not set</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+                <option value="unknown">Unknown</option>
+              </SelectInput>
+            </Field>
+            <Field label="Water access">
+              <SelectInput value={v.water_access} onChange={(e) => set("water_access", e.target.value)}>
+                <option value="">Not set</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+                <option value="unknown">Unknown</option>
+              </SelectInput>
+            </Field>
+          </div>
+          <Field label="Venue setup / kitchen">
+            <TextArea
+              value={v.venue_setup_notes}
+              onChange={(e) => set("venue_setup_notes", e.target.value)}
+              className="min-h-[64px]"
+              placeholder="Indoors with a domestic kitchen"
+            />
+          </Field>
+          <Field label="Logistics notes">
+            <TextArea
+              value={v.logistics_notes}
+              onChange={(e) => set("logistics_notes", e.target.value)}
+              className="min-h-[64px]"
+            />
+          </Field>
+
 
           <Field label="Event type">
             <SelectInput value={v.event_type} onChange={(e) => set("event_type", e.target.value)}>

@@ -13,6 +13,10 @@ import { EventMenu } from "@/components/inbtwn/EventMenu";
 import { EventProduction } from "@/components/inbtwn/EventProduction";
 import { EventShopping } from "@/components/inbtwn/EventShopping";
 import { EventPacking } from "@/components/inbtwn/EventPacking";
+import { EventProposal } from "@/components/inbtwn/EventProposal";
+import { EventPricing } from "@/components/inbtwn/EventPricing";
+import { EventNotes } from "@/components/inbtwn/EventNotes";
+import { stageOf, stageLabel, accessLabel } from "@/lib/commercial";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,10 +28,26 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const SECTIONS = ["overview", "menu", "production", "shopping", "packing", "staff", "client", "finance", "more"] as const;
+const SECTIONS = [
+  "overview",
+  "proposal",
+  "pricing",
+  "notes",
+  "menu",
+  "production",
+  "shopping",
+  "packing",
+  "staff",
+  "client",
+  "finance",
+  "more",
+] as const;
 type Section = (typeof SECTIONS)[number];
 const SECTION_LABEL: Record<Section, string> = {
   overview: "Overview",
+  proposal: "Proposal",
+  pricing: "Pricing",
+  notes: "Notes",
   menu: "Menu",
   production: "Production",
   shopping: "Shopping",
@@ -82,12 +102,18 @@ function EventDetailPage() {
   const qc = useQueryClient();
   const event = useQuery(eventQuery(eventId));
   const [pendingStatus, setPendingStatus] = useState<EventStatus | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   if (event.isLoading) return <p className="font-mono text-[12px] text-ink-soft">Loading…</p>;
   if (!event.data) return <EmptyNote>Event not found.</EmptyNote>;
   const e = event.data;
   const c = e.client;
   const money = fmtMoney(e.budget, e.currency);
+  const stage = stageOf(e.status);
+  const budgetText =
+    e.budget_min != null || e.budget_max != null
+      ? [fmtMoney(e.budget_min, e.currency), fmtMoney(e.budget_max, e.currency)].filter(Boolean).join("–")
+      : money;
 
   const applyStatus = async (status: EventStatus) => {
     const { error } = await supabase.from("events").update({ status }).eq("id", e.id);
@@ -151,19 +177,34 @@ function EventDetailPage() {
           </div>
           <div>
             <div className="label-mono text-ink-soft">Budget</div>
-            <div className="font-semibold">{money ?? "—"}</div>
+            <div className="font-semibold">{budgetText ?? "—"}</div>
+            {e.budget_flexible ? (
+              <div className="font-mono text-[10px] text-ink-soft">flexible</div>
+            ) : null}
           </div>
         </div>
         <div className="mt-2 font-mono text-[11px] text-ink-soft">
           {e.venue_name || e.venue_address ? [e.venue_name, e.venue_address].filter(Boolean).join(" · ") : "Venue not set"}
         </div>
-        <Link
-          to="/events/$eventId/edit"
-          params={{ eventId }}
-          className="tap mt-3 inline-flex items-center rounded-sm border border-ink/20 bg-paper px-4 font-mono text-[12px] text-ink"
-        >
-          Edit event
-        </Link>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link
+            to="/events/$eventId/edit"
+            params={{ eventId }}
+            className="tap inline-flex items-center rounded-sm border border-ink/20 bg-paper px-4 font-mono text-[12px] text-ink"
+          >
+            Edit event
+          </Link>
+          {stage === "enquiry" || stage === "quoted" ? (
+            <button
+              type="button"
+              onClick={() => setConfirming(true)}
+              className="tap inline-flex items-center rounded-sm bg-ink px-4 py-2 font-mono text-[12px] text-cream"
+            >
+              Confirm event
+            </button>
+          ) : null}
+        </div>
+        <div className="mt-2 font-mono text-[10px] text-ink-soft">Commercial stage: {stageLabel(stage)}</div>
       </div>
 
       {/* Section nav */}
@@ -208,6 +249,28 @@ function EventDetailPage() {
                     href={e.venue_contact_phone ? `tel:${e.venue_contact_phone.replace(/\s+/g, "")}` : undefined}
                   />
                 ) : null}
+              </div>
+            </div>
+
+            <div>
+              <SectionHeading title="Commercial" />
+              <div className="border border-ink/15 bg-cream px-4 py-1">
+                <Row label="Stage" value={stageLabel(stage)} />
+                <Row
+                  label="Budget"
+                  value={
+                    e.budget_min != null || e.budget_max != null
+                      ? [fmtMoney(e.budget_min, e.currency), fmtMoney(e.budget_max, e.currency)]
+                          .filter(Boolean)
+                          .join("–")
+                      : money
+                  }
+                />
+                <Row label="Budget flexible" value={e.budget_flexible == null ? null : e.budget_flexible ? "Yes" : "No"} />
+                <Row label="Power access" value={e.power_access ? accessLabel(e.power_access) : null} />
+                <Row label="Water access" value={e.water_access ? accessLabel(e.water_access) : null} />
+                <Row label="Venue setup" value={e.venue_setup_notes} />
+                <Row label="Logistics" value={e.logistics_notes} />
               </div>
             </div>
 
@@ -256,6 +319,12 @@ function EventDetailPage() {
           </>
         ) : s === "client" ? (
           <ClientBlock event={e} />
+        ) : s === "proposal" ? (
+          <EventProposal eventId={eventId} confirmed={stage === "confirmed" || stage === "completed"} />
+        ) : s === "pricing" ? (
+          <EventPricing event={e} />
+        ) : s === "notes" ? (
+          <EventNotes eventId={eventId} />
         ) : s === "menu" ? (
           <EventMenu eventId={eventId} guestCount={e.guest_count} />
         ) : s === "production" ? (
@@ -292,6 +361,30 @@ function EventDetailPage() {
               }}
             >
               Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirming} onOpenChange={(o) => !o && setConfirming(false)}>
+        <AlertDialogContent className="bg-paper">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-[22px] font-normal">Confirm this event?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The enquiry, proposal and pricing stay exactly as they are on this same event. The operational tabs stay
+              available so you can build the menu from the accepted proposal.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Not yet</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-ink text-cream"
+              onClick={() => {
+                applyStatus("confirmed");
+                setConfirming(false);
+              }}
+            >
+              Confirm event
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
