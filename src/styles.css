@@ -144,6 +144,14 @@
   );
 }
 
+/* Torn top edge, straight bottom (used for scale ingredient cards) */
+@utility torn-straight-bottom {
+  clip-path: polygon(
+    0 3%, 8% 0, 21% 3%, 34% 1%, 47% 3%, 59% 0, 71% 3%, 83% 1%, 93% 3%, 100% 0,
+    100% 100%, 0 100%
+  );
+}
+
 /* Jagged top edge for the bottom nav */
 @utility jag {
   clip-path: polygon(

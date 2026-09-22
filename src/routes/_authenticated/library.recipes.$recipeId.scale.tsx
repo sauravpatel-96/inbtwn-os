@@ -35,6 +35,19 @@ export const Route = createFileRoute("/_authenticated/library/recipes/$recipeId/
   component: ScalePage,
 });
 
+/** Display rounding for count-based ingredients: round up to the next whole item. */
+function displayQuantity(baseQty: number | null | undefined, base: BaseUnit): number | null {
+  if (baseQty === null || baseQty === undefined || Number.isNaN(baseQty)) return null;
+  if (base === "each") return Math.ceil(baseQty);
+  return baseQty;
+}
+
+function fmtScaleQty(baseQty: number | null | undefined, base: BaseUnit): string {
+  const qty = displayQuantity(baseQty, base);
+  if (qty === null) return "—";
+  return fmtQty(qty, base);
+}
+
 function ComponentBlock({ c, depth = 0 }: { c: ComponentLine; depth?: number }) {
   return (
     <div className={depth ? "ml-3 border-l border-ink/10 pl-3" : ""}>
@@ -47,7 +60,7 @@ function ComponentBlock({ c, depth = 0 }: { c: ComponentLine; depth?: number }) 
           <div key={i.ingredientId} className="flex items-baseline justify-between py-1.5">
             <span className="text-[13px]">{i.name}</span>
             <span className="text-right font-mono text-[12px]">
-              {fmtQty(i.usable, i.baseUnit)}
+              {fmtScaleQty(i.usable, i.baseUnit)}
               {i.yieldPct !== 100 ? (
                 <span className="block text-ink-soft">{fmtQty(i.raw, i.baseUnit)} raw</span>
               ) : null}
@@ -223,7 +236,7 @@ function ScalePage() {
 
           <div className="mt-5">
             <SectionHeading title="Ingredients" />
-            <TornCard className="px-4 py-2 shadow-card">
+            <TornCard straightBottom className="px-4 py-2 pb-4 shadow-card">
               {result.ingredients.length === 0 && result.components.length === 0 ? (
                 <div className="py-3 font-mono text-[12px] text-ink-soft">Nothing in this version yet.</div>
               ) : null}
@@ -234,7 +247,7 @@ function ScalePage() {
                     {i.prepNote ? <div className="font-mono text-[11px] text-ink-soft">{i.prepNote}</div> : null}
                   </div>
                   <div className="text-right">
-                    <div className="font-mono text-[15px]">{fmtQty(i.usable, i.baseUnit)} usable</div>
+                    <div className="font-mono text-[15px]">{fmtScaleQty(i.usable, i.baseUnit)} usable</div>
                     {i.yieldPct !== 100 ? (
                       <div className="font-mono text-[12px] text-ink-soft">{fmtQty(i.raw, i.baseUnit)} raw required</div>
                     ) : null}
