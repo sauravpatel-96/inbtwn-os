@@ -255,6 +255,8 @@ function EventDetailPage() {
           </>
         ) : s === "client" ? (
           <ClientBlock event={e} />
+        ) : s === "menu" ? (
+          <EventMenu eventId={eventId} guestCount={e.guest_count} />
         ) : (
           <div className="torn bg-cream px-5 py-8 text-center">
             <div className="font-display text-[22px] leading-none">{SECTION_LABEL[s]}</div>
