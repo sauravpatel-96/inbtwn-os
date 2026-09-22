@@ -79,7 +79,7 @@ export function foodLinesFromProduction(
   if (result.components.length) {
     return result.components.map((c) => ({
       key: `food:${versionId}:${c.versionId}`,
-      name: `${dishName} – ${c.name}`,
+      name: `${dishName} – ${stripDishPrefix(dishName, c.name)}`,
       quantity: fmtProdQty(c.required, c.baseUnit),
     }));
   }
