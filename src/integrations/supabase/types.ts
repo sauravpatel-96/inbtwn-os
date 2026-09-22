@@ -151,6 +151,80 @@ export type Database = {
           },
         ]
       }
+      event_menu_items: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          notes: string | null
+          organisation_id: string
+          portion_size: string
+          quantity_per_guest: number | null
+          quantity_unit: Database["public"]["Enums"]["base_unit"]
+          recipe_id: string
+          recipe_version_id: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          organisation_id?: string
+          portion_size?: string
+          quantity_per_guest?: number | null
+          quantity_unit?: Database["public"]["Enums"]["base_unit"]
+          recipe_id: string
+          recipe_version_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          organisation_id?: string
+          portion_size?: string
+          quantity_per_guest?: number | null
+          quantity_unit?: Database["public"]["Enums"]["base_unit"]
+          recipe_id?: string
+          recipe_version_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_menu_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_menu_items_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_menu_items_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_menu_items_recipe_version_id_fkey"
+            columns: ["recipe_version_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           arrival_time: string | null
