@@ -203,7 +203,7 @@ export function EventQuote({ event }: { event: EventRow & { client: ClientRow | 
 
       <div className="mt-6 border border-ink/15 bg-cream px-4 py-3">
         <div className="label-mono text-ink-soft">Quote status</div>
-        <div className="mt-2 grid grid-cols-3 gap-2">
+        <div className="mt-2 grid grid-cols-2 gap-2">
           {QUOTE_STATUSES.map((st) => (
             <button
               key={st.value}
@@ -218,7 +218,10 @@ export function EventQuote({ event }: { event: EventRow & { client: ClientRow | 
           ))}
         </div>
         <p className="mt-2 font-mono text-[10px] text-ink-soft">
-          Sending a quote does not confirm the event.
+          Sending or accepting a quote does not confirm the event, and does not mean anything has been paid.
+          {quote.status === "accepted" && quote.agreed_total != null
+            ? ` Agreed total locked at ${money(Number(quote.agreed_total))}.`
+            : ""}
         </p>
       </div>
 
