@@ -17,6 +17,7 @@ import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events.index'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 import { Route as AuthenticatedLibraryIndexRouteImport } from './routes/_authenticated/library.index'
+import { Route as AuthenticatedEventsEventIdIndexRouteImport } from './routes/_authenticated/events.$eventId.index'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events.$eventId.edit'
 import { Route as AuthenticatedLibraryClientsIndexRouteImport } from './routes/_authenticated/library.clients.index'
 import { Route as AuthenticatedLibraryClientsNewRouteImport } from './routes/_authenticated/library.clients.new'
@@ -64,6 +65,12 @@ const AuthenticatedLibraryIndexRoute =
     path: '/library/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEventsEventIdIndexRoute =
+  AuthenticatedEventsEventIdIndexRouteImport.update({
+    id: '/events/$eventId/',
+    path: '/events/$eventId/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdEditRoute =
   AuthenticatedEventsEventIdEditRouteImport.update({
     id: '/events/$eventId/edit',
@@ -105,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/library/': typeof AuthenticatedLibraryIndexRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/library/clients/new': typeof AuthenticatedLibraryClientsNewRoute
+  '/events/$eventId/': typeof AuthenticatedEventsEventIdIndexRoute
   '/library/clients/': typeof AuthenticatedLibraryClientsIndexRoute
   '/library/clients/$clientId/edit': typeof AuthenticatedLibraryClientsClientIdEditRoute
   '/library/clients/$clientId/': typeof AuthenticatedLibraryClientsClientIdIndexRoute
@@ -119,6 +127,7 @@ export interface FileRoutesByTo {
   '/library': typeof AuthenticatedLibraryIndexRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/library/clients/new': typeof AuthenticatedLibraryClientsNewRoute
+  '/events/$eventId': typeof AuthenticatedEventsEventIdIndexRoute
   '/library/clients': typeof AuthenticatedLibraryClientsIndexRoute
   '/library/clients/$clientId/edit': typeof AuthenticatedLibraryClientsClientIdEditRoute
   '/library/clients/$clientId': typeof AuthenticatedLibraryClientsClientIdIndexRoute
@@ -135,6 +144,7 @@ export interface FileRoutesById {
   '/_authenticated/library/': typeof AuthenticatedLibraryIndexRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/_authenticated/library/clients/new': typeof AuthenticatedLibraryClientsNewRoute
+  '/_authenticated/events/$eventId/': typeof AuthenticatedEventsEventIdIndexRoute
   '/_authenticated/library/clients/': typeof AuthenticatedLibraryClientsIndexRoute
   '/_authenticated/library/clients/$clientId/edit': typeof AuthenticatedLibraryClientsClientIdEditRoute
   '/_authenticated/library/clients/$clientId/': typeof AuthenticatedLibraryClientsClientIdIndexRoute
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/library/'
     | '/events/$eventId/edit'
     | '/library/clients/new'
+    | '/events/$eventId/'
     | '/library/clients/'
     | '/library/clients/$clientId/edit'
     | '/library/clients/$clientId/'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/events/$eventId/edit'
     | '/library/clients/new'
+    | '/events/$eventId'
     | '/library/clients'
     | '/library/clients/$clientId/edit'
     | '/library/clients/$clientId'
@@ -180,6 +192,7 @@ export interface FileRouteTypes {
     | '/_authenticated/library/'
     | '/_authenticated/events/$eventId/edit'
     | '/_authenticated/library/clients/new'
+    | '/_authenticated/events/$eventId/'
     | '/_authenticated/library/clients/'
     | '/_authenticated/library/clients/$clientId/edit'
     | '/_authenticated/library/clients/$clientId/'
@@ -249,6 +262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLibraryIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/events/$eventId/': {
+      id: '/_authenticated/events/$eventId/'
+      path: '/events/$eventId'
+      fullPath: '/events/$eventId/'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/events/$eventId/edit': {
       id: '/_authenticated/events/$eventId/edit'
       path: '/events/$eventId/edit'
@@ -295,6 +315,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLibraryIndexRoute: typeof AuthenticatedLibraryIndexRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
   AuthenticatedLibraryClientsNewRoute: typeof AuthenticatedLibraryClientsNewRoute
+  AuthenticatedEventsEventIdIndexRoute: typeof AuthenticatedEventsEventIdIndexRoute
   AuthenticatedLibraryClientsIndexRoute: typeof AuthenticatedLibraryClientsIndexRoute
   AuthenticatedLibraryClientsClientIdEditRoute: typeof AuthenticatedLibraryClientsClientIdEditRoute
   AuthenticatedLibraryClientsClientIdIndexRoute: typeof AuthenticatedLibraryClientsClientIdIndexRoute
@@ -308,6 +329,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLibraryIndexRoute: AuthenticatedLibraryIndexRoute,
   AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
   AuthenticatedLibraryClientsNewRoute: AuthenticatedLibraryClientsNewRoute,
+  AuthenticatedEventsEventIdIndexRoute: AuthenticatedEventsEventIdIndexRoute,
   AuthenticatedLibraryClientsIndexRoute: AuthenticatedLibraryClientsIndexRoute,
   AuthenticatedLibraryClientsClientIdEditRoute:
     AuthenticatedLibraryClientsClientIdEditRoute,

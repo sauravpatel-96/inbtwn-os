@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { eventQuery } from "@/lib/queries";
+import { eventQuery, type EventRow, type ClientRow } from "@/lib/queries";
 import { EVENT_STATUSES, GUEST_COUNT_STATUSES, type EventStatus } from "@/lib/constants";
 import { fmtDateLong, fmtTime, fmtMoney, clientDisplayName, clientContactName } from "@/lib/format";
 import { PageTitle, SectionHeading, StatusPill, SourceBadge, DemoTag, EmptyNote, Chip } from "@/components/inbtwn/bits";
@@ -295,7 +295,7 @@ function ClientBlock({
   event,
   compact = false,
 }: {
-  event: NonNullable<ReturnType<typeof useQuery<Awaited<ReturnType<ReturnType<typeof eventQuery>["queryFn"]>>>>["data"]>;
+  event: EventRow & { client: ClientRow | null };
   compact?: boolean;
 }) {
   const c = event.client;
