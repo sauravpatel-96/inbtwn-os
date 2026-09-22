@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { PageTitle } from "@/components/inbtwn/bits";
 import { clientsQuery } from "@/lib/queries";
+import { ingredientsQuery, recipesQuery } from "@/lib/recipe-queries";
 
 export const Route = createFileRoute("/_authenticated/library/")({
   head: () => ({
@@ -15,10 +16,12 @@ export const Route = createFileRoute("/_authenticated/library/")({
   component: LibraryPage,
 });
 
-const LATER = ["Recipes", "Ingredients", "Equipment", "Suppliers", "Templates"];
+const LATER = ["Equipment", "Suppliers", "Templates"];
 
 function LibraryPage() {
   const clients = useQuery(clientsQuery);
+  const recipes = useQuery(recipesQuery);
+  const ingredients = useQuery(ingredientsQuery);
   return (
     <div>
       <PageTitle title="Library" aside="reference" />
@@ -34,6 +37,24 @@ function LibraryPage() {
             </div>
           </div>
           <div className="mt-1 font-mono text-[11px] text-ink-soft">People and companies you cater for</div>
+        </Link>
+        <Link to="/library/recipes" className="torn tap bg-cream px-4 py-4 text-ink shadow-card active:bg-panel">
+          <div className="flex items-baseline justify-between">
+            <div className="font-display text-[22px] leading-none">Recipes</div>
+            <div className="font-display text-[22px] leading-none text-flame">
+              {recipes.data?.length ?? "–"}
+            </div>
+          </div>
+          <div className="mt-1 font-mono text-[11px] text-ink-soft">Scale, cost, version</div>
+        </Link>
+        <Link to="/library/ingredients" className="torn tap bg-cream px-4 py-4 text-ink shadow-card active:bg-panel">
+          <div className="flex items-baseline justify-between">
+            <div className="font-display text-[22px] leading-none">Ingredients</div>
+            <div className="font-display text-[22px] leading-none text-flame">
+              {ingredients.data?.length ?? "–"}
+            </div>
+          </div>
+          <div className="mt-1 font-mono text-[11px] text-ink-soft">Yields, costs, allergens</div>
         </Link>
         {LATER.map((l) => (
           <div key={l} className="torn bg-cream/70 px-4 py-4 opacity-70">
