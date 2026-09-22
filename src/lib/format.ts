@@ -38,10 +38,12 @@ export function fmtMoney(
   if (amount === null || amount === undefined || amount === "") return null;
   const n = typeof amount === "string" ? Number(amount) : amount;
   if (Number.isNaN(n)) return null;
+  const isInteger = Number.isInteger(n);
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: currency || DEFAULT_CURRENCY,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: isInteger ? 0 : 2,
+    maximumFractionDigits: 2,
   }).format(n);
 }
 
