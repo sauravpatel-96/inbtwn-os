@@ -11,6 +11,7 @@ import { PageTitle, SectionHeading, StatusPill, SourceBadge, DemoTag, EmptyNote,
 import { Dietaries } from "@/components/inbtwn/Dietaries";
 import { EventMenu } from "@/components/inbtwn/EventMenu";
 import { EventProduction } from "@/components/inbtwn/EventProduction";
+import { EventShopping } from "@/components/inbtwn/EventShopping";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,8 +37,6 @@ const SECTION_LABEL: Record<Section, string> = {
   more: "More",
 };
 const PLACEHOLDER: Partial<Record<Section, string>> = {
-
-  shopping: "Shopping lists will be generated from menus in a later build.",
   packing: "Packing and equipment lists are coming in a later build.",
   staff: "Staffing will be added in a later build.",
   finance: "Quotes, invoicing and profitability are coming in a later build.",
@@ -260,6 +259,8 @@ function EventDetailPage() {
           <EventMenu eventId={eventId} guestCount={e.guest_count} />
         ) : s === "production" ? (
           <EventProduction eventId={eventId} guestCount={e.guest_count} />
+        ) : s === "shopping" ? (
+          <EventShopping eventId={eventId} guestCount={e.guest_count} />
         ) : (
           <div className="torn bg-cream px-5 py-8 text-center">
             <div className="font-display text-[22px] leading-none">{SECTION_LABEL[s]}</div>
