@@ -7,15 +7,16 @@ import { daysUntil, clientDisplayName } from "@/lib/format";
 import { PageTitle, Chip, EmptyNote, TextInput } from "@/components/inbtwn/bits";
 import { EventCard } from "@/components/inbtwn/EventCard";
 
-const FILTERS = ["all", "enquiries", "quotes", "confirmed", "week", "completed"] as const;
+const FILTERS = ["all", "enquiries", "quotes", "confirmed", "week", "completed", "lost"] as const;
 type Filter = (typeof FILTERS)[number];
 const FILTER_LABEL: Record<Filter, string> = {
   all: "All",
   enquiries: "Enquiries",
-  quotes: "Quotes",
+  quotes: "Quoted",
   confirmed: "Confirmed",
   week: "This week",
   completed: "Completed",
+  lost: "Lost",
 };
 
 export const Route = createFileRoute("/_authenticated/events/")({
@@ -47,6 +48,8 @@ function matches(e: EventWithClient, f: Filter): boolean {
     }
     case "completed":
       return e.status === "completed";
+    case "lost":
+      return e.status === "lost" || e.status === "cancelled";
   }
 }
 

@@ -97,6 +97,51 @@ export type Database = {
           },
         ]
       }
+      event_commercial_notes: {
+        Row: {
+          body: string
+          category: string | null
+          created_at: string
+          event_id: string
+          id: string
+          organisation_id: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          category?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          organisation_id?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          category?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          organisation_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_commercial_notes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_commercial_notes_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_dietaries: {
         Row: {
           confirmed: boolean
@@ -315,6 +360,282 @@ export type Database = {
           },
         ]
       }
+      event_pricing_charges: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          option_id: string
+          organisation_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description: string
+          id?: string
+          option_id: string
+          organisation_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          option_id?: string
+          organisation_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_pricing_charges_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "event_pricing_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_pricing_charges_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_pricing_option_sections: {
+        Row: {
+          created_at: string
+          id: string
+          option_id: string
+          organisation_id: string
+          section_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_id: string
+          organisation_id?: string
+          section_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_id?: string
+          organisation_id?: string
+          section_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_pricing_option_sections_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "event_pricing_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_pricing_option_sections_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_pricing_option_sections_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "event_proposal_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_pricing_options: {
+        Row: {
+          created_at: string
+          event_id: string
+          guest_count_override: number | null
+          id: string
+          is_selected: boolean
+          name: string
+          notes: string | null
+          organisation_id: string
+          payment_fee_percentage: number | null
+          price_per_head: number | null
+          sort_order: number
+          updated_at: string
+          vat_enabled: boolean
+          vat_rate: number
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          guest_count_override?: number | null
+          id?: string
+          is_selected?: boolean
+          name: string
+          notes?: string | null
+          organisation_id?: string
+          payment_fee_percentage?: number | null
+          price_per_head?: number | null
+          sort_order?: number
+          updated_at?: string
+          vat_enabled?: boolean
+          vat_rate?: number
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          guest_count_override?: number | null
+          id?: string
+          is_selected?: boolean
+          name?: string
+          notes?: string | null
+          organisation_id?: string
+          payment_fee_percentage?: number | null
+          price_per_head?: number | null
+          sort_order?: number
+          updated_at?: string
+          vat_enabled?: boolean
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_pricing_options_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_pricing_options_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_proposal_items: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          name: string
+          notes: string | null
+          organisation_id: string
+          recipe_id: string | null
+          section_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          name: string
+          notes?: string | null
+          organisation_id?: string
+          recipe_id?: string | null
+          section_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          organisation_id?: string
+          recipe_id?: string | null
+          section_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_proposal_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_proposal_items_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_proposal_items_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_proposal_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "event_proposal_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_proposal_sections: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          name: string
+          notes: string | null
+          organisation_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          name: string
+          notes?: string | null
+          organisation_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          organisation_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_proposal_sections_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_proposal_sections_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_shopping_checks: {
         Row: {
           created_at: string
@@ -365,6 +686,9 @@ export type Database = {
         Row: {
           arrival_time: string | null
           budget: number | null
+          budget_flexible: boolean | null
+          budget_max: number | null
+          budget_min: number | null
           client_id: string | null
           created_at: string
           cuisine: string | null
@@ -377,7 +701,9 @@ export type Database = {
           id: string
           internal_notes: string | null
           is_demo: boolean
+          logistics_notes: string | null
           organisation_id: string
+          power_access: string | null
           service_style: string | null
           service_time: string | null
           source: Database["public"]["Enums"]["event_source"]
@@ -389,10 +715,15 @@ export type Database = {
           venue_contact_name: string | null
           venue_contact_phone: string | null
           venue_name: string | null
+          venue_setup_notes: string | null
+          water_access: string | null
         }
         Insert: {
           arrival_time?: string | null
           budget?: number | null
+          budget_flexible?: boolean | null
+          budget_max?: number | null
+          budget_min?: number | null
           client_id?: string | null
           created_at?: string
           cuisine?: string | null
@@ -405,7 +736,9 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           is_demo?: boolean
+          logistics_notes?: string | null
           organisation_id?: string
+          power_access?: string | null
           service_style?: string | null
           service_time?: string | null
           source?: Database["public"]["Enums"]["event_source"]
@@ -417,10 +750,15 @@ export type Database = {
           venue_contact_name?: string | null
           venue_contact_phone?: string | null
           venue_name?: string | null
+          venue_setup_notes?: string | null
+          water_access?: string | null
         }
         Update: {
           arrival_time?: string | null
           budget?: number | null
+          budget_flexible?: boolean | null
+          budget_max?: number | null
+          budget_min?: number | null
           client_id?: string | null
           created_at?: string
           cuisine?: string | null
@@ -433,7 +771,9 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           is_demo?: boolean
+          logistics_notes?: string | null
           organisation_id?: string
+          power_access?: string | null
           service_style?: string | null
           service_time?: string | null
           source?: Database["public"]["Enums"]["event_source"]
@@ -445,6 +785,8 @@ export type Database = {
           venue_contact_name?: string | null
           venue_contact_phone?: string | null
           venue_name?: string | null
+          venue_setup_notes?: string | null
+          water_access?: string | null
         }
         Relationships: [
           {
