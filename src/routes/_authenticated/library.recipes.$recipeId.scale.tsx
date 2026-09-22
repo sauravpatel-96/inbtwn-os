@@ -249,7 +249,7 @@ function ScalePage() {
                   <div className="text-right">
                     <div className="font-mono text-[15px]">{fmtScaleQty(i.usable, i.baseUnit)} usable</div>
                     {i.yieldPct !== 100 ? (
-                      <div className="font-mono text-[12px] text-ink-soft">{fmtScaleQty(i.raw, i.baseUnit)} raw required</div>
+                      <div className="font-mono text-[12px] text-ink-soft">{fmtQty(i.raw, i.baseUnit)} raw required</div>
                     ) : null}
                   </div>
                 </div>
