@@ -66,39 +66,22 @@ export type FoodPackLine = {
 };
 
 /**
- * Derive the prepared food that leaves the kitchen from an already-calculated
- * Production result. No quantities are recalculated here — Production remains
- * the single source of truth.
+ * Derive the finished dishes that leave the kitchen from an already-calculated
+ * Production result. One line per finished menu dish, using the full-precision
+ * final production target. No quantities are recalculated here — Production
+ * remains the single source of truth.
  */
-/** Component recipes are often named "Dish - Part"; avoid repeating the dish. */
-function stripDishPrefix(dishName: string, componentName: string): string {
-  const lower = componentName.toLowerCase();
-  const prefix = dishName.toLowerCase();
-  if (lower.startsWith(prefix)) {
-    const rest = componentName.slice(dishName.length).replace(/^[\s\u2013\u2014:-]+/, "");
-    if (rest) return rest;
-  }
-  return componentName;
-}
-
 export function foodLinesFromProduction(
   dishName: string,
   versionId: string,
   base: BaseUnit,
   result: ScaleResult,
 ): FoodPackLine[] {
-  if (result.components.length) {
-    return result.components.map((c) => ({
-      key: `food:${versionId}:${c.versionId}`,
-      name: `${dishName} – ${stripDishPrefix(dishName, c.name)}`,
-      quantity: fmtProdQty(c.required, c.baseUnit),
-    }));
-  }
   return [
     {
       key: `food:${versionId}`,
       name: dishName,
-      quantity: fmtProdQty(result.required, base),
+      quantity: fmtProdQty(result.required, result.baseUnit ?? base),
     },
   ];
 }
