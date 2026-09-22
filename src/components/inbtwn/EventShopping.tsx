@@ -40,27 +40,31 @@ function ShoppingRow({
   const [open, setOpen] = useState(false);
   const canExplain = line.yieldPct !== 100;
   return (
-    <div className="border-b border-ink/10 py-2.5 last:border-0">
-      <div className="flex items-start gap-3">
+    <div className="border-b border-ink/10 last:border-0">
+      <div className="flex items-center">
         <button
           type="button"
           onClick={onToggle}
           aria-pressed={collected}
           aria-label={`${collected ? "Uncollect" : "Collect"} ${line.name}`}
-          className={`tap mt-0.5 flex size-7 shrink-0 items-center justify-center border text-[13px] ${
-            collected ? "border-ink bg-ink text-cream" : "border-ink/30 bg-paper"
-          }`}
+          className="tap -ml-2 flex size-11 shrink-0 items-center justify-center"
         >
-          {collected ? "✓" : ""}
+          <span
+            className={`flex size-[22px] items-center justify-center border text-[12px] leading-none ${
+              collected ? "border-ink bg-ink text-cream" : "border-ink/40 bg-paper"
+            }`}
+          >
+            {collected ? "✓" : ""}
+          </span>
         </button>
         <button
           type="button"
           onClick={() => canExplain && setOpen((o) => !o)}
-          className={`flex min-h-[28px] flex-1 items-baseline justify-between gap-3 text-left ${
+          className={`flex min-h-[40px] flex-1 items-center justify-between gap-3 py-1 text-left ${
             canExplain ? "tap" : "cursor-default"
           } ${collected ? "text-ink-soft line-through opacity-60" : ""}`}
         >
-          <span className="text-[14px]">
+          <span className="text-[14px] leading-tight">
             {line.name}
             {canExplain ? <span className="ml-1.5 font-mono text-[10px] text-ink-soft">ⓘ</span> : null}
           </span>
