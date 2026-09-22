@@ -58,18 +58,21 @@ export function TornCard({
   children,
   className,
   tilt = 0,
+  straightBottom,
   as: Comp = "div",
   ...rest
 }: {
   children: ReactNode;
   className?: string | undefined;
   tilt?: -1 | 0 | 1;
+  straightBottom?: boolean;
   as?: "div" | "button";
 } & Record<string, unknown>) {
   return (
     <Comp
       className={cn(
-        "torn block w-full bg-cream text-left text-ink",
+        straightBottom ? "torn-straight-bottom" : "torn",
+        "block w-full bg-cream text-left text-ink",
         tilt === -1 && "-rotate-[0.5deg]",
         tilt === 1 && "rotate-[0.5deg]",
         className,
