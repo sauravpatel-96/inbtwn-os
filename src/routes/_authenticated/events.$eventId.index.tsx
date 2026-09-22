@@ -37,8 +37,6 @@ const SECTION_LABEL: Record<Section, string> = {
   more: "More",
 };
 const PLACEHOLDER: Partial<Record<Section, string>> = {
-
-  shopping: "Shopping lists will be generated from menus in a later build.",
   packing: "Packing and equipment lists are coming in a later build.",
   staff: "Staffing will be added in a later build.",
   finance: "Quotes, invoicing and profitability are coming in a later build.",
