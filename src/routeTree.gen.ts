@@ -10,33 +10,198 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedAskRouteImport } from './routes/_authenticated/ask'
+import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
+import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events.index'
+import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
+import { Route as AuthenticatedLibraryIndexRouteImport } from './routes/_authenticated/library.index'
+import { Route as AuthenticatedEventsEventIdIndexRouteImport } from './routes/_authenticated/events.$eventId.index'
+import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events.$eventId.edit'
+import { Route as AuthenticatedLibraryClientsIndexRouteImport } from './routes/_authenticated/library.clients.index'
+import { Route as AuthenticatedLibraryClientsNewRouteImport } from './routes/_authenticated/library.clients.new'
+import { Route as AuthenticatedLibraryClientsClientIdIndexRouteImport } from './routes/_authenticated/library.clients.$clientId.index'
+import { Route as AuthenticatedLibraryClientsClientIdEditRouteImport } from './routes/_authenticated/library.clients.$clientId.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAskRoute = AuthenticatedAskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEventsIndexRoute =
+  AuthenticatedEventsIndexRouteImport.update({
+    id: '/events/',
+    path: '/events/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEventsNewRoute = AuthenticatedEventsNewRouteImport.update({
+  id: '/events/new',
+  path: '/events/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLibraryIndexRoute =
+  AuthenticatedLibraryIndexRouteImport.update({
+    id: '/library/',
+    path: '/library/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEventsEventIdIndexRoute =
+  AuthenticatedEventsEventIdIndexRouteImport.update({
+    id: '/events/$eventId/',
+    path: '/events/$eventId/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEventsEventIdEditRoute =
+  AuthenticatedEventsEventIdEditRouteImport.update({
+    id: '/events/$eventId/edit',
+    path: '/events/$eventId/edit',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibraryClientsIndexRoute =
+  AuthenticatedLibraryClientsIndexRouteImport.update({
+    id: '/library/clients/',
+    path: '/library/clients/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibraryClientsNewRoute =
+  AuthenticatedLibraryClientsNewRouteImport.update({
+    id: '/library/clients/new',
+    path: '/library/clients/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibraryClientsClientIdIndexRoute =
+  AuthenticatedLibraryClientsClientIdIndexRouteImport.update({
+    id: '/library/clients/$clientId/',
+    path: '/library/clients/$clientId/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibraryClientsClientIdEditRoute =
+  AuthenticatedLibraryClientsClientIdEditRouteImport.update({
+    id: '/library/clients/$clientId/edit',
+    path: '/library/clients/$clientId/edit',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/ask': typeof AuthenticatedAskRoute
+  '/today': typeof AuthenticatedTodayRoute
+  '/events/new': typeof AuthenticatedEventsNewRoute
+  '/events/': typeof AuthenticatedEventsIndexRoute
+  '/library/': typeof AuthenticatedLibraryIndexRoute
+  '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/library/clients/new': typeof AuthenticatedLibraryClientsNewRoute
+  '/events/$eventId/': typeof AuthenticatedEventsEventIdIndexRoute
+  '/library/clients/': typeof AuthenticatedLibraryClientsIndexRoute
+  '/library/clients/$clientId/edit': typeof AuthenticatedLibraryClientsClientIdEditRoute
+  '/library/clients/$clientId/': typeof AuthenticatedLibraryClientsClientIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/ask': typeof AuthenticatedAskRoute
+  '/today': typeof AuthenticatedTodayRoute
+  '/events/new': typeof AuthenticatedEventsNewRoute
+  '/events': typeof AuthenticatedEventsIndexRoute
+  '/library': typeof AuthenticatedLibraryIndexRoute
+  '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/library/clients/new': typeof AuthenticatedLibraryClientsNewRoute
+  '/events/$eventId': typeof AuthenticatedEventsEventIdIndexRoute
+  '/library/clients': typeof AuthenticatedLibraryClientsIndexRoute
+  '/library/clients/$clientId/edit': typeof AuthenticatedLibraryClientsClientIdEditRoute
+  '/library/clients/$clientId': typeof AuthenticatedLibraryClientsClientIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/ask': typeof AuthenticatedAskRoute
+  '/_authenticated/today': typeof AuthenticatedTodayRoute
+  '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
+  '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
+  '/_authenticated/library/': typeof AuthenticatedLibraryIndexRoute
+  '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/_authenticated/library/clients/new': typeof AuthenticatedLibraryClientsNewRoute
+  '/_authenticated/events/$eventId/': typeof AuthenticatedEventsEventIdIndexRoute
+  '/_authenticated/library/clients/': typeof AuthenticatedLibraryClientsIndexRoute
+  '/_authenticated/library/clients/$clientId/edit': typeof AuthenticatedLibraryClientsClientIdEditRoute
+  '/_authenticated/library/clients/$clientId/': typeof AuthenticatedLibraryClientsClientIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/ask'
+    | '/today'
+    | '/events/new'
+    | '/events/'
+    | '/library/'
+    | '/events/$eventId/edit'
+    | '/library/clients/new'
+    | '/events/$eventId/'
+    | '/library/clients/'
+    | '/library/clients/$clientId/edit'
+    | '/library/clients/$clientId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/ask'
+    | '/today'
+    | '/events/new'
+    | '/events'
+    | '/library'
+    | '/events/$eventId/edit'
+    | '/library/clients/new'
+    | '/events/$eventId'
+    | '/library/clients'
+    | '/library/clients/$clientId/edit'
+    | '/library/clients/$clientId'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/ask'
+    | '/_authenticated/today'
+    | '/_authenticated/events/new'
+    | '/_authenticated/events/'
+    | '/_authenticated/library/'
+    | '/_authenticated/events/$eventId/edit'
+    | '/_authenticated/library/clients/new'
+    | '/_authenticated/events/$eventId/'
+    | '/_authenticated/library/clients/'
+    | '/_authenticated/library/clients/$clientId/edit'
+    | '/_authenticated/library/clients/$clientId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +213,137 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/ask': {
+      id: '/_authenticated/ask'
+      path: '/ask'
+      fullPath: '/ask'
+      preLoaderRoute: typeof AuthenticatedAskRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/today': {
+      id: '/_authenticated/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof AuthenticatedTodayRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/events/': {
+      id: '/_authenticated/events/'
+      path: '/events'
+      fullPath: '/events/'
+      preLoaderRoute: typeof AuthenticatedEventsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/events/new': {
+      id: '/_authenticated/events/new'
+      path: '/events/new'
+      fullPath: '/events/new'
+      preLoaderRoute: typeof AuthenticatedEventsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/': {
+      id: '/_authenticated/library/'
+      path: '/library'
+      fullPath: '/library/'
+      preLoaderRoute: typeof AuthenticatedLibraryIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/events/$eventId/': {
+      id: '/_authenticated/events/$eventId/'
+      path: '/events/$eventId'
+      fullPath: '/events/$eventId/'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/events/$eventId/edit': {
+      id: '/_authenticated/events/$eventId/edit'
+      path: '/events/$eventId/edit'
+      fullPath: '/events/$eventId/edit'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdEditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/clients/': {
+      id: '/_authenticated/library/clients/'
+      path: '/library/clients'
+      fullPath: '/library/clients/'
+      preLoaderRoute: typeof AuthenticatedLibraryClientsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/clients/new': {
+      id: '/_authenticated/library/clients/new'
+      path: '/library/clients/new'
+      fullPath: '/library/clients/new'
+      preLoaderRoute: typeof AuthenticatedLibraryClientsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/clients/$clientId/': {
+      id: '/_authenticated/library/clients/$clientId/'
+      path: '/library/clients/$clientId'
+      fullPath: '/library/clients/$clientId/'
+      preLoaderRoute: typeof AuthenticatedLibraryClientsClientIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/clients/$clientId/edit': {
+      id: '/_authenticated/library/clients/$clientId/edit'
+      path: '/library/clients/$clientId/edit'
+      fullPath: '/library/clients/$clientId/edit'
+      preLoaderRoute: typeof AuthenticatedLibraryClientsClientIdEditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAskRoute: typeof AuthenticatedAskRoute
+  AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
+  AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
+  AuthenticatedEventsIndexRoute: typeof AuthenticatedEventsIndexRoute
+  AuthenticatedLibraryIndexRoute: typeof AuthenticatedLibraryIndexRoute
+  AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
+  AuthenticatedLibraryClientsNewRoute: typeof AuthenticatedLibraryClientsNewRoute
+  AuthenticatedEventsEventIdIndexRoute: typeof AuthenticatedEventsEventIdIndexRoute
+  AuthenticatedLibraryClientsIndexRoute: typeof AuthenticatedLibraryClientsIndexRoute
+  AuthenticatedLibraryClientsClientIdEditRoute: typeof AuthenticatedLibraryClientsClientIdEditRoute
+  AuthenticatedLibraryClientsClientIdIndexRoute: typeof AuthenticatedLibraryClientsClientIdIndexRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAskRoute: AuthenticatedAskRoute,
+  AuthenticatedTodayRoute: AuthenticatedTodayRoute,
+  AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,
+  AuthenticatedEventsIndexRoute: AuthenticatedEventsIndexRoute,
+  AuthenticatedLibraryIndexRoute: AuthenticatedLibraryIndexRoute,
+  AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
+  AuthenticatedLibraryClientsNewRoute: AuthenticatedLibraryClientsNewRoute,
+  AuthenticatedEventsEventIdIndexRoute: AuthenticatedEventsEventIdIndexRoute,
+  AuthenticatedLibraryClientsIndexRoute: AuthenticatedLibraryClientsIndexRoute,
+  AuthenticatedLibraryClientsClientIdEditRoute:
+    AuthenticatedLibraryClientsClientIdEditRoute,
+  AuthenticatedLibraryClientsClientIdIndexRoute:
+    AuthenticatedLibraryClientsClientIdIndexRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
