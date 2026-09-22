@@ -16,6 +16,7 @@ import { EventPacking } from "@/components/inbtwn/EventPacking";
 import { EventProposal } from "@/components/inbtwn/EventProposal";
 import { EventPricing } from "@/components/inbtwn/EventPricing";
 import { EventNotes } from "@/components/inbtwn/EventNotes";
+import { EventQuote } from "@/components/inbtwn/EventQuote";
 import { stageOf, stageLabel, accessLabel } from "@/lib/commercial";
 import {
   AlertDialog,
@@ -32,6 +33,7 @@ const SECTIONS = [
   "overview",
   "proposal",
   "pricing",
+  "quote",
   "notes",
   "menu",
   "production",
@@ -47,6 +49,7 @@ const SECTION_LABEL: Record<Section, string> = {
   overview: "Overview",
   proposal: "Proposal",
   pricing: "Pricing",
+  quote: "Quote",
   notes: "Notes",
   menu: "Menu",
   production: "Production",
@@ -323,6 +326,8 @@ function EventDetailPage() {
           <EventProposal eventId={eventId} confirmed={stage === "confirmed" || stage === "completed"} />
         ) : s === "pricing" ? (
           <EventPricing event={e} />
+        ) : s === "quote" ? (
+          <EventQuote event={e} />
         ) : s === "notes" ? (
           <EventNotes eventId={eventId} />
         ) : s === "menu" ? (

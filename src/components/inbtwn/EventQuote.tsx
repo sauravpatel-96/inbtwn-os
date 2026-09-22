@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Field, TextInput, TextArea, PrimaryButton, GhostButton, EmptyNote } from "@/components/inbtwn/bits";
+import { Field, TextInput, TextArea, PrimaryButton, GhostButton } from "@/components/inbtwn/bits";
 import { fmtMoney, fmtDateLong } from "@/lib/format";
 import { pricingQuery, proposalQuery } from "@/lib/commercial";
 import {
@@ -643,8 +643,3 @@ function QuotePreview({ quote, money }: { quote: Quote; money: (n: number) => st
     </article>
   );
 }
-
-function EmptyUnused() {
-  return <EmptyNote>—</EmptyNote>;
-}
-void EmptyUnused;
