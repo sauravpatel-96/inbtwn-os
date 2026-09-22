@@ -139,6 +139,11 @@ export function EventQuote({ event }: { event: EventRow & { client: ClientRow | 
   const setStatus = async (status: QuoteStatus) => {
     const values: Record<string, unknown> = { status };
     if (status === "sent") values["sent_at"] = new Date().toISOString();
+    if (status === "accepted") {
+      values["accepted_at"] = new Date().toISOString();
+      // Snapshot the agreed figure so later pricing changes never rewrite the agreement.
+      values["agreed_total"] = quoteTotals(quote).total;
+    }
     const { error } = await supabase.from("event_quotes").update(values as never).eq("id", quote.id);
     if (error) return void toast.error(error.message);
     if (status === "sent" && event.status === "enquiry") {
@@ -147,15 +152,18 @@ export function EventQuote({ event }: { event: EventRow & { client: ClientRow | 
         qc.invalidateQueries({ queryKey: ["events"] });
         toast.success("Quote sent — event moved to Quoted");
       }
+    } else if (status === "accepted") {
+      toast.success("Quote accepted — the agreed total is now locked");
     } else {
       toast.success(`Quote marked ${status}`);
     }
+    qc.invalidateQueries({ queryKey: ["finance-terms", eventId] });
     await invalidate();
   };
 
   const totals = quoteTotals(quote);
   const money = (n: number) => fmtMoney(n, event.currency) ?? "—";
-  const sent = quote.status === "sent";
+  const sent = quote.status === "sent" || quote.status === "accepted";
 
   return (
     <div className="pb-10">

@@ -116,6 +116,10 @@ export async function buildQuoteSnapshot(args: {
   existing: Quote | null;
 }): Promise<void> {
   const { event, option, proposal, existing } = args;
+  // An accepted quote is a signed commercial agreement — never rewritten from defaults.
+  if (existing?.status === "accepted") {
+    throw new Error("This quote has been accepted and can no longer be rebuilt.");
+  }
   const fields = quoteFieldsFromEvent(event, option);
 
   let quoteId = existing?.id ?? null;
