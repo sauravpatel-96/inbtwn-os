@@ -742,14 +742,24 @@ export function RecipeEditor({
       </Drawer>
 
       {/* Inline ingredient creation — recipe state is preserved */}
-      <Drawer open={newIng} onOpenChange={setNewIng}>
+      <Drawer
+        open={newIng}
+        onOpenChange={(open) => {
+          setNewIng(open);
+          if (!open) setPickIng(true);
+        }}
+        shouldScaleBackground={false}
+      >
         <DrawerContent className="bg-paper border-ink/10">
           <div className="mx-auto max-h-[85vh] w-full max-w-md overflow-y-auto px-5 pb-safe pt-2">
             <DrawerTitle className="font-display text-[24px] leading-none">New ingredient</DrawerTitle>
             <div className="mt-3">
               <IngredientForm
                 compact
-                onCancel={() => setNewIng(false)}
+                onCancel={() => {
+                  setNewIng(false);
+                  setPickIng(true);
+                }}
                 onSaved={async (row) => {
                   await qc.invalidateQueries({ queryKey: ["ingredients"] });
                   await qc.invalidateQueries({ queryKey: ["recipe-graph"] });
