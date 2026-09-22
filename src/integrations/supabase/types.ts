@@ -142,6 +142,63 @@ export type Database = {
           },
         ]
       }
+      event_costs: {
+        Row: {
+          actual_amount: number | null
+          category: string
+          cost_date: string | null
+          created_at: string
+          description: string
+          estimated_amount: number | null
+          event_id: string
+          id: string
+          notes: string | null
+          organisation_id: string
+          updated_at: string
+        }
+        Insert: {
+          actual_amount?: number | null
+          category?: string
+          cost_date?: string | null
+          created_at?: string
+          description: string
+          estimated_amount?: number | null
+          event_id: string
+          id?: string
+          notes?: string | null
+          organisation_id?: string
+          updated_at?: string
+        }
+        Update: {
+          actual_amount?: number | null
+          category?: string
+          cost_date?: string | null
+          created_at?: string
+          description?: string
+          estimated_amount?: number | null
+          event_id?: string
+          id?: string
+          notes?: string | null
+          organisation_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_costs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_costs_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_dietaries: {
         Row: {
           confirmed: boolean
@@ -189,6 +246,132 @@ export type Database = {
           },
           {
             foreignKeyName: "event_dietaries_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_invoice_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          organisation_id: string
+          quantity: number
+          sort_order: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          organisation_id?: string
+          quantity?: number
+          sort_order?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          organisation_id?: string
+          quantity?: number
+          sort_order?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "event_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_invoice_items_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_invoices: {
+        Row: {
+          billing_details: string | null
+          client_name: string | null
+          created_at: string
+          due_date: string | null
+          event_id: string
+          id: string
+          invoice_number: string
+          issue_date: string
+          kind: string
+          notes: string | null
+          organisation_id: string
+          payment_instructions: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+          vat_enabled: boolean
+          vat_rate: number
+        }
+        Insert: {
+          billing_details?: string | null
+          client_name?: string | null
+          created_at?: string
+          due_date?: string | null
+          event_id: string
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          kind?: string
+          notes?: string | null
+          organisation_id?: string
+          payment_instructions?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          vat_enabled?: boolean
+          vat_rate?: number
+        }
+        Update: {
+          billing_details?: string | null
+          client_name?: string | null
+          created_at?: string
+          due_date?: string | null
+          event_id?: string
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          kind?: string
+          notes?: string | null
+          organisation_id?: string
+          payment_instructions?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          vat_enabled?: boolean
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_invoices_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_invoices_organisation_id_fkey"
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
@@ -353,6 +536,166 @@ export type Database = {
           },
           {
             foreignKeyName: "event_packing_items_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_payment_terms: {
+        Row: {
+          actual_payout: number | null
+          actual_payout_date: string | null
+          agreed_total_override: number | null
+          balance_due_date: string | null
+          balance_due_days_before: number
+          card_fee_applied: boolean
+          card_fee_percentage: number
+          created_at: string
+          deposit_amount: number | null
+          deposit_due_date: string | null
+          deposit_mode: string
+          deposit_percentage: number
+          event_id: string
+          expected_payout: number | null
+          expected_payout_date: string | null
+          id: string
+          notes: string | null
+          organisation_id: string
+          payout_status: string
+          updated_at: string
+          vat_enabled: boolean
+          vat_rate: number
+        }
+        Insert: {
+          actual_payout?: number | null
+          actual_payout_date?: string | null
+          agreed_total_override?: number | null
+          balance_due_date?: string | null
+          balance_due_days_before?: number
+          card_fee_applied?: boolean
+          card_fee_percentage?: number
+          created_at?: string
+          deposit_amount?: number | null
+          deposit_due_date?: string | null
+          deposit_mode?: string
+          deposit_percentage?: number
+          event_id: string
+          expected_payout?: number | null
+          expected_payout_date?: string | null
+          id?: string
+          notes?: string | null
+          organisation_id?: string
+          payout_status?: string
+          updated_at?: string
+          vat_enabled?: boolean
+          vat_rate?: number
+        }
+        Update: {
+          actual_payout?: number | null
+          actual_payout_date?: string | null
+          agreed_total_override?: number | null
+          balance_due_date?: string | null
+          balance_due_days_before?: number
+          card_fee_applied?: boolean
+          card_fee_percentage?: number
+          created_at?: string
+          deposit_amount?: number | null
+          deposit_due_date?: string | null
+          deposit_mode?: string
+          deposit_percentage?: number
+          event_id?: string
+          expected_payout?: number | null
+          expected_payout_date?: string | null
+          id?: string
+          notes?: string | null
+          organisation_id?: string
+          payout_status?: string
+          updated_at?: string
+          vat_enabled?: boolean
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_payment_terms_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_payment_terms_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_payments: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          event_id: string
+          id: string
+          invoice_id: string | null
+          method: string
+          notes: string | null
+          organisation_id: string
+          payment_date: string
+          reference: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          event_id: string
+          id?: string
+          invoice_id?: string | null
+          method?: string
+          notes?: string | null
+          organisation_id?: string
+          payment_date?: string
+          reference?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          invoice_id?: string | null
+          method?: string
+          notes?: string | null
+          organisation_id?: string
+          payment_date?: string
+          reference?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "event_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_payments_organisation_id_fkey"
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
@@ -795,6 +1138,8 @@ export type Database = {
       }
       event_quotes: {
         Row: {
+          accepted_at: string | null
+          agreed_total: number | null
           card_fee_enabled: boolean
           card_fee_percentage: number | null
           catering_label: string
@@ -824,6 +1169,8 @@ export type Database = {
           whats_included: string | null
         }
         Insert: {
+          accepted_at?: string | null
+          agreed_total?: number | null
           card_fee_enabled?: boolean
           card_fee_percentage?: number | null
           catering_label?: string
@@ -853,6 +1200,8 @@ export type Database = {
           whats_included?: string | null
         }
         Update: {
+          accepted_at?: string | null
+          agreed_total?: number | null
           card_fee_enabled?: boolean
           card_fee_percentage?: number | null
           catering_label?: string
