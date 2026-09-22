@@ -119,6 +119,7 @@ function TodayPage() {
       </div>
 
       {all.length === 0 ? <DemoDataPrompt /> : null}
+      {all.some((e) => e.is_demo) ? <RemoveDemoLink /> : null}
     </div>
   );
 }
@@ -149,5 +150,41 @@ function DemoDataPrompt() {
         {busy ? "Loading…" : "Load demo data"}
       </button>
     </TornCard>
+  );
+}
+
+function RemoveDemoLink() {
+  const qc = useQueryClient();
+  const [confirm, setConfirm] = useState(false);
+  const remove = async () => {
+    const { error } = await supabase.rpc("remove_demo_data");
+    setConfirm(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Demo data removed");
+    qc.invalidateQueries({ queryKey: ["events"] });
+    qc.invalidateQueries({ queryKey: ["clients"] });
+  };
+  return (
+    <div className="mt-10 text-center font-mono text-[11px] text-ink-soft">
+      {confirm ? (
+        <span>
+          Remove all Demo-tagged clients and events?{" "}
+          <button onClick={remove} className="text-s-lost underline">
+            Yes, remove
+          </button>{" "}
+          ·{" "}
+          <button onClick={() => setConfirm(false)} className="underline">
+            Keep
+          </button>
+        </span>
+      ) : (
+        <button onClick={() => setConfirm(true)} className="underline">
+          Remove demo data
+        </button>
+      )}
+    </div>
   );
 }
