@@ -35,21 +35,38 @@ export const Route = createFileRoute("/_authenticated/library/recipes/$recipeId/
   component: ScalePage,
 });
 
+/** Display rounding for count-based ingredients: round up to the next whole item. */
+function displayQuantity(baseQty: number | null | undefined, base: BaseUnit): number | null {
+  if (baseQty === null || baseQty === undefined || Number.isNaN(baseQty)) return null;
+  if (base === "each") return Math.ceil(baseQty);
+  return baseQty;
+}
+
+function fmtScaleQty(baseQty: number | null | undefined, base: BaseUnit): string {
+  const qty = displayQuantity(baseQty, base);
+  if (qty === null) return "—";
+  return fmtQty(qty, base);
+}
+
+function scaleBigQty(baseQty: number, base: BaseUnit): { value: string; unit: string } {
+  return bigQty(displayQuantity(baseQty, base) ?? baseQty, base);
+}
+
 function ComponentBlock({ c, depth = 0 }: { c: ComponentLine; depth?: number }) {
   return (
     <div className={depth ? "ml-3 border-l border-ink/10 pl-3" : ""}>
       <div className="flex items-baseline justify-between py-2">
         <span className="text-[14px] font-semibold">{c.name}</span>
-        <span className="font-mono text-[13px]">{fmtQty(c.required, c.baseUnit)}</span>
+        <span className="font-mono text-[13px]">{fmtScaleQty(c.required, c.baseUnit)}</span>
       </div>
       <div className="ml-3 border-l border-ink/10 pl-3">
         {c.result.ingredients.map((i) => (
           <div key={i.ingredientId} className="flex items-baseline justify-between py-1.5">
             <span className="text-[13px]">{i.name}</span>
             <span className="text-right font-mono text-[12px]">
-              {fmtQty(i.usable, i.baseUnit)}
+              {fmtScaleQty(i.usable, i.baseUnit)}
               {i.yieldPct !== 100 ? (
-                <span className="block text-ink-soft">{fmtQty(i.raw, i.baseUnit)} raw</span>
+                <span className="block text-ink-soft">{fmtScaleQty(i.raw, i.baseUnit)} raw</span>
               ) : null}
             </span>
           </div>
