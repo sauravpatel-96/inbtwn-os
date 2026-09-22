@@ -16,7 +16,8 @@ export const versionBuffersQuery = queryOptions({
 });
 
 function trim(n: number, decimalPlaces: number): string {
-  return n.toFixed(decimalPlaces).replace(/\.?0+$/, "");
+  if (decimalPlaces === 0) return String(Math.round(n));
+  return n.toFixed(decimalPlaces).replace(/\.00$/, "");
 }
 
 /**
