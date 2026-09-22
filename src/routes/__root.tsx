@@ -14,6 +14,31 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 
+const moduleRecoveryScript = `
+(() => {
+  const failurePattern = /Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module|Loading chunk [^ ]+ failed/i;
+  const recoveryKey = "__inbtwn_module_reload__:" + window.location.pathname;
+
+  const recover = (message) => {
+    if (!failurePattern.test(String(message || ""))) return;
+    const lastAttempt = Number(window.sessionStorage.getItem(recoveryKey) || 0);
+    if (Date.now() - lastAttempt < 30000) return;
+    window.sessionStorage.setItem(recoveryKey, String(Date.now()));
+    window.location.reload();
+  };
+
+  window.addEventListener("error", (event) => {
+    const target = event.target;
+    const isModuleScript = target instanceof HTMLScriptElement && target.type === "module";
+    recover(isModuleScript ? "Importing a module script failed" : event.message);
+  }, true);
+
+  window.addEventListener("unhandledrejection", (event) => {
+    recover(event.reason instanceof Error ? event.reason.message : event.reason);
+  });
+})();
+`;
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -108,6 +133,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en-GB">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: moduleRecoveryScript }} />
       </head>
       <body>
         {children}
