@@ -17,6 +17,7 @@ import { EventProposal } from "@/components/inbtwn/EventProposal";
 import { EventPricing } from "@/components/inbtwn/EventPricing";
 import { EventNotes } from "@/components/inbtwn/EventNotes";
 import { EventQuote } from "@/components/inbtwn/EventQuote";
+import { EventFinance } from "@/components/inbtwn/EventFinance";
 import { stageOf, stageLabel, accessLabel } from "@/lib/commercial";
 import {
   AlertDialog,
@@ -63,7 +64,6 @@ const SECTION_LABEL: Record<Section, string> = {
 const PLACEHOLDER: Partial<Record<Section, string>> = {
   packing: "Packing and equipment lists are coming in a later build.",
   staff: "Staffing will be added in a later build.",
-  finance: "Quotes, invoicing and profitability are coming in a later build.",
   more: "Tasks, expenses and documents will live here in a later build.",
 };
 
@@ -336,6 +336,8 @@ function EventDetailPage() {
           <EventProduction eventId={eventId} guestCount={e.guest_count} />
         ) : s === "shopping" ? (
           <EventShopping eventId={eventId} guestCount={e.guest_count} />
+        ) : s === "finance" ? (
+          <EventFinance event={e} />
         ) : s === "packing" ? (
           <EventPacking eventId={eventId} guestCount={e.guest_count} />
         ) : (
