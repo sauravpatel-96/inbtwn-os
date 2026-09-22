@@ -70,6 +70,17 @@ export type FoodPackLine = {
  * Production result. No quantities are recalculated here — Production remains
  * the single source of truth.
  */
+/** Component recipes are often named "Dish - Part"; avoid repeating the dish. */
+function stripDishPrefix(dishName: string, componentName: string): string {
+  const lower = componentName.toLowerCase();
+  const prefix = dishName.toLowerCase();
+  if (lower.startsWith(prefix)) {
+    const rest = componentName.slice(dishName.length).replace(/^[\s\u2013\u2014:-]+/, "");
+    if (rest) return rest;
+  }
+  return componentName;
+}
+
 export function foodLinesFromProduction(
   dishName: string,
   versionId: string,
