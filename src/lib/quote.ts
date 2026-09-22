@@ -10,12 +10,13 @@ export type QuoteSectionRow = Database["public"]["Tables"]["event_quote_sections
 export type QuoteItemRow = Database["public"]["Tables"]["event_quote_items"]["Row"];
 export type QuoteChargeRow = Database["public"]["Tables"]["event_quote_charges"]["Row"];
 
-export type QuoteStatus = "draft" | "ready" | "sent";
+export type QuoteStatus = "draft" | "ready" | "sent" | "accepted";
 
 export const QUOTE_STATUSES: { value: QuoteStatus; label: string }[] = [
   { value: "draft", label: "Draft" },
   { value: "ready", label: "Ready" },
   { value: "sent", label: "Sent" },
+  { value: "accepted", label: "Accepted" },
 ];
 
 export type QuoteSection = QuoteSectionRow & { items: QuoteItemRow[] };
@@ -115,6 +116,10 @@ export async function buildQuoteSnapshot(args: {
   existing: Quote | null;
 }): Promise<void> {
   const { event, option, proposal, existing } = args;
+  // An accepted quote is a signed commercial agreement — never rewritten from defaults.
+  if (existing?.status === "accepted") {
+    throw new Error("This quote has been accepted and can no longer be rebuilt.");
+  }
   const fields = quoteFieldsFromEvent(event, option);
 
   let quoteId = existing?.id ?? null;
