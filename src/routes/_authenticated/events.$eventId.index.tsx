@@ -11,6 +11,7 @@ import { PageTitle, SectionHeading, StatusPill, SourceBadge, DemoTag, EmptyNote,
 import { Dietaries } from "@/components/inbtwn/Dietaries";
 import { EventMenu } from "@/components/inbtwn/EventMenu";
 import { EventProduction } from "@/components/inbtwn/EventProduction";
+import { EventPlan } from "@/components/inbtwn/EventPlan";
 import { EventShopping } from "@/components/inbtwn/EventShopping";
 import { EventPacking } from "@/components/inbtwn/EventPacking";
 import { EventProposal } from "@/components/inbtwn/EventProposal";
@@ -38,6 +39,7 @@ const SECTIONS = [
   "quote",
   "notes",
   "menu",
+  "plan",
   "production",
   "shopping",
   "packing",
@@ -54,6 +56,7 @@ const SECTION_LABEL: Record<Section, string> = {
   quote: "Quote",
   notes: "Notes",
   menu: "Menu",
+  plan: "Plan",
   production: "Production",
   shopping: "Shopping",
   packing: "Packing",
@@ -365,6 +368,8 @@ function EventDetailPage() {
           <EventNotes eventId={eventId} />
         ) : s === "menu" ? (
           <EventMenu eventId={eventId} guestCount={e.guest_count} />
+        ) : s === "plan" ? (
+          <EventPlan event={e} />
         ) : s === "production" ? (
           <EventProduction eventId={eventId} guestCount={e.guest_count} />
         ) : s === "shopping" ? (
