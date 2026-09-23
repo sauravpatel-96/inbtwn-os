@@ -186,6 +186,10 @@ export type EventDerived = {
   ingredientsMissingCost: number;
   shoppingRemaining: number;
   packingRemaining: number;
+  /** Admin/financial close-out state, separate from the operational status. */
+  closed: boolean;
+  /** Past confirmed work that has not been marked completed yet. */
+  needsCompletion: boolean;
 };
 
 /** Recursively collect every ingredient used by a set of recipe versions (ids only). */
