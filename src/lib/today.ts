@@ -353,6 +353,7 @@ export function buildToday(data: TodayData, today = new Date()): {
     section: EventSection,
     actionLabel: string,
     urgency: number,
+    extra?: { action?: "complete"; secondary?: string },
   ) =>
     items.push({
       id: `${d.event.id}:${id}`,
@@ -363,6 +364,8 @@ export function buildToday(data: TodayData, today = new Date()): {
       section,
       actionLabel,
       urgency,
+      ...(extra?.action ? { action: extra.action } : {}),
+      ...(extra?.secondary ? { secondary: extra.secondary } : {}),
     });
 
   const money = (n: number) =>
