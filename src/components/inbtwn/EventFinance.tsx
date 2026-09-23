@@ -16,6 +16,10 @@ import {
   paymentTermsQuery,
   paymentsQuery,
   invoicesQuery,
+  allocationsQuery,
+  reconcileAllocations,
+  invoicePaymentState,
+  PAYMENT_STATE_LABELS,
   costsQuery,
   ensurePaymentTerms,
   buildSchedule,
@@ -39,6 +43,7 @@ import {
   type TermsRow,
   type PaymentRow,
   type CostRow,
+  type AllocationRow,
 } from "@/lib/finance";
 
 type Ev = EventRow & { client: ClientRow | null };
