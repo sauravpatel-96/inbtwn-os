@@ -95,7 +95,7 @@ function TodayPage() {
       <div className="mt-7">
         <SectionHeading title="Operations · next 7 days" />
         {ops.shoppingItems === 0 && ops.packingItems === 0 && ops.recipeGaps === 0 ? (
-          <EmptyNote>Nothing outstanding.</EmptyNote>
+          <EmptyNote>Nothing outstanding in the next 7 days.</EmptyNote>
         ) : (
           <div className="border border-ink/15 bg-cream">
             {ops.shoppingItems > 0 ? (
