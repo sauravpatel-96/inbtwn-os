@@ -328,6 +328,10 @@ export type AttentionItem = {
   actionLabel: string;
   /** Lower sorts first within a severity. */
   urgency: number;
+  /** In-app action rather than navigation. */
+  action?: "complete";
+  /** Supporting detail shown under the main message. */
+  secondary?: string;
 };
 
 const EXCLUDED = ["cancelled", "lost"];
