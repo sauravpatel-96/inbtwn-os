@@ -948,7 +948,10 @@ function InvoiceDetail({
   return (
     <div className="mt-2 space-y-3 border-t border-ink/10 pt-2">
       <Line label="Issued" value={fmtDateLong(invoice.issue_date)} />
-      <Line label="Due" value={invoice.due_date ? fmtDateLong(invoice.due_date) : "—"} />
+      <Line
+        label="Due"
+        value={invoice.due_date ? fmtDateLong(invoice.due_date) : invoice.kind === "deposit" ? "On booking" : "—"}
+      />
       {invoice.items.map((i) => (
         <div key={i.id} className="flex items-center justify-between gap-3 border-b border-ink/10 py-1.5">
           <span className="min-w-0 break-words text-[13px]">{i.description}</span>
