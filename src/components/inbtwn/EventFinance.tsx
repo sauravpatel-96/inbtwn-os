@@ -975,6 +975,28 @@ function InvoiceDetail({
       <Line label="Total" value={money(totals.total)} />
       <Line label="Paid" value={money(totals.paid)} />
       <Line label="Outstanding" value={money(totals.outstanding)} />
+      <Line label="Payment state" value={PAYMENT_STATE_LABELS[state]} />
+
+      {applied.length ? (
+        <div className="border border-ink/15 px-3 py-2">
+          <div className="label-mono text-ink-soft">Payments applied</div>
+          {applied.map(({ alloc, payment }) => (
+            <div key={alloc.id} className="flex items-start justify-between gap-3 border-b border-ink/10 py-1.5 last:border-0">
+              <div className="min-w-0">
+                <div className="font-mono text-[11px]">
+                  {payment ? fmtDateLong(payment.payment_date) : "—"}
+                  {payment ? ` · ${labelOf(PAYMENT_METHODS, payment.method)}` : ""}
+                </div>
+                {payment?.notes || payment?.reference ? (
+                  <div className="font-mono text-[10px] text-ink-soft">{payment.notes ?? payment.reference}</div>
+                ) : null}
+              </div>
+              <span className="shrink-0 font-mono text-[13px]">{money(Number(alloc.amount))}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       <Field label="Status">
         <SelectInput value={invoice.status} onChange={(e) => onStatus(e.target.value)}>
           {INVOICE_STATUSES.map((s) => (
