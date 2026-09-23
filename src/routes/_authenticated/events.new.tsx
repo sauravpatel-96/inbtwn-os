@@ -6,7 +6,10 @@ import { PageTitle } from "@/components/inbtwn/bits";
 import { EventForm } from "@/components/inbtwn/EventForm";
 
 export const Route = createFileRoute("/_authenticated/events/new")({
-  validateSearch: z.object({ clientId: z.string().uuid().optional() }),
+  validateSearch: z.object({
+    clientId: z.string().uuid().optional(),
+    contactId: z.string().uuid().optional(),
+  }),
   head: () => ({
     meta: [
       { title: "New enquiry — INBTWN OS" },

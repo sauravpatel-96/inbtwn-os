@@ -109,7 +109,10 @@ function ClientDetailPage() {
       .from("client_contacts")
       .update({ active: !row.active, is_primary: row.active ? false : row.is_primary })
       .eq("id", row.id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success(row.active ? "Contact archived" : "Contact restored");
     refreshContacts();
   };
