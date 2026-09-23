@@ -1,61 +1,63 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { format } from "date-fns";
 import { toast } from "sonner";
-import { eventsQuery } from "@/lib/queries";
-import { buildAttention } from "@/lib/attention";
-import { daysUntil, fmtDate } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
-import { PageTitle, SectionHeading, StatusPill, SourceBadge, EmptyNote, TornCard } from "@/components/inbtwn/bits";
+import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, type AttentionItem, type Severity } from "@/lib/today";
+import { fmtDate, fmtMoney } from "@/lib/format";
+import { statusLabel } from "@/lib/constants";
+import { PageTitle, SectionHeading, StatusPill, EmptyNote } from "@/components/inbtwn/bits";
 
 export const Route = createFileRoute("/_authenticated/today")({
   head: () => ({
     meta: [
       { title: "Today — INBTWN OS" },
-      { name: "description", content: "What needs your attention today: stalled enquiries, missing details and upcoming events." },
+      { name: "description", content: "What needs your attention today: overdue money, upcoming events and outstanding operational work." },
       { property: "og:title", content: "Today — INBTWN OS" },
-      { property: "og:description", content: "Your catering service board for today." },
+      { property: "og:description", content: "Your catering command centre for today." },
     ],
   }),
   component: TodayPage,
 });
 
+const SEV_CLASS: Record<Severity, string> = {
+  high: "text-s-lost",
+  medium: "text-flame",
+  low: "text-ink-soft",
+};
+
 function TodayPage() {
-  const events = useQuery(eventsQuery);
+  const data = useQuery(todayDataQuery);
   const [showAll, setShowAll] = useState(false);
 
-  if (events.isLoading) return <p className="font-mono text-[12px] text-ink-soft">Loading…</p>;
-  if (events.isError) return <p className="font-mono text-[12px] text-s-lost">{events.error.message}</p>;
+  const model = useMemo(() => {
+    if (!data.data) return null;
+    const { attention, derived } = buildToday(data.data);
+    return {
+      attention,
+      derived,
+      upcoming: upcomingEvents(derived),
+      ops: opsSummary(derived),
+      money: moneySummary(derived),
+    };
+  }, [data.data]);
 
-  const all = events.data ?? [];
-  const enquiries = all.filter((e) => e.status === "enquiry").length;
-  const quotes = all.filter((e) => e.status === "quoting" || e.status === "awaiting_client").length;
-  const attention = buildAttention(all);
-  const shown = showAll ? attention : attention.slice(0, 5);
-  const upcoming = all.filter((e) => {
-    const d = daysUntil(e.event_date);
-    return d !== null && d >= 0 && d <= 7 && !["lost", "cancelled", "completed"].includes(e.status);
-  });
+  if (data.isLoading) return <p className="font-mono text-[12px] text-ink-soft">Loading…</p>;
+  if (data.isError) return <p className="font-mono text-[12px] text-s-lost">{(data.error as Error).message}</p>;
+  if (!model) return null;
+
+  const { attention, upcoming, ops, money } = model;
+  const shown = showAll ? attention : attention.slice(0, 6);
 
   return (
     <div>
-      <PageTitle title="Today" aside="service board" />
-
-      <div className="mb-6 flex gap-3">
-        <Link to="/events" search={{ f: "enquiries" }} className="relative torn flex-1 bg-cream px-3.5 pb-3 pt-3.5 text-ink">
-          <div className="font-display text-[34px] leading-none">{enquiries}</div>
-          <div className="label-mono mt-1 text-ink-soft">Enquiries</div>
-        </Link>
-        <Link to="/events" search={{ f: "quotes" }} className="relative torn flex-1 bg-cream px-3.5 pb-3 pt-3.5 text-ink">
-          <div className="font-display text-[34px] leading-none text-flame">{quotes}</div>
-          <div className="label-mono mt-1 text-ink-soft">In quotes</div>
-        </Link>
-      </div>
+      <PageTitle title="Today" aside={format(new Date(), "EEE d MMM")} />
 
       <SectionHeading
         title="Needs attention"
         action={
-          attention.length > 5 ? (
+          attention.length > 6 ? (
             <button onClick={() => setShowAll((s) => !s)} className="font-mono text-[11px] text-flame">
               {showAll ? "Show less" : `View all (${attention.length})`}
             </button>
@@ -63,61 +65,145 @@ function TodayPage() {
         }
       />
       {shown.length === 0 ? (
-        <EmptyNote>Nothing needs you right now. Nice.</EmptyNote>
+        <EmptyNote>Nothing urgent needs attention.</EmptyNote>
       ) : (
-        <div className="flex flex-col gap-2.5">
-          {shown.map((a, i) => (
-            <Link
-              key={a.event.id}
-              to="/events/$eventId"
-              params={{ eventId: a.event.id }}
-              className={`torn flex flex-col gap-1 bg-cream px-3.5 py-3 text-ink `}
-            >
-              <div className="flex items-center justify-between">
-                <span className="label-mono text-flame">Action</span>
-                <SourceBadge source={a.event.source} />
-              </div>
-              <p className="font-semibold text-[14px] leading-tight">
-                {a.event.title} · <span className="font-medium text-ink-soft">{a.reason}</span>
-              </p>
-              <p className="font-mono text-[11px] text-ink-soft">
-                {fmtDate(a.event.event_date)}
-                {a.event.guest_count != null ? ` · ${a.event.guest_count} guests` : ""}
-              </p>
-            </Link>
+        <div className="flex flex-col gap-1.5">
+          {shown.map((a) => (
+            <AlertRow key={a.id} item={a} />
           ))}
         </div>
       )}
+
+      <div className="mt-7">
+        <SectionHeading title="Money" />
+        <div className="border border-ink/15 bg-cream">
+          <MoneyRow label="Overdue" value={fmtMoney(money.overdue)} tone={money.overdue > 0 ? "alert" : undefined} />
+          <MoneyRow
+            label="Outstanding"
+            value={fmtMoney(money.outstanding)}
+            note={money.outstandingIncomplete ? "some bookings have no agreed value" : undefined}
+          />
+          <MoneyRow
+            label="Platform payouts"
+            value={money.payouts > 0 ? fmtMoney(money.payouts) : money.payoutsIncomplete ? "Not yet known" : fmtMoney(0)}
+            note={money.payouts > 0 && money.payoutsIncomplete ? "some payouts not yet known" : undefined}
+          />
+          <MoneyRow label="Confirmed this month" value={fmtMoney(money.confirmedThisMonth)} last />
+        </div>
+      </div>
+
+      <div className="mt-7">
+        <SectionHeading title="Operations · next 7 days" />
+        {ops.shoppingItems === 0 && ops.packingItems === 0 && ops.recipeGaps === 0 ? (
+          <EmptyNote>Nothing outstanding.</EmptyNote>
+        ) : (
+          <div className="border border-ink/15 bg-cream">
+            {ops.shoppingItems > 0 ? (
+              <OpsRow
+                label="Shopping"
+                detail={`${ops.shoppingItems} items remaining across ${ops.shoppingEvents} event${ops.shoppingEvents === 1 ? "" : "s"}`}
+              />
+            ) : null}
+            {ops.packingItems > 0 ? (
+              <OpsRow
+                label="Packing"
+                detail={`${ops.packingItems} items remaining across ${ops.packingEvents} event${ops.packingEvents === 1 ? "" : "s"}`}
+              />
+            ) : null}
+            {ops.recipeGaps > 0 ? (
+              <OpsRow
+                label="Menu"
+                detail={`${ops.recipeGaps} dishes need recipes across ${ops.recipeGapEvents} event${ops.recipeGapEvents === 1 ? "" : "s"}`}
+                last
+              />
+            ) : null}
+          </div>
+        )}
+      </div>
 
       <div className="mt-7">
         <SectionHeading title="Upcoming · next 7 days" />
         {upcoming.length === 0 ? (
           <EmptyNote>No events in the next seven days.</EmptyNote>
         ) : (
-          <div className="flex flex-col gap-2.5">
-            {upcoming.map((e) => (
+          <div className="flex flex-col gap-1.5">
+            {upcoming.map((d) => (
               <Link
-                key={e.id}
+                key={d.event.id}
                 to="/events/$eventId"
-                params={{ eventId: e.id }}
-                className="torn flex items-center gap-3 bg-cream px-3.5 py-3 text-ink"
+                params={{ eventId: d.event.id }}
+                className="flex items-center gap-3 border border-ink/15 bg-cream px-3 py-2.5 text-ink"
               >
-                <div className="w-[68px] shrink-0 font-display text-[18px] leading-none">{fmtDate(e.event_date)}</div>
+                <div className="w-[62px] shrink-0 label-mono text-ink-soft">{fmtDate(d.event.event_date)}</div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-[14px] leading-tight">{e.title}</p>
+                  <p className="truncate font-semibold text-[14px] leading-tight">{d.event.title}</p>
                   <p className="font-mono text-[11px] text-ink-soft">
-                    {e.guest_count != null ? `${e.guest_count} guests` : "Guests TBC"}
+                    {d.event.guest_count != null ? `${d.event.guest_count} guests` : "Guests TBC"} ·{" "}
+                    {statusLabel(d.event.status)}
                   </p>
                 </div>
-                <StatusPill status={e.status} />
+                <StatusPill status={d.event.status} />
               </Link>
             ))}
           </div>
         )}
       </div>
 
-      {all.length === 0 ? <DemoDataPrompt /> : null}
-      {all.some((e) => e.is_demo) ? <RemoveDemoLink /> : null}
+      {model.derived.length === 0 ? <DemoDataPrompt /> : null}
+      {model.derived.some((d) => d.event.is_demo) ? <RemoveDemoLink /> : null}
+    </div>
+  );
+}
+
+function AlertRow({ item }: { item: AttentionItem }) {
+  return (
+    <Link
+      to="/events/$eventId"
+      params={{ eventId: item.eventId }}
+      search={{ s: item.section }}
+      className="flex items-center gap-3 border border-ink/15 bg-cream px-3 py-2.5 text-ink"
+    >
+      <span className={`mt-[3px] h-2 w-2 shrink-0 ${item.severity === "high" ? "bg-s-lost" : item.severity === "medium" ? "bg-flame" : "bg-ink/30"}`} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-semibold text-[14px] leading-tight">{item.eventTitle}</p>
+        <p className={`font-mono text-[11px] ${SEV_CLASS[item.severity]}`}>{item.message}</p>
+      </div>
+      <span className="label-mono shrink-0 text-ink-soft">{item.actionLabel} →</span>
+    </Link>
+  );
+}
+
+function MoneyRow({
+  label,
+  value,
+  note,
+  tone,
+  last,
+}: {
+  label: string;
+  value: string | null;
+  note?: string | undefined;
+  tone?: "alert" | undefined;
+  last?: boolean;
+}) {
+  return (
+    <div className={`flex items-baseline justify-between gap-3 px-3 py-2.5 ${last ? "" : "border-b border-ink/10"}`}>
+      <div className="min-w-0">
+        <div className="label-mono text-ink-soft">{label}</div>
+        {note ? <div className="font-mono text-[10px] text-ink-soft">{note}</div> : null}
+      </div>
+      <div className={`font-display text-[20px] leading-none ${tone === "alert" ? "text-s-lost" : "text-ink"}`}>
+        {value ?? "—"}
+      </div>
+    </div>
+  );
+}
+
+function OpsRow({ label, detail, last }: { label: string; detail: string; last?: boolean }) {
+  return (
+    <div className={`px-3 py-2.5 ${last ? "" : "border-b border-ink/10"}`}>
+      <div className="label-mono text-ink-soft">{label}</div>
+      <div className="font-mono text-[12px] text-ink">{detail}</div>
     </div>
   );
 }
@@ -134,11 +220,12 @@ function DemoDataPrompt() {
       return;
     }
     toast.success("Demo data loaded — look for the Demo tag.");
+    qc.invalidateQueries({ queryKey: ["today-data"] });
     qc.invalidateQueries({ queryKey: ["events"] });
     qc.invalidateQueries({ queryKey: ["clients"] });
   };
   return (
-    <TornCard className="mt-8 border border-dashed border-ink/25 bg-panel px-4 py-4">
+    <div className="mt-8 border border-dashed border-ink/25 bg-panel px-4 py-4">
       <div className="font-display text-[20px] leading-none">Empty board</div>
       <p className="mt-2 text-sm text-ink-soft">
         Add your first enquiry with the <span className="font-semibold text-flame">+</span> button, or load
@@ -147,7 +234,7 @@ function DemoDataPrompt() {
       <button onClick={load} disabled={busy} className="mt-3 font-mono text-[12px] text-flame underline">
         {busy ? "Loading…" : "Load demo data"}
       </button>
-    </TornCard>
+    </div>
   );
 }
 
@@ -162,6 +249,7 @@ function RemoveDemoLink() {
       return;
     }
     toast.success("Demo data removed");
+    qc.invalidateQueries({ queryKey: ["today-data"] });
     qc.invalidateQueries({ queryKey: ["events"] });
     qc.invalidateQueries({ queryKey: ["clients"] });
   };
