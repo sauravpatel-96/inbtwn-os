@@ -854,11 +854,11 @@ function InvoicesPanel({
             .map((a) => ({ alloc: a, payment: payments.find((p) => p.id === a.payment_id) ?? null }));
           const expanded = open === inv.id;
           const liveDoc = settings
-            ? buildInvoiceDoc({ invoice: inv, event, settings, totals: it, platform })
+            ? buildInvoiceDoc({ invoice: inv, event, settings, totals: it, platform, paymentState: state })
             : null;
           /* Paid and amount due always reflect today's payments, even on an issued copy. */
           const doc = liveDoc
-            ? { ...snapshotOf(inv.document_snapshot, liveDoc), paid: it.paid, outstanding: it.outstanding }
+            ? { ...snapshotOf(inv.document_snapshot, liveDoc), paid: it.paid, outstanding: it.outstanding, paymentState: state }
             : null;
           return (
             <div key={inv.id} className="border-b border-ink/10 py-2 last:border-0">

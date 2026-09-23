@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import { fmtMoney, fmtDateLong, todayISO } from "./format";
+import { format, isValid, parse, parseISO } from "date-fns";
+import { fmtMoney, todayISO } from "./format";
 import { clientDisplayName } from "./format";
 import {
   businessAddressLines,
@@ -11,7 +12,7 @@ import {
 } from "./business";
 import type { Quote } from "./quote";
 import { quoteTotals } from "./quote";
-import type { Invoice } from "./finance";
+import type { Invoice, PaymentState } from "./finance";
 import { invoiceTotals } from "./finance";
 import type { EventRow, ClientRow } from "./queries";
 
@@ -75,6 +76,7 @@ export type InvoiceDoc = BaseDoc & {
   total: number;
   paid: number;
   outstanding: number;
+  paymentState?: PaymentState;
   paymentInstructions: string[];
   notes: string | null;
 };
@@ -83,6 +85,15 @@ export type AnyDoc = QuoteDoc | InvoiceDoc;
 
 const money = (n: number, currency: string) => fmtMoney(n, currency) ?? "—";
 export const docMoney = money;
+
+/** Client documents use a formal date without a weekday. Stored dates are unchanged. */
+export function documentDate(value: string | null | undefined): string {
+  if (!value) return "Date TBC";
+  const iso = parseISO(value);
+  if (isValid(iso)) return format(iso, "d MMMM yyyy");
+  const legacy = parse(value, "EEE d MMM yyyy", new Date());
+  return isValid(legacy) ? format(legacy, "d MMMM yyyy") : value;
+}
 
 function partyFrom(s: BusinessSettings): DocParty {
   return {
@@ -119,7 +130,7 @@ export function buildQuoteDoc(args: {
       label: quote.catering_label || "Catering",
       detail:
         t.guests > 0
-          ? `${t.guests} guests × ${money(t.perHead, currency)} per head`
+          ? `${t.guests} guests × ${money(t.perHead, currency)} per person`
           : null,
       amount: t.cateringTotal,
     });
@@ -147,7 +158,7 @@ export function buildQuoteDoc(args: {
     if (value && String(value).trim()) eventDetails.push({ label, value: String(value) });
   };
   push("Event", quote.event_name ?? event.title);
-  push("Date", quote.event_date ? fmtDateLong(quote.event_date) : null);
+  push("Date", quote.event_date ? documentDate(quote.event_date) : null);
   push("Venue", quote.venue);
   push("Guests", quote.guest_count != null ? String(quote.guest_count) : null);
   push("Event type", quote.event_type);
@@ -156,9 +167,9 @@ export function buildQuoteDoc(args: {
 
   const meta: DocMetaRow[] = [
     { label: "Quote no.", value: quote.quote_number ?? "Draft" },
-    { label: "Date", value: fmtDateLong(quote.quote_date ?? todayISO()) },
+    { label: "Date", value: documentDate(quote.quote_date ?? todayISO()) },
   ];
-  if (quote.valid_until) meta.push({ label: "Valid until", value: fmtDateLong(quote.valid_until) });
+  if (quote.valid_until) meta.push({ label: "Valid until", value: documentDate(quote.valid_until) });
   if ((quote.revision ?? 1) > 1) meta.push({ label: "Revision", value: String(quote.revision) });
 
   return {
@@ -175,20 +186,20 @@ export function buildQuoteDoc(args: {
     menu,
     lines,
     subtotal: t.subtotal,
-    vatEnabled: quote.vat_enabled,
+    vatEnabled: Boolean(settings.vat_registered && quote.vat_enabled),
     vatRate: Number(quote.vat_rate),
     vat: t.vat,
     total: t.total,
     perHeadNote:
       t.guests > 0 && t.perHead > 0
-        ? `${money(t.perHead, currency)} per head for ${t.guests} guests`
+        ? `${money(t.perHead, currency)} per person for ${t.guests} guests`
         : null,
     whatsIncluded: splitLines(quote.whats_included),
     notes: quote.client_notes?.trim() || null,
     terms: quote.terms?.trim() ? splitLines(quote.terms) : quoteTermsLines(settings, platform),
     bank: !platform && settings.bank_details_on_quotes ? bankDetailsOf(settings) : null,
     footerNote: platform
-      ? "Booked through a partner platform. Payment is handled by the platform."
+      ? null
       : settings.card_payments_available
         ? settings.card_wording?.trim() || null
         : null,
@@ -204,23 +215,24 @@ export function buildInvoiceDoc(args: {
   settings: BusinessSettings;
   totals: ReturnType<typeof invoiceTotals>;
   platform: boolean;
+  paymentState: PaymentState;
 }): InvoiceDoc {
-  const { invoice, event, settings, totals, platform } = args;
+  const { invoice, event, settings, totals, platform, paymentState } = args;
   const currency = event.currency || settings.currency || "GBP";
   const meta: DocMetaRow[] = [
     { label: "Invoice no.", value: invoice.invoice_number },
-    { label: "Issue date", value: fmtDateLong(invoice.issue_date) },
+    { label: "Issue date", value: documentDate(invoice.issue_date) },
     {
       label: "Due",
       value: invoice.due_date
-        ? fmtDateLong(invoice.due_date)
+        ? documentDate(invoice.due_date)
         : invoice.kind === "deposit"
           ? "On booking"
           : "—",
     },
     { label: "Event", value: event.title },
   ];
-  if (event.event_date) meta.push({ label: "Event date", value: fmtDateLong(event.event_date) });
+  if (event.event_date) meta.push({ label: "Event date", value: documentDate(event.event_date) });
 
   const instructions = invoice.payment_instructions?.trim()
     ? splitLines(invoice.payment_instructions)
@@ -243,12 +255,13 @@ export function buildInvoiceDoc(args: {
       amount: Number(i.quantity) * Number(i.unit_price),
     })),
     subtotal: totals.subtotal,
-    vatEnabled: invoice.vat_enabled,
+    vatEnabled: Boolean(settings.vat_registered && invoice.vat_enabled),
     vatRate: Number(invoice.vat_rate),
     vat: totals.vat,
     total: totals.total,
     paid: totals.paid,
     outstanding: totals.outstanding,
+    paymentState,
     paymentInstructions: instructions,
     notes: invoice.notes?.trim() || null,
     bank: !platform && settings.bank_details_on_invoices ? bankDetailsOf(settings) : null,
@@ -262,7 +275,27 @@ export function buildInvoiceDoc(args: {
 /** A snapshot is the document exactly as it was sent. Live data never rewrites it. */
 export function snapshotOf<T extends AnyDoc>(stored: unknown, live: T): T {
   if (stored && typeof stored === "object" && (stored as { kind?: string }).kind === live.kind) {
-    return stored as T;
+    const frozen = stored as T;
+    const normalizeRows = (rows: DocMetaRow[]) => rows.map((row) => ({
+      ...row,
+      value: /date|valid until|due/i.test(row.label) ? documentDate(row.value) : row.value,
+    }));
+    const normalized = {
+      ...frozen,
+      meta: normalizeRows(frozen.meta),
+      vatEnabled: live.vatEnabled,
+      footerNote: frozen.kind === "quote" && frozen.platform ? null : frozen.footerNote,
+    } as T;
+    if (normalized.kind === "quote") {
+      normalized.eventDetails = normalizeRows(normalized.eventDetails);
+      normalized.lines = normalized.lines.map((line) => ({
+        ...line,
+        detail: line.detail?.replace(/per head/g, "per person") ?? null,
+      }));
+      normalized.perHeadNote = normalized.perHeadNote?.replace(/per head/g, "per person") ?? null;
+      if (normalized.platform) normalized.terms = live.kind === "quote" ? live.terms : normalized.terms;
+    }
+    return normalized;
   }
   return live;
 }
