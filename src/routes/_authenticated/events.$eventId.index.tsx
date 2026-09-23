@@ -134,13 +134,17 @@ function EventDetailPage() {
       : money;
 
   const applyStatus = async (status: EventStatus) => {
-    const { error } = await supabase.from("events").update({ status }).eq("id", e.id);
+    // Completion records when the catering happened; it never touches money.
+    const patch: Record<string, unknown> = { status };
+    if (status === "completed" && !e.completed_at) patch["completed_at"] = new Date().toISOString();
+    const { error } = await supabase.from("events").update(patch).eq("id", e.id);
     if (error) {
       toast.error(error.message);
       return;
     }
     toast.success(`Moved to ${EVENT_STATUSES.find((x) => x.value === status)?.label}`);
     qc.invalidateQueries({ queryKey: ["events"] });
+    qc.invalidateQueries({ queryKey: ["today-data"] });
   };
 
   const changeStatus = (status: EventStatus) => {
