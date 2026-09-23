@@ -181,7 +181,38 @@ function TodayPage() {
   );
 }
 
-function AlertRow({ item }: { item: AttentionItem }) {
+function AlertRow({ item, onComplete }: { item: AttentionItem; onComplete: () => void }) {
+  const dot = (
+    <span
+      className={`mt-[3px] h-2 w-2 shrink-0 ${item.severity === "high" ? "bg-s-lost" : item.severity === "medium" ? "bg-flame" : "bg-ink/30"}`}
+    />
+  );
+  const body = (
+    <div className="min-w-0 flex-1">
+      <p className="truncate font-semibold text-[14px] leading-tight">{item.eventTitle}</p>
+      <p className={`font-mono text-[11px] ${SEV_CLASS[item.severity]}`}>{item.message}</p>
+      {item.secondary ? <p className="font-mono text-[11px] text-ink-soft">{item.secondary}</p> : null}
+    </div>
+  );
+
+  if (item.action === "complete") {
+    return (
+      <div className="flex items-center gap-3 border border-ink/15 bg-cream px-3 py-2.5 text-ink">
+        {dot}
+        <Link to="/events/$eventId" params={{ eventId: item.eventId }} className="min-w-0 flex-1 text-ink">
+          {body}
+        </Link>
+        <button
+          type="button"
+          onClick={onComplete}
+          className="tap shrink-0 rounded-sm bg-ink px-3 py-2 label-mono text-cream"
+        >
+          Mark completed →
+        </button>
+      </div>
+    );
+  }
+
   return (
     <Link
       to="/events/$eventId"
@@ -189,11 +220,8 @@ function AlertRow({ item }: { item: AttentionItem }) {
       search={{ s: item.section }}
       className="flex items-center gap-3 border border-ink/15 bg-cream px-3 py-2.5 text-ink"
     >
-      <span className={`mt-[3px] h-2 w-2 shrink-0 ${item.severity === "high" ? "bg-s-lost" : item.severity === "medium" ? "bg-flame" : "bg-ink/30"}`} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold text-[14px] leading-tight">{item.eventTitle}</p>
-        <p className={`font-mono text-[11px] ${SEV_CLASS[item.severity]}`}>{item.message}</p>
-      </div>
+      {dot}
+      {body}
       <span className="label-mono shrink-0 text-ink-soft">{item.actionLabel} →</span>
     </Link>
   );
