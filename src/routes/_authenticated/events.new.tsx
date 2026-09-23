@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/events/new")({
 });
 
 function NewEventPage() {
-  const { clientId } = Route.useSearch();
+  const { clientId, contactId } = Route.useSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
   return (
@@ -35,6 +35,7 @@ function NewEventPage() {
       <PageTitle title="New enquiry" aside="status: Enquiry" />
       <EventForm
         presetClientId={clientId}
+        presetContactId={contactId}
         onSaved={(e) => {
           qc.invalidateQueries({ queryKey: ["events"] });
           qc.invalidateQueries({ queryKey: ["clients"] });
