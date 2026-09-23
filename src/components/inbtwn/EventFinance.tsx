@@ -109,7 +109,27 @@ export function EventFinance({ event }: { event: Ev }) {
   const t = terms.data ?? null;
   const pays = payments.data ?? [];
   const invs = invoices.data ?? [];
+  const allocs = allocations.data ?? [];
   const costRows = costs.data ?? [];
+
+  /* Apply eligible unallocated payments to invoices (never creates or duplicates payments). */
+  useEffect(() => {
+    if (allocating || !payments.data || !invoices.data || !allocations.data) return;
+    if (invoices.data.length === 0 || payments.data.length === 0) return;
+    setAllocating(true);
+    reconcileAllocations({
+      eventId,
+      invoices: invoices.data,
+      payments: payments.data,
+      allocations: allocations.data,
+    })
+      .then((n) => {
+        if (n > 0) qc.invalidateQueries({ queryKey: ["finance-allocations", eventId] });
+      })
+      .catch((e: Error) => toast.error(e.message))
+      .finally(() => setAllocating(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, payments.data, invoices.data, allocations.data]);
 
   const quoteTotal = quote.data ? quoteTotals(quote.data).total : null;
   const accepted = quote.data?.status === "accepted";
