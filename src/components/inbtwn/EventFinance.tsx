@@ -753,6 +753,7 @@ function InvoicesPanel({
   event,
   invoices,
   payments,
+  allocations,
   money,
   qc,
   agreedTotal,
@@ -763,6 +764,7 @@ function InvoicesPanel({
   event: Ev;
   invoices: Invoice[];
   payments: PaymentRow[];
+  allocations: AllocationRow[];
   money: (n: number | null | undefined) => string;
   qc: ReturnType<typeof useQueryClient>;
   agreedTotal: number | null;
