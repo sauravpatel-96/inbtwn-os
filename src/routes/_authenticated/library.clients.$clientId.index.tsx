@@ -149,7 +149,13 @@ function ClientDetailPage() {
         </Link>
       </div>
 
-      <div className="bg-cream px-4 py-2 outline-1 outline-ink/10">
+      <div
+        className={
+          [c.email, c.phone, c.website, c.source, c.billing_address, c.default_event_address, primary].some(Boolean)
+            ? "bg-cream px-4 py-2 outline-1 outline-ink/10"
+            : "hidden"
+        }
+      >
         <Row label="Primary contact" value={primary ? contactName(primary) : c.company_name ? clientContactName(c) : null} />
         <Row label="Email" value={c.email ?? primary?.email} href={(c.email ?? primary?.email) ? `mailto:${c.email ?? primary?.email}` : undefined} />
         <Row
