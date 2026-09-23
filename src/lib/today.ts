@@ -1,13 +1,11 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  allocationsQuery as _unusedAllocations,
   buildSchedule,
   financeTotals,
   invoiceTotals,
   isPlatformSource,
   maybeNum,
-  num,
   resolveAgreedValue,
   round2,
   type AllocationRow,
@@ -23,8 +21,6 @@ import { daysUntil } from "./format";
 import type { EventWithClient } from "./queries";
 import { CLIENT_SUMMARY } from "./queries";
 import { manualKey } from "./packing";
-
-void _unusedAllocations;
 
 /* ------------------------------------------------------------------ */
 /* Raw org-wide data                                                    */
@@ -552,5 +548,3 @@ export function moneySummary(derived: EventDerived[], today = new Date()): Money
     confirmedThisMonth: round2(confirmedThisMonth),
   };
 }
-
-export const _internal = { num };
