@@ -362,16 +362,100 @@ export function financeTotals(args: {
 
 /* ---------- Invoices ---------- */
 
-export function invoiceTotals(invoice: Invoice, payments: PaymentRow[]) {
+export function invoiceTotals(invoice: Invoice, payments: PaymentRow[], allocations: AllocationRow[] = []) {
   const subtotal = round2(invoice.items.reduce((s, i) => s + num(i.quantity) * num(i.unit_price), 0));
   const vat = invoice.vat_enabled ? round2((subtotal * num(invoice.vat_rate)) / 100) : 0;
   const total = round2(subtotal + vat);
+  const received = new Set(payments.filter((p) => p.status === "received").map((p) => p.id));
   const paid = round2(
-    payments
-      .filter((p) => p.invoice_id === invoice.id && p.status === "received")
-      .reduce((s, p) => s + num(p.amount) * (p.category === "refund" ? -1 : 1), 0),
+    allocations
+      .filter((a) => a.invoice_id === invoice.id && received.has(a.payment_id))
+      .reduce((s, a) => s + num(a.amount), 0),
   );
   return { subtotal, vat, total, paid, outstanding: round2(total - paid) };
+}
+
+/** Payment state is derived, and deliberately separate from the invoice document status. */
+export type PaymentState = "unpaid" | "part_paid" | "paid" | "overdue";
+
+export function invoicePaymentState(
+  invoice: InvoiceRow,
+  totals: { total: number; paid: number; outstanding: number },
+  today = new Date(),
+): PaymentState {
+  if (totals.total > 0 && totals.outstanding <= 0) return "paid";
+  const due = parse(invoice.due_date);
+  if (due && due < today && totals.outstanding > 0) return "overdue";
+  return totals.paid > 0 ? "part_paid" : "unpaid";
+}
+
+export const PAYMENT_STATE_LABELS: Record<PaymentState, string> = {
+  unpaid: "Unpaid",
+  part_paid: "Part paid",
+  paid: "Paid",
+  overdue: "Overdue",
+};
+
+/** Payment categories an invoice of each kind may draw on, in priority order. */
+const ELIGIBLE: Record<string, string[]> = {
+  deposit: ["deposit", "full"],
+  balance: ["balance", "full", "deposit"],
+  full: ["full", "deposit", "balance"],
+};
+const KIND_ORDER = ["deposit", "balance", "full"];
+
+/**
+ * Applies eligible unallocated payments to invoices. Each payment can only ever be
+ * allocated up to its own amount across all invoices, so nothing is double counted,
+ * and event-level received totals are untouched.
+ */
+export async function reconcileAllocations(args: {
+  eventId: string;
+  invoices: Invoice[];
+  payments: PaymentRow[];
+  allocations: AllocationRow[];
+}): Promise<number> {
+  const { eventId, invoices, payments, allocations } = args;
+  const remainingOf = new Map<string, number>();
+  for (const p of payments) {
+    if (p.status !== "received" || p.category === "refund" || p.category === "payout") continue;
+    const used = allocations.filter((a) => a.payment_id === p.id).reduce((s, a) => s + num(a.amount), 0);
+    const left = round2(num(p.amount) - used);
+    if (left > 0.004) remainingOf.set(p.id, left);
+  }
+  if (remainingOf.size === 0) return 0;
+
+  const inserts: { event_id: string; payment_id: string; invoice_id: string; amount: number }[] = [];
+  const ordered = [...invoices].sort(
+    (a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || a.invoice_number.localeCompare(b.invoice_number),
+  );
+
+  for (const inv of ordered) {
+    if (inv.status === "cancelled") continue;
+    const t = invoiceTotals(inv, payments, allocations);
+    let outstanding = round2(t.outstanding + inserts.filter((i) => i.invoice_id === inv.id).reduce((s, i) => s - i.amount, 0));
+    if (outstanding <= 0.004) continue;
+    for (const category of ELIGIBLE[inv.kind] ?? ELIGIBLE.full) {
+      for (const p of payments) {
+        if (outstanding <= 0.004) break;
+        if (p.category !== category) continue;
+        const left = remainingOf.get(p.id);
+        if (!left || left <= 0.004) continue;
+        if (allocations.some((a) => a.payment_id === p.id && a.invoice_id === inv.id)) continue;
+        if (inserts.some((i) => i.payment_id === p.id && i.invoice_id === inv.id)) continue;
+        const amount = round2(Math.min(left, outstanding));
+        inserts.push({ event_id: eventId, payment_id: p.id, invoice_id: inv.id, amount });
+        remainingOf.set(p.id, round2(left - amount));
+        outstanding = round2(outstanding - amount);
+      }
+      if (outstanding <= 0.004) break;
+    }
+  }
+
+  if (inserts.length === 0) return 0;
+  const { error } = await supabase.from("event_payment_allocations").insert(inserts);
+  if (error) throw new Error(error.message);
+  return inserts.length;
 }
 
 /** INV-YYYY-NNN, sequential within the organisation for that year. */
