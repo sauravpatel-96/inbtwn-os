@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Field, TextInput, TextArea, SelectInput, PrimaryButton, GhostButton, SectionHeading } from "@/components/inbtwn/bits";
 import { DocumentPreview, DocumentActions } from "@/components/inbtwn/DocumentPreview";
+import { EventCloseout } from "@/components/inbtwn/EventCloseout";
 import { businessSettingsQuery, type BusinessSettings } from "@/lib/business";
 import { buildInvoiceDoc, snapshotOf, issueInvoiceDocument, type InvoiceDoc } from "@/lib/documents";
 import { fmtMoney, fmtDateLong, todayISO } from "@/lib/format";
@@ -181,7 +182,16 @@ export function EventFinance({ event }: { event: Ev }) {
 
   const cs = costSummary(costRows);
   const estProfit = profitability(totals.revenue, cs.hasEstimates ? cs.estimated : null);
-  const actProfit = profitability(totals.revenue, cs.actualComplete ? cs.actual : null);
+  /**
+   * Profit from costs that have actually been recorded. When ingredient costs
+   * or actual job costs are still missing this is truthful but not final, so
+   * it is labelled "Recorded" rather than "Actual".
+   */
+  const recordedCosts = costRows.length ? cs.actual : null;
+  const recProfit = profitability(totals.revenue, recordedCosts);
+  const costingComplete = cs.actualComplete && costRows.length > 0 && (food ? food.missing === 0 : true);
+  const profitWord = costingComplete ? "Actual" : "Recorded";
+  const pct = (n: number | null) => (n === null ? "—" : `${n.toFixed(1)}%`);
 
   const patchTerms = async (values: Partial<TermsRow>) => {
     if (!t) return;
@@ -262,9 +272,16 @@ export function EventFinance({ event }: { event: Ev }) {
         <Line label="Estimated costs" value={cs.hasEstimates ? money(cs.estimated) : "Not recorded"} muted={!cs.hasEstimates} />
         <Line label="Actual costs" value={cs.actualComplete ? money(cs.actual) : costRows.length ? `${money(cs.actual)} (partial)` : "Not recorded"} muted={!cs.actualComplete} />
         <Line label="Estimated profit" value={estProfit.profit === null ? "Not enough data" : money(estProfit.profit)} muted={estProfit.profit === null} />
-        <Line label="Estimated margin" value={estProfit.margin === null ? "—" : `${estProfit.margin}%`} muted={estProfit.margin === null} />
-        <Line label="Actual profit" value={actProfit.profit === null ? "Not enough data" : money(actProfit.profit)} muted={actProfit.profit === null} />
-        <Line label="Actual margin" value={actProfit.margin === null ? "—" : `${actProfit.margin}%`} muted={actProfit.margin === null} />
+        <Line label="Estimated margin" value={pct(estProfit.margin)} muted={estProfit.margin === null} />
+        <Line label={`${profitWord} profit`} value={recProfit.profit === null ? "Not enough data" : money(recProfit.profit)} muted={recProfit.profit === null} />
+        <Line label={`${profitWord} margin`} value={pct(recProfit.margin)} muted={recProfit.margin === null} />
+        {!costingComplete && recProfit.profit !== null ? (
+          <p className="mt-2 font-mono text-[10px] text-flame">
+            {food && food.missing > 0
+              ? "Incomplete — ingredient costs are missing."
+              : "Incomplete — some costs have no actual amount recorded."}
+          </p>
+        ) : null}
         {totals.revenue === null || totals.revenueProvisional ? (
           <p className="mt-2 font-mono text-[10px] text-flame">
             {totals.revenue === null
@@ -273,6 +290,21 @@ export function EventFinance({ event }: { event: Ev }) {
           </p>
         ) : null}
       </Panel>
+
+      {event.status === "completed" ? (
+        <EventCloseout
+          eventId={eventId}
+          summary={{
+            revenue: money(totals.revenue),
+            received: money(totals.received),
+            outstanding: money(totals.outstanding),
+            recordedCosts: recordedCosts === null ? "Not recorded" : money(recordedCosts),
+            recordedProfit: recProfit.profit === null ? "Not enough data" : money(recProfit.profit),
+            recordedMargin: pct(recProfit.margin),
+            costingComplete,
+          }}
+        />
+      ) : null}
     </div>
   );
 }
