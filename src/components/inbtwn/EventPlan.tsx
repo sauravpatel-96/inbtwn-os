@@ -27,7 +27,7 @@ import { graphQuery } from "@/lib/recipe-queries";
 import { menuItemsQuery } from "@/lib/menu-queries";
 import { versionBuffersQuery } from "@/lib/production";
 import { packingChecksQuery, packingItemsQuery, manualKey, foodLinesFromProduction } from "@/lib/packing";
-import { collectPurchases, shoppingChecksQuery } from "@/lib/shopping";
+import { collectPurchases, shoppingChecksQuery, type ShoppingLine } from "@/lib/shopping";
 import { scaleVersion, type ScaleResult } from "@/lib/recipe-calc";
 import {
   ASSIGNMENTS,
@@ -40,6 +40,7 @@ import {
   pendingGeneration,
   statusTaskLabel,
   taskQuantity,
+  type DishQuantities,
   type EventTaskRow,
   type PrepStepRow,
   type TaskStatus,
@@ -56,13 +57,13 @@ const nextStatus = (s: string): TaskStatus =>
 function TaskRow({
   task,
   quantity,
-  recipeLink,
+  recipeId,
   onToggle,
   onEdit,
 }: {
   task: EventTaskRow;
   quantity: string | null;
-  recipeLink: string | null;
+  recipeId: string | null;
   onToggle: () => void;
   onEdit: () => void;
 }) {
@@ -107,8 +108,12 @@ function TaskRow({
           <button type="button" onClick={onEdit} className="tap font-mono text-[11px] text-flame underline">
             Edit
           </button>
-          {recipeLink ? (
-            <Link to={recipeLink} className="font-mono text-[11px] text-ink-soft underline">
+          {recipeId ? (
+            <Link
+              to="/library/recipes/$recipeId"
+              params={{ recipeId }}
+              className="font-mono text-[11px] text-ink-soft underline"
+            >
               Open recipe
             </Link>
           ) : null}
@@ -181,7 +186,7 @@ export function EventPlan({ event }: { event: EventRow }) {
   }, [menu.data, graph.data, buffers.data, guests]);
 
   const production = useMemo(
-    () => (graph.data ? indexProduction(dishes, graph.data) : new Map()),
+    () => (graph.data ? indexProduction(dishes, graph.data) : new Map<string, DishQuantities>()),
     [dishes, graph.data],
   );
 
@@ -216,8 +221,8 @@ export function EventPlan({ event }: { event: EventRow }) {
 
   /* ---- Shopping / packing summaries (existing systems, read-only) ---- */
   const shopping = useMemo(() => {
-    const map = new Map<string, unknown>();
-    for (const d of dishes) collectPurchases(d.result, map as never);
+    const map = new Map<string, ShoppingLine>();
+    for (const d of dishes) collectPurchases(d.result, map);
     const total = map.size;
     const checked = new Set(shopChecks.data ?? []);
     return { total, collected: [...map.keys()].filter((k) => checked.has(k)).length };
@@ -482,7 +487,7 @@ export function EventPlan({ event }: { event: EventRow }) {
                         key={t.id}
                         task={t}
                         quantity={taskQuantity(t, production)}
-                        recipeLink={t.recipe_id ? `/library/recipes/${t.recipe_id}` : null}
+                        recipeId={t.recipe_id}
                         onToggle={() => cycle(t)}
                         onEdit={() => openSheet(t)}
                       />
