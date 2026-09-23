@@ -137,7 +137,9 @@ function RecipePrepPage() {
   const componentName = (id: string | null) =>
     components.find((c) => c.id === id)?.name ?? "Component";
 
-  const saveRecipeField = async (patch: Record<string, unknown>) => {
+  const saveRecipeField = async (
+    patch: Partial<Database["public"]["Tables"]["recipes"]["Update"]>,
+  ) => {
     const { error } = await supabase.from("recipes").update(patch).eq("id", recipeId);
     if (error) {
       toast.error(error.message);
