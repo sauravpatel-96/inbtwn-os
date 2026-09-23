@@ -277,7 +277,9 @@ export function EventFinance({ event }: { event: Ev }) {
         <Line label={`${profitWord} margin`} value={pct(recProfit.margin)} muted={recProfit.margin === null} />
         {!costingComplete && recProfit.profit !== null ? (
           <p className="mt-2 font-mono text-[10px] text-flame">
-            Incomplete — ingredient costs are missing.
+            {food && food.missing > 0
+              ? "Incomplete — ingredient costs are missing."
+              : "Incomplete — some costs have no actual amount recorded."}
           </p>
         ) : null}
         {totals.revenue === null || totals.revenueProvisional ? (
