@@ -79,7 +79,7 @@ export function buildCloseout(d: EventDerived, data: TodayData, today = new Date
   if (costs.length === 0) {
     warn("costs", "No job costs recorded");
   } else if (!cs.actualComplete) {
-    const missing = costs.filter((c) => c.actual_amount === null || c.actual_amount === "").length;
+    const missing = costs.filter((c) => c.actual_amount === null).length;
     warn("costs", `${missing} job ${missing === 1 ? "cost has" : "costs have"} no actual amount`);
   } else {
     add("costs", "Actual job costs recorded", true);
