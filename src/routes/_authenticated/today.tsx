@@ -177,6 +177,32 @@ function TodayPage() {
 
       {model.derived.length === 0 ? <DemoDataPrompt /> : null}
       {model.derived.some((d) => d.event.is_demo) ? <RemoveDemoLink /> : null}
+
+      <AlertDialog open={Boolean(completing)} onOpenChange={(o) => !o && setCompleting(null)}>
+        <AlertDialogContent className="bg-paper">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-[22px] font-normal">
+              Mark {completing?.eventTitle} as completed?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This means the catering event has taken place. Outstanding payments and unfinished admin can still be
+              managed afterwards.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-ink text-cream"
+              onClick={() => {
+                if (completing) markCompleted(completing);
+                setCompleting(null);
+              }}
+            >
+              Mark completed
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
