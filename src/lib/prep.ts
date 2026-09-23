@@ -8,6 +8,7 @@
  * result tree (scaleVersion) and simply looks up the matching line.
  */
 import { queryOptions } from "@tanstack/react-query";
+import { format, isValid, parseISO, subDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import type { CalcGraph, ScaleResult } from "./recipe-calc";
@@ -166,9 +167,10 @@ export function taskQuantity(
 
 export function scheduledDateFor(eventDate: string | null, daysBefore: number): string | null {
   if (!eventDate) return null;
-  const d = new Date(`${eventDate}T00:00:00`);
-  d.setDate(d.getDate() - Math.max(0, daysBefore));
-  return d.toISOString().slice(0, 10);
+  const date = parseISO(eventDate);
+  if (!isValid(date)) return null;
+  // Calendar-date arithmetic only: never round-trip through UTC.
+  return format(subDays(date, Math.max(0, daysBefore)), "yyyy-MM-dd");
 }
 
 export type GeneratedTaskInsert = {
