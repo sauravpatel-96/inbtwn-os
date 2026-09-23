@@ -10,6 +10,7 @@ export type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
 export type DietaryRow = Database["public"]["Tables"]["event_dietaries"]["Row"];
 export type DietaryInsert = Database["public"]["Tables"]["event_dietaries"]["Insert"];
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+export type ContactRow = Database["public"]["Tables"]["client_contacts"]["Row"];
 
 export const CLIENT_SUMMARY = "id, client_type, company_name, first_name, last_name, email, phone";
 export type ClientSummary = Pick<
@@ -73,16 +74,21 @@ export const dietariesQuery = (eventId: string) =>
       ) as DietaryRow[],
   });
 
+export type ClientWithRelations = ClientRow & {
+  events: { count: number }[];
+  contacts: ContactRow[];
+};
+
 export const clientsQuery = queryOptions({
   queryKey: ["clients"],
   queryFn: async () =>
     unwrap(
       await supabase
         .from("clients")
-        .select("*, events(count)")
+        .select("*, events(count), contacts:client_contacts(*)")
         .order("company_name", { ascending: true, nullsFirst: false })
         .order("last_name", { ascending: true, nullsFirst: false }),
-    ) as (ClientRow & { events: { count: number }[] })[],
+    ) as ClientWithRelations[],
 });
 
 export const clientQuery = (id: string) =>
