@@ -301,6 +301,8 @@ function EventDetailPage() {
               </div>
             </div>
 
+            {e.status === "completed" ? <EventCloseout eventId={eventId} /> : null}
+
             <ClientBlock event={e} compact />
 
             <Dietaries eventId={eventId} />
