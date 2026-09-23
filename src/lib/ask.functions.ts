@@ -75,13 +75,11 @@ export const askInbtwn = createServerFn({ method: "POST" })
     const { streamText, stepCountIs } = await import("ai");
     const { createOpenAI } = await import("@ai-sdk/openai");
 
-    console.log("[ask] start");
     const today = new Date();
     const client = context.supabase as unknown as { from: (t: string) => any };
 
     try {
       const ctx = await loadAskContext(client, today);
-      console.log("[ask] data loaded", ctx.derived.length);
       const { tools, log } = buildAskTools(ctx, today, client);
 
       const lovable = createOpenAI({
@@ -97,7 +95,6 @@ export const askInbtwn = createServerFn({ method: "POST" })
         tools,
         stopWhen: stepCountIs(24),
         onError: (e) => console.error("[ask] stream error", JSON.stringify(e).slice(0, 600)),
-        onStepFinish: (s) => console.log("[ask] step", s.finishReason, s.toolCalls.map((t) => t.toolName).join(",")),
         providerOptions: {
           openai: {
             store: false,
@@ -110,7 +107,6 @@ export const askInbtwn = createServerFn({ method: "POST" })
       });
 
       const answer = (await result.text).trim();
-      console.log("[ask] answered", answer.length);
       return {
         ok: true,
         answer: answer || "I couldn't find anything to answer that.",
