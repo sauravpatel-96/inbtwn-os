@@ -647,6 +647,7 @@ function PaymentsPanel({
     setForm(blank);
     setAdding(false);
     qc.invalidateQueries({ queryKey: ["finance-payments", eventId] });
+    qc.invalidateQueries({ queryKey: ["finance-allocations", eventId] });
     toast.success("Payment recorded");
   };
 
@@ -654,6 +655,7 @@ function PaymentsPanel({
     const { error } = await supabase.from("event_payments").delete().eq("id", id);
     if (error) return void toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["finance-payments", eventId] });
+    qc.invalidateQueries({ queryKey: ["finance-allocations", eventId] });
   };
 
   return (

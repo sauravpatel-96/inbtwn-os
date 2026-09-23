@@ -426,6 +426,23 @@ export async function reconcileAllocations(args: {
   if (remainingOf.size === 0) return 0;
 
   const inserts: { event_id: string; payment_id: string; invoice_id: string; amount: number }[] = [];
+
+  /* Payments explicitly linked to an invoice are honoured first, whatever their category. */
+  for (const p of payments) {
+    const left = remainingOf.get(p.id);
+    if (!p.invoice_id || !left || left <= 0.004) continue;
+    const inv = invoices.find((i) => i.id === p.invoice_id);
+    if (!inv || inv.status === "cancelled") continue;
+    if (allocations.some((a) => a.payment_id === p.id && a.invoice_id === inv.id)) continue;
+    const t = invoiceTotals(inv, payments, allocations);
+    const taken = inserts.filter((i) => i.invoice_id === inv.id).reduce((s, i) => s + i.amount, 0);
+    const outstanding = round2(t.outstanding - taken);
+    if (outstanding <= 0.004) continue;
+    const amount = round2(Math.min(left, outstanding));
+    inserts.push({ event_id: eventId, payment_id: p.id, invoice_id: inv.id, amount });
+    remainingOf.set(p.id, round2(left - amount));
+  }
+
   const ordered = [...invoices].sort(
     (a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || a.invoice_number.localeCompare(b.invoice_number),
   );
