@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Field, TextInput, TextArea, SelectInput, PrimaryButton, GhostButton, SectionHeading } from "@/components/inbtwn/bits";
 import { DocumentPreview, DocumentActions } from "@/components/inbtwn/DocumentPreview";
+import { EventCloseout } from "@/components/inbtwn/EventCloseout";
 import { businessSettingsQuery, type BusinessSettings } from "@/lib/business";
 import { buildInvoiceDoc, snapshotOf, issueInvoiceDocument, type InvoiceDoc } from "@/lib/documents";
 import { fmtMoney, fmtDateLong, todayISO } from "@/lib/format";
