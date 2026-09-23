@@ -480,9 +480,7 @@ export function opsSummary(derived: EventDerived[], days = 7): OpsSummary {
   );
   const shopping = live.filter((d) => d.shoppingRemaining > 0);
   const packing = live.filter((d) => d.packingRemaining > 0);
-  const recipes = derived.filter(
-    (d) => (d.daysAway === null || d.daysAway >= 0) && d.dishesNeedingRecipes > 0,
-  );
+  const recipes = live.filter((d) => d.dishesNeedingRecipes > 0);
   return {
     shoppingItems: shopping.reduce((s, d) => s + d.shoppingRemaining, 0),
     shoppingEvents: shopping.length,
