@@ -106,6 +106,19 @@ function EventDetailPage() {
   const event = useQuery(eventQuery(eventId));
   const [pendingStatus, setPendingStatus] = useState<EventStatus | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  // Keep the active tab visible in the scrollable tab row.
+  useEffect(() => {
+    const bar = tabsRef.current;
+    const active = bar?.querySelector<HTMLElement>("[data-active]");
+    if (!bar || !active) return;
+    const left = active.offsetLeft - 20; // account for the bar's px-5 padding
+    const right = left + active.offsetWidth + 40;
+    if (left < bar.scrollLeft || right > bar.scrollLeft + bar.clientWidth) {
+      bar.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+    }
+  }, [s, event.data]);
 
   if (event.isLoading) return <p className="font-mono text-[12px] text-ink-soft">Loading…</p>;
   if (!event.data) return <EmptyNote>Event not found.</EmptyNote>;
