@@ -835,7 +835,11 @@ function InvoicesPanel({
         <p className="font-mono text-[11px] text-ink-soft">No invoices yet.</p>
       ) : (
         invoices.map((inv) => {
-          const it = invoiceTotals(inv, payments);
+          const it = invoiceTotals(inv, payments, allocations);
+          const state = invoicePaymentState(inv, it);
+          const applied = allocations
+            .filter((a) => a.invoice_id === inv.id)
+            .map((a) => ({ alloc: a, payment: payments.find((p) => p.id === a.payment_id) ?? null }));
           const expanded = open === inv.id;
           return (
             <div key={inv.id} className="border-b border-ink/10 py-2 last:border-0">
