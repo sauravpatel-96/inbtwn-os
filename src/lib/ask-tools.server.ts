@@ -505,6 +505,51 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
         });
       },
     }),
+
+    get_prep_tasks: tool({
+      description:
+        "Prep plan tasks across events: name, scheduled date, status, assignment, approximate minutes, whether the task came from a recipe prep step or was added manually, and the event it belongs to. Use for 'what do I need to do today', 'what prep is on Friday', 'what is left for Y11 Banquet'. Read-only: tasks can only be changed on the event's Plan tab.",
+      inputSchema: z.object({
+        event_id: z.string().nullable().describe("Limit to one event, or null for all events"),
+        from: z.string().nullable().describe("Inclusive start date yyyy-mm-dd"),
+        to: z.string().nullable().describe("Inclusive end date yyyy-mm-dd"),
+        outstanding_only: z.boolean().nullable().describe("Default true: exclude completed tasks"),
+      }),
+      execute: async ({ event_id, from, to, outstanding_only }) => {
+        const byEvent = new Map(ctx.derived.map((d) => [d.event.id, d]));
+        const rows = ctx.data.tasks
+          .filter((t) => (event_id ? t.event_id === event_id : true))
+          .filter((t) => (outstanding_only === false ? true : t.status !== "done"))
+          .filter((t) => (from || to ? inRange(t.scheduled_date, from, to) : true))
+          .filter((t) => byEvent.has(t.event_id))
+          .map((t) => {
+            const d = byEvent.get(t.event_id)!;
+            return {
+              task: t.name,
+              event: d.event.title,
+              event_id: t.event_id,
+              event_date: d.event.event_date,
+              event_status: statusLabel(d.event.status),
+              scheduled_date: t.scheduled_date,
+              overdue: !!t.scheduled_date && t.scheduled_date < iso(today) && t.status !== "done",
+              status: t.status,
+              assignment: t.assignment,
+              approximate_minutes: t.approximate_minutes,
+              source: t.source,
+              link: eventLink(t.event_id, "plan"),
+            };
+          })
+          .sort((a, b) => (a.scheduled_date ?? "9999").localeCompare(b.scheduled_date ?? "9999"));
+        const minutes = rows.reduce((s, r) => s + (r.approximate_minutes ?? 0), 0);
+        return mark("get_prep_tasks", {
+          today: iso(today),
+          count: rows.length,
+          total_approximate_minutes: minutes,
+          tasks: rows,
+          note: "Prep tasks are scheduled work only. Completing one never changes production, shopping, packing, event status or finance. Tasks are edited on the event's Plan tab.",
+        });
+      },
+    }),
   };
 
   return { tools, log };
