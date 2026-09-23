@@ -892,6 +892,8 @@ function InvoicesPanel({
 function InvoiceDetail({
   invoice,
   totals,
+  state,
+  applied,
   money,
   qc,
   eventId,
@@ -899,6 +901,8 @@ function InvoiceDetail({
 }: {
   invoice: Invoice;
   totals: ReturnType<typeof invoiceTotals>;
+  state: keyof typeof PAYMENT_STATE_LABELS;
+  applied: { alloc: AllocationRow; payment: PaymentRow | null }[];
   money: (n: number | null | undefined) => string;
   qc: ReturnType<typeof useQueryClient>;
   eventId: string;
