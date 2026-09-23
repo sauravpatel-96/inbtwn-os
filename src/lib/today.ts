@@ -283,8 +283,11 @@ export function deriveEvent(event: EventWithClient, data: TodayData, today: Date
   ).length;
 
   const d = daysUntil(event.event_date);
+  const isPast = d !== null && d < 0;
 
   return {
+    closed: (event as { closeout_state?: string | null }).closeout_state === "closed",
+    needsCompletion: isPast && (event.status === "confirmed" || event.status === "in_progress"),
     event,
     platform,
     daysAway: d,
