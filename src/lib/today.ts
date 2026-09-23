@@ -389,7 +389,8 @@ export function buildToday(data: TodayData, today = new Date()): {
       push(d, "quote", `Quote ${amount}not accepted`, "medium", "quote", "View Quote", urgency);
     }
     const confirmed = stage === "confirmed" || stage === "in_progress";
-    if (confirmed && d.agreed === null) {
+    // Platform bookings settle via the payout, so an agreed value is only expected on direct work.
+    if (confirmed && !d.platform && d.agreed === null) {
       push(d, "agreed", "Confirmed without an agreed value", "high", "finance", "Set value", urgency);
     }
 
