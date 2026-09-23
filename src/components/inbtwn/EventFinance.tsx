@@ -181,7 +181,16 @@ export function EventFinance({ event }: { event: Ev }) {
 
   const cs = costSummary(costRows);
   const estProfit = profitability(totals.revenue, cs.hasEstimates ? cs.estimated : null);
-  const actProfit = profitability(totals.revenue, cs.actualComplete ? cs.actual : null);
+  /**
+   * Profit from costs that have actually been recorded. When ingredient costs
+   * or actual job costs are still missing this is truthful but not final, so
+   * it is labelled "Recorded" rather than "Actual".
+   */
+  const recordedCosts = costRows.length ? cs.actual : null;
+  const recProfit = profitability(totals.revenue, recordedCosts);
+  const costingComplete = cs.actualComplete && costRows.length > 0 && (food ? food.missing === 0 : true);
+  const profitWord = costingComplete ? "Actual" : "Recorded";
+  const pct = (n: number | null) => (n === null ? "—" : `${n.toFixed(1)}%`);
 
   const patchTerms = async (values: Partial<TermsRow>) => {
     if (!t) return;
