@@ -8,6 +8,16 @@ import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, t
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { statusLabel } from "@/lib/constants";
 import { PageTitle, SectionHeading, StatusPill, EmptyNote } from "@/components/inbtwn/bits";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/today")({
   head: () => ({
@@ -29,7 +39,23 @@ const SEV_CLASS: Record<Severity, string> = {
 
 function TodayPage() {
   const data = useQuery(todayDataQuery);
+  const qc = useQueryClient();
   const [showAll, setShowAll] = useState(false);
+  const [completing, setCompleting] = useState<AttentionItem | null>(null);
+
+  const markCompleted = async (item: AttentionItem) => {
+    const { error } = await supabase
+      .from("events")
+      .update({ status: "completed", completed_at: new Date().toISOString() })
+      .eq("id", item.eventId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`${item.eventTitle} marked completed`);
+    qc.invalidateQueries({ queryKey: ["today-data"] });
+    qc.invalidateQueries({ queryKey: ["events"] });
+  };
 
   const model = useMemo(() => {
     if (!data.data) return null;
@@ -69,7 +95,7 @@ function TodayPage() {
       ) : (
         <div className="flex flex-col gap-1.5">
           {shown.map((a) => (
-            <AlertRow key={a.id} item={a} />
+            <AlertRow key={a.id} item={a} onComplete={() => setCompleting(a)} />
           ))}
         </div>
       )}
@@ -151,11 +177,68 @@ function TodayPage() {
 
       {model.derived.length === 0 ? <DemoDataPrompt /> : null}
       {model.derived.some((d) => d.event.is_demo) ? <RemoveDemoLink /> : null}
+
+      <AlertDialog open={Boolean(completing)} onOpenChange={(o) => !o && setCompleting(null)}>
+        <AlertDialogContent className="bg-paper">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-[22px] font-normal">
+              Mark {completing?.eventTitle} as completed?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This means the catering event has taken place. Outstanding payments and unfinished admin can still be
+              managed afterwards.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-ink text-cream"
+              onClick={() => {
+                if (completing) markCompleted(completing);
+                setCompleting(null);
+              }}
+            >
+              Mark completed
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
-function AlertRow({ item }: { item: AttentionItem }) {
+function AlertRow({ item, onComplete }: { item: AttentionItem; onComplete: () => void }) {
+  const dot = (
+    <span
+      className={`mt-[3px] h-2 w-2 shrink-0 ${item.severity === "high" ? "bg-s-lost" : item.severity === "medium" ? "bg-flame" : "bg-ink/30"}`}
+    />
+  );
+  const body = (
+    <div className="min-w-0 flex-1">
+      <p className="truncate font-semibold text-[14px] leading-tight">{item.eventTitle}</p>
+      <p className={`font-mono text-[11px] ${SEV_CLASS[item.severity]}`}>{item.message}</p>
+      {item.secondary ? <p className="font-mono text-[11px] text-ink-soft">{item.secondary}</p> : null}
+    </div>
+  );
+
+  if (item.action === "complete") {
+    return (
+      <div className="flex items-center gap-3 border border-ink/15 bg-cream px-3 py-2.5 text-ink">
+        {dot}
+        <Link to="/events/$eventId" params={{ eventId: item.eventId }} className="min-w-0 flex-1 text-ink">
+          {body}
+        </Link>
+        <button
+          type="button"
+          onClick={onComplete}
+          className="tap shrink-0 rounded-sm bg-ink px-3 py-2 label-mono text-cream"
+        >
+          Mark completed →
+        </button>
+      </div>
+    );
+  }
+
   return (
     <Link
       to="/events/$eventId"
@@ -163,11 +246,8 @@ function AlertRow({ item }: { item: AttentionItem }) {
       search={{ s: item.section }}
       className="flex items-center gap-3 border border-ink/15 bg-cream px-3 py-2.5 text-ink"
     >
-      <span className={`mt-[3px] h-2 w-2 shrink-0 ${item.severity === "high" ? "bg-s-lost" : item.severity === "medium" ? "bg-flame" : "bg-ink/30"}`} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold text-[14px] leading-tight">{item.eventTitle}</p>
-        <p className={`font-mono text-[11px] ${SEV_CLASS[item.severity]}`}>{item.message}</p>
-      </div>
+      {dot}
+      {body}
       <span className="label-mono shrink-0 text-ink-soft">{item.actionLabel} →</span>
     </Link>
   );

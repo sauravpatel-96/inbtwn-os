@@ -8,6 +8,7 @@
  * raw SQL is exposed to the model.
  */
 import { tool } from "ai";
+import { buildCloseout } from "./closeout";
 import { z } from "zod";
 import { addDays, format, parseISO, isValid } from "date-fns";
 import {
@@ -66,6 +67,9 @@ function eventSummary(d: EventDerived) {
     title: d.event.title,
     date: d.event.event_date,
     status: statusLabel(d.event.status),
+    completed: d.event.status === "completed",
+    closeout_state: d.closed ? "closed" : "open",
+    needs_marking_completed: d.needsCompletion,
     source: sourceLabel(d.event.source),
     platform_booking: d.platform,
     guests: d.event.guest_count,
@@ -470,6 +474,34 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
             prep_note: i.prep_note,
           })),
           link: `/library/recipes/${recipe_id}`,
+        });
+      },
+    }),
+
+    get_closeout: tool({
+      description:
+        "Close-out state of jobs: whether the catering happened (completed) and whether the admin/financial record is finished (closed), with the real outstanding items. Use for questions like 'which jobs still need closing', 'is X finished', 'what is left to do for X', 'which completed jobs still owe me money' or 'which completed events have incomplete costs'.",
+      inputSchema: z.object({
+        event_id: z.string().nullable().describe("One specific event, or null for all jobs needing close-out."),
+      }),
+      execute: async ({ event_id }) => {
+        const list = event_id
+          ? ctx.derived.filter((d) => d.event.id === event_id)
+          : ctx.derived.filter((d) => d.event.status === "completed" && !d.closed);
+        return mark("get_closeout", {
+          jobs: list.map((d) => {
+            const co = buildCloseout(d, ctx.data, today);
+            return {
+              event_id: d.event.id,
+              title: d.event.title,
+              date: d.event.event_date,
+              completed: co.completed,
+              closeout_state: co.closed ? "closed" : "open",
+              ready_to_close: co.ready,
+              outstanding_items: co.warnings,
+              link: eventLink(d.event.id),
+            };
+          }),
         });
       },
     }),

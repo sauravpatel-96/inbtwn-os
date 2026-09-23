@@ -1582,6 +1582,9 @@ export type Database = {
           budget_max: number | null
           budget_min: number | null
           client_id: string | null
+          closed_at: string | null
+          closeout_state: string
+          completed_at: string | null
           contact_id: string | null
           created_at: string
           cuisine: string | null
@@ -1618,6 +1621,9 @@ export type Database = {
           budget_max?: number | null
           budget_min?: number | null
           client_id?: string | null
+          closed_at?: string | null
+          closeout_state?: string
+          completed_at?: string | null
           contact_id?: string | null
           created_at?: string
           cuisine?: string | null
@@ -1654,6 +1660,9 @@ export type Database = {
           budget_max?: number | null
           budget_min?: number | null
           client_id?: string | null
+          closed_at?: string | null
+          closeout_state?: string
+          completed_at?: string | null
           contact_id?: string | null
           created_at?: string
           cuisine?: string | null

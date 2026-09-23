@@ -156,12 +156,22 @@ function ClientDetailPage() {
             : "hidden"
         }
       >
+        {/* The active primary contact record is authoritative; the older
+            client-level fields are only a fallback when no contact exists. */}
         <Row label="Primary contact" value={primary ? contactName(primary) : c.company_name ? clientContactName(c) : null} />
-        <Row label="Email" value={c.email ?? primary?.email} href={(c.email ?? primary?.email) ? `mailto:${c.email ?? primary?.email}` : undefined} />
+        <Row
+          label="Email"
+          value={primary?.email ?? c.email}
+          href={(primary?.email ?? c.email) ? `mailto:${primary?.email ?? c.email}` : undefined}
+        />
         <Row
           label="Phone"
-          value={c.phone ?? primary?.phone}
-          href={(c.phone ?? primary?.phone) ? `tel:${(c.phone ?? primary?.phone ?? "").replace(/\s+/g, "")}` : undefined}
+          value={primary?.phone ?? c.phone}
+          href={
+            (primary?.phone ?? c.phone)
+              ? `tel:${(primary?.phone ?? c.phone ?? "").replace(/\s+/g, "")}`
+              : undefined
+          }
         />
         <Row label="Website" value={c.website} />
         <Row label="Source" value={c.source} />

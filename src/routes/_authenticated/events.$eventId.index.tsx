@@ -18,6 +18,8 @@ import { EventPricing } from "@/components/inbtwn/EventPricing";
 import { EventNotes } from "@/components/inbtwn/EventNotes";
 import { EventQuote } from "@/components/inbtwn/EventQuote";
 import { EventFinance } from "@/components/inbtwn/EventFinance";
+import { EventCloseout } from "@/components/inbtwn/EventCloseout";
+import { isClosed } from "@/lib/closeout";
 import { stageOf, stageLabel, accessLabel } from "@/lib/commercial";
 import {
   AlertDialog,
@@ -132,13 +134,22 @@ function EventDetailPage() {
       : money;
 
   const applyStatus = async (status: EventStatus) => {
-    const { error } = await supabase.from("events").update({ status }).eq("id", e.id);
+    // Completion records when the catering happened; it never touches money.
+    const { error } = await supabase
+      .from("events")
+      .update(
+        status === "completed" && !e.completed_at
+          ? { status, completed_at: new Date().toISOString() }
+          : { status },
+      )
+      .eq("id", e.id);
     if (error) {
       toast.error(error.message);
       return;
     }
     toast.success(`Moved to ${EVENT_STATUSES.find((x) => x.value === status)?.label}`);
     qc.invalidateQueries({ queryKey: ["events"] });
+    qc.invalidateQueries({ queryKey: ["today-data"] });
   };
 
   const changeStatus = (status: EventStatus) => {
@@ -175,6 +186,11 @@ function EventDetailPage() {
           <SourceBadge source={e.source} />
           {e.source_reference ? <span className="font-mono text-[10px] text-ink-soft">{e.source_reference}</span> : null}
           {e.is_demo ? <DemoTag /> : null}
+          {e.status === "completed" ? (
+            <span className="label-mono text-ink-soft">
+              Close-out: {isClosed(e) ? "Closed" : "Open"}
+            </span>
+          ) : null}
         </div>
         <h1 className="mt-2 font-display text-[28px] leading-none">{e.title}</h1>
         <div className="mt-3 grid grid-cols-3 gap-2">
@@ -293,6 +309,8 @@ function EventDetailPage() {
                 <Row label="Logistics" value={e.logistics_notes} />
               </div>
             </div>
+
+            {e.status === "completed" ? <EventCloseout eventId={eventId} /> : null}
 
             <ClientBlock event={e} compact />
 
