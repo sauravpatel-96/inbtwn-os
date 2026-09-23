@@ -18,6 +18,8 @@ import { EventPricing } from "@/components/inbtwn/EventPricing";
 import { EventNotes } from "@/components/inbtwn/EventNotes";
 import { EventQuote } from "@/components/inbtwn/EventQuote";
 import { EventFinance } from "@/components/inbtwn/EventFinance";
+import { EventCloseout } from "@/components/inbtwn/EventCloseout";
+import { isClosed } from "@/lib/closeout";
 import { stageOf, stageLabel, accessLabel } from "@/lib/commercial";
 import {
   AlertDialog,
