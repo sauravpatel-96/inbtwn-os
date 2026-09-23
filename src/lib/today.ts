@@ -396,12 +396,13 @@ export function buildToday(data: TodayData, today = new Date()): {
     }
 
     /* ----- Menu & production ----- */
-    if (confirmed && d.dishesNeedingRecipes > 0) {
+    // Only urgent inside the 7-day operational window; the Menu screen keeps its own readiness warnings.
+    if (confirmed && away !== null && away >= 0 && away <= 7 && d.dishesNeedingRecipes > 0) {
       push(
         d,
         "recipes",
         `${d.dishesNeedingRecipes} ${d.dishesNeedingRecipes === 1 ? "dish needs a recipe" : "dishes need recipes"}`,
-        away !== null && away <= 7 ? "high" : "medium",
+        "high",
         "menu",
         "Fix Menu",
         urgency,
