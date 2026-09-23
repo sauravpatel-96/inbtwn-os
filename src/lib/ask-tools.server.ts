@@ -8,6 +8,7 @@
  * raw SQL is exposed to the model.
  */
 import { tool } from "ai";
+import { buildCloseout } from "./closeout";
 import { z } from "zod";
 import { addDays, format, parseISO, isValid } from "date-fns";
 import {
