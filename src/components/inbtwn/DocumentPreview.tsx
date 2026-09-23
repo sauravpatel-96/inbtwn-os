@@ -17,7 +17,7 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
 
 function Head({ children }: { children: string }) {
   return (
-    <div className="mb-1.5 mt-5 border-b border-ink/20 pb-1 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-soft">
+    <div className="mb-2 mt-6 border-b border-flame/60 pb-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-ink">
       {children}
     </div>
   );
@@ -26,10 +26,10 @@ function Head({ children }: { children: string }) {
 export function DocumentPreview({ doc }: { doc: AnyDoc }) {
   const m = (n: number) => docMoney(n, doc.currency);
   return (
-    <div className="border border-ink/15 bg-white px-5 py-5 text-ink">
-      <div className="flex items-start justify-between gap-4 border-b border-ink pb-3">
+    <div className="border border-ink/15 bg-white px-5 py-6 text-ink shadow-[0_1px_0_rgb(0_0_0/0.08)] sm:px-8 sm:py-8">
+      <div className="flex items-start justify-between gap-4 border-b-2 border-ink pb-4">
         <div className="min-w-0">
-          <div className="font-display text-[24px] leading-none">{doc.business.name}</div>
+          <div className="font-display text-[28px] leading-none">{doc.business.name}</div>
           <div className="mt-1.5 font-mono text-[10px] leading-relaxed text-ink-soft">
             {doc.business.lines.join(", ")}
             {doc.business.email ? <div>{doc.business.email}</div> : null}
@@ -38,7 +38,7 @@ export function DocumentPreview({ doc }: { doc: AnyDoc }) {
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <div className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-soft">
+          <div className="font-display text-[17px] uppercase leading-none text-ink">
             {doc.documentTitle}
           </div>
           <div className="mt-1.5 font-mono text-[10px] leading-relaxed text-ink-soft">
@@ -53,7 +53,7 @@ export function DocumentPreview({ doc }: { doc: AnyDoc }) {
 
       <div className="mt-4">
         <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-soft">
-          {doc.kind === "invoice" ? "Invoice to" : "Prepared for"}
+          {doc.kind === "invoice" ? "Bill to" : "Prepared for"}
         </div>
         <div className="text-[15px] font-semibold">{doc.clientName}</div>
         {doc.billingLines.map((l, i) => (
@@ -84,9 +84,10 @@ export function DocumentPreview({ doc }: { doc: AnyDoc }) {
               <p className="whitespace-pre-wrap text-[13px] leading-relaxed">{doc.introduction}</p>
             </>
           ) : null}
-          {doc.menu.map((s) => (
-            <div key={s.name}>
-              <Head>{s.name}</Head>
+           {doc.menu.length ? <Head>Proposed menu</Head> : null}
+           {doc.menu.map((s) => (
+             <div key={s.name} className="mt-4 first:mt-2">
+               <div className="mb-2 text-[14px] font-semibold">{s.name}</div>
               <ul className="space-y-1">
                 {s.items.map((i) => (
                   <li key={i} className="text-[13px] leading-snug">
@@ -108,9 +109,6 @@ export function DocumentPreview({ doc }: { doc: AnyDoc }) {
             {doc.vatEnabled ? <Row label={`VAT ${doc.vatRate}%`} value={m(doc.vat)} /> : null}
             <Row label="Total" value={m(doc.total)} bold />
           </div>
-          {!doc.vatEnabled ? (
-            <p className="mt-1 font-mono text-[10px] text-ink-soft">Prices are not subject to VAT.</p>
-          ) : null}
           {doc.whatsIncluded.length ? (
             <>
               <Head>What&apos;s included</Head>
@@ -145,6 +143,11 @@ export function DocumentPreview({ doc }: { doc: AnyDoc }) {
       ) : (
         <>
           <Head>Details</Head>
+           {doc.paymentState && doc.paymentState !== "unpaid" ? (
+             <div className="mb-3 inline-flex border-l-2 border-flame px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-ink">
+               {doc.paymentState === "part_paid" ? "Part paid" : doc.paymentState}
+             </div>
+           ) : null}
           {doc.lines.map((l, i) => (
             <div key={i}>
               <Row label={l.label} value={m(l.amount)} />
@@ -158,9 +161,6 @@ export function DocumentPreview({ doc }: { doc: AnyDoc }) {
             <Row label="Paid" value={m(doc.paid)} />
             <Row label="Amount due" value={m(doc.outstanding)} bold />
           </div>
-          {!doc.vatEnabled ? (
-            <p className="mt-1 font-mono text-[10px] text-ink-soft">Not VAT registered. No VAT is charged.</p>
-          ) : null}
           {doc.paymentInstructions.length ? (
             <>
               <Head>Payment</Head>

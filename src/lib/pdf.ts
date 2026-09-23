@@ -11,6 +11,7 @@ const CONTENT = W - M * 2;
 const INK = rgb(0.09, 0.09, 0.09);
 const SOFT = rgb(0.42, 0.42, 0.42);
 const RULE = rgb(0.82, 0.82, 0.82);
+const FLAME = rgb(0.84, 0.29, 0.08);
 
 /** pdf-lib standard fonts are WinAnsi; keep text inside that range. */
 function safe(text: string): string {
@@ -116,8 +117,8 @@ class Doc {
   heading(label: string) {
     this.need(34);
     this.space(10);
-    this.text(label.toUpperCase(), { size: 8.5, bold: true, color: SOFT, lineGap: 4 });
-    this.page.drawLine({ start: { x: M, y: this.y + 2 }, end: { x: W - M, y: this.y + 2 }, thickness: 0.7, color: RULE });
+    this.text(label.toUpperCase(), { size: 8.5, bold: true, color: INK, lineGap: 4 });
+    this.page.drawLine({ start: { x: M, y: this.y + 2 }, end: { x: W - M, y: this.y + 2 }, thickness: 0.8, color: FLAME });
     this.y -= 6;
   }
 
@@ -155,8 +156,8 @@ class Doc {
 
 function header(d: Doc, doc: AnyDoc) {
   const b = doc.business;
-  d.page.drawText(safe(b.name), { x: M, y: H - M - 20, size: 20, font: d.bold, color: INK });
-  d.right(doc.documentTitle, { size: 12, bold: true, y: H - M - 18, color: SOFT });
+  d.page.drawText(safe(b.name), { x: M, y: H - M - 21, size: 23, font: d.bold, color: INK });
+  d.right(doc.documentTitle, { size: 13, bold: true, y: H - M - 19, color: INK });
   d.y = H - M - 34;
 
   const infoY = d.y;
@@ -185,7 +186,7 @@ function header(d: Doc, doc: AnyDoc) {
 
 function partyBlock(d: Doc, doc: AnyDoc) {
   d.space(6);
-  d.text(doc.kind === "invoice" ? "Invoice to" : "Prepared for", { size: 8.5, bold: true, color: SOFT });
+  d.text(doc.kind === "invoice" ? "BILL TO" : "PREPARED FOR", { size: 8.5, bold: true, color: SOFT });
   d.text(doc.clientName, { size: 12, bold: true });
   for (const line of doc.billingLines) d.text(line, { size: 9.5, color: SOFT, lineGap: 2.5 });
 }
@@ -234,8 +235,10 @@ export async function renderDocumentPdf(doc: AnyDoc): Promise<Uint8Array> {
       d.heading("Introduction");
       d.text(q.introduction, { size: 10, lineGap: 4 });
     }
+    if (q.menu.length) d.heading("Proposed menu");
     for (const section of q.menu) {
-      d.heading(section.name);
+      d.space(5);
+      d.text(section.name, { size: 10.5, bold: true, lineGap: 4 });
       for (const item of section.items) {
         d.text(`·  ${item}`, { size: 10, lineGap: 4, width: CONTENT - 12 });
       }
@@ -243,7 +246,6 @@ export async function renderDocumentPdf(doc: AnyDoc): Promise<Uint8Array> {
     d.heading("Pricing");
     for (const line of q.lines) d.amountRow(line.label, docMoney(line.amount, q.currency), { detail: line.detail ?? null });
     totalsBlock(d, q);
-    if (!q.vatEnabled) d.text("Prices are not subject to VAT.", { size: 8.5, color: SOFT });
     if (q.whatsIncluded.length) {
       d.heading("What's included");
       for (const item of q.whatsIncluded) d.text(`·  ${item}`, { size: 10, lineGap: 4 });
@@ -260,12 +262,15 @@ export async function renderDocumentPdf(doc: AnyDoc): Promise<Uint8Array> {
   } else {
     const inv = doc as InvoiceDoc;
     d.heading("Details");
+    if (inv.paymentState && inv.paymentState !== "unpaid") {
+      const state = inv.paymentState === "part_paid" ? "PART PAID" : inv.paymentState.toUpperCase();
+      d.text(state, { size: 9, bold: true, color: FLAME, lineGap: 5 });
+    }
     for (const line of inv.lines) d.amountRow(line.label, docMoney(line.amount, inv.currency), { detail: line.detail ?? null });
     totalsBlock(d, inv, [
       { label: "Paid", amount: inv.paid },
       { label: "Amount due", amount: inv.outstanding },
     ]);
-    if (!inv.vatEnabled) d.text("Not VAT registered. No VAT is charged.", { size: 8.5, color: SOFT });
     if (inv.paymentInstructions.length) {
       d.heading("Payment");
       for (const line of inv.paymentInstructions) d.text(line, { size: 9.5, lineGap: 3.5 });
