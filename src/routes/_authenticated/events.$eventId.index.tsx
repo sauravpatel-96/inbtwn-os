@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -106,6 +106,19 @@ function EventDetailPage() {
   const event = useQuery(eventQuery(eventId));
   const [pendingStatus, setPendingStatus] = useState<EventStatus | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  // Keep the active tab visible in the scrollable tab row.
+  useEffect(() => {
+    const bar = tabsRef.current;
+    const active = bar?.querySelector<HTMLElement>("[data-active]");
+    if (!bar || !active) return;
+    const left = active.offsetLeft - 20; // account for the bar's px-5 padding
+    const right = left + active.offsetWidth + 40;
+    if (left < bar.scrollLeft || right > bar.scrollLeft + bar.clientWidth) {
+      bar.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+    }
+  }, [s, event.data]);
 
   if (event.isLoading) return <p className="font-mono text-[12px] text-ink-soft">Loading…</p>;
   if (!event.data) return <EmptyNote>Event not found.</EmptyNote>;
@@ -210,8 +223,11 @@ function EventDetailPage() {
         <div className="mt-2 font-mono text-[10px] text-ink-soft">Commercial stage: {stageLabel(stage)}</div>
       </div>
 
-      {/* Section nav */}
-      <div className="-mx-5 mt-4 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
+      {/* Section nav — horizontally scrollable on mobile, everything fits on desktop */}
+      <div
+        ref={tabsRef}
+        className="no-scrollbar -mx-5 mt-4 touch-pan-x overflow-x-auto overscroll-x-contain px-5 pb-1 [-webkit-overflow-scrolling:touch]"
+      >
         <div className="flex w-max gap-2">
           {SECTIONS.map((key) => (
             <Link
@@ -220,7 +236,8 @@ function EventDetailPage() {
               params={{ eventId }}
               search={{ s: key }}
               replace
-              className={`font-mono text-[11px] rounded-sm px-3 py-2 min-h-[36px] ${
+              data-active={s === key || undefined}
+              className={`shrink-0 font-mono text-[11px] rounded-sm px-3 py-2 min-h-[36px] ${
                 s === key ? "bg-ink text-cream" : "bg-cream text-ink-soft outline-1 outline-ink/15"
               }`}
             >
