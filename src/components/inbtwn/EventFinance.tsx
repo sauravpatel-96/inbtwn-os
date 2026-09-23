@@ -174,12 +174,24 @@ export function EventFinance({ event }: { event: Ev }) {
           <Stat label="Payout status" value={t?.payout_status === "received" ? "Received" : "Awaiting"} />
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-2">
-          <Stat label="Agreed value" value={money(totals.revenue ?? agreedTotal)} note={accepted ? "Accepted quote" : quote.data ? "Quote not accepted" : "No quote"} />
-          <Stat label="Received" value={money(totals.received)} />
-          <Stat label="Outstanding" value={money(totals.outstanding)} />
+        <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            <Stat label="Agreed value" value={money(totals.revenue ?? agreedTotal)} note={agreedNote} />
+            <Stat label="Received" value={money(totals.received)} />
+            <Stat label="Outstanding" value={money(totals.outstanding)} />
+          </div>
+          <AgreedValueEditor
+            terms={t}
+            agreedSource={agreed.source}
+            manual={maybeNum(t?.agreed_total_override)}
+            quoteValue={quoteValue}
+            quoteAccepted={accepted}
+            money={money}
+            patch={patchTerms}
+          />
         </div>
       )}
+
 
       {platform ? (
         <PayoutPanel terms={t} event={event} money={money} patch={patchTerms} />
