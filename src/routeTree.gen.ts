@@ -32,6 +32,7 @@ import { Route as AuthenticatedLibraryIngredientsIngredientIdIndexRouteImport } 
 import { Route as AuthenticatedLibraryIngredientsIngredientIdEditRouteImport } from './routes/_authenticated/library.ingredients.$ingredientId.edit'
 import { Route as AuthenticatedLibraryRecipesRecipeIdIndexRouteImport } from './routes/_authenticated/library.recipes.$recipeId.index'
 import { Route as AuthenticatedLibraryRecipesRecipeIdEditRouteImport } from './routes/_authenticated/library.recipes.$recipeId.edit'
+import { Route as AuthenticatedLibraryRecipesRecipeIdPrepRouteImport } from './routes/_authenticated/library.recipes.$recipeId.prep'
 import { Route as AuthenticatedLibraryRecipesRecipeIdProfilesRouteImport } from './routes/_authenticated/library.recipes.$recipeId.profiles'
 import { Route as AuthenticatedLibraryRecipesRecipeIdScaleRouteImport } from './routes/_authenticated/library.recipes.$recipeId.scale'
 import { Route as AuthenticatedLibraryRecipesRecipeIdVersionsRouteImport } from './routes/_authenticated/library.recipes.$recipeId.versions'
@@ -167,6 +168,12 @@ const AuthenticatedLibraryRecipesRecipeIdEditRoute =
     path: '/library/recipes/$recipeId/edit',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedLibraryRecipesRecipeIdPrepRoute =
+  AuthenticatedLibraryRecipesRecipeIdPrepRouteImport.update({
+    id: '/library/recipes/$recipeId/prep',
+    path: '/library/recipes/$recipeId/prep',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLibraryRecipesRecipeIdProfilesRoute =
   AuthenticatedLibraryRecipesRecipeIdProfilesRouteImport.update({
     id: '/library/recipes/$recipeId/profiles',
@@ -206,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/library/clients/$clientId/edit': typeof AuthenticatedLibraryClientsClientIdEditRoute
   '/library/ingredients/$ingredientId/edit': typeof AuthenticatedLibraryIngredientsIngredientIdEditRoute
   '/library/recipes/$recipeId/edit': typeof AuthenticatedLibraryRecipesRecipeIdEditRoute
+  '/library/recipes/$recipeId/prep': typeof AuthenticatedLibraryRecipesRecipeIdPrepRoute
   '/library/recipes/$recipeId/profiles': typeof AuthenticatedLibraryRecipesRecipeIdProfilesRoute
   '/library/recipes/$recipeId/scale': typeof AuthenticatedLibraryRecipesRecipeIdScaleRoute
   '/library/recipes/$recipeId/versions': typeof AuthenticatedLibraryRecipesRecipeIdVersionsRoute
@@ -233,6 +241,7 @@ export interface FileRoutesByTo {
   '/library/clients/$clientId/edit': typeof AuthenticatedLibraryClientsClientIdEditRoute
   '/library/ingredients/$ingredientId/edit': typeof AuthenticatedLibraryIngredientsIngredientIdEditRoute
   '/library/recipes/$recipeId/edit': typeof AuthenticatedLibraryRecipesRecipeIdEditRoute
+  '/library/recipes/$recipeId/prep': typeof AuthenticatedLibraryRecipesRecipeIdPrepRoute
   '/library/recipes/$recipeId/profiles': typeof AuthenticatedLibraryRecipesRecipeIdProfilesRoute
   '/library/recipes/$recipeId/scale': typeof AuthenticatedLibraryRecipesRecipeIdScaleRoute
   '/library/recipes/$recipeId/versions': typeof AuthenticatedLibraryRecipesRecipeIdVersionsRoute
@@ -262,6 +271,7 @@ export interface FileRoutesById {
   '/_authenticated/library/clients/$clientId/edit': typeof AuthenticatedLibraryClientsClientIdEditRoute
   '/_authenticated/library/ingredients/$ingredientId/edit': typeof AuthenticatedLibraryIngredientsIngredientIdEditRoute
   '/_authenticated/library/recipes/$recipeId/edit': typeof AuthenticatedLibraryRecipesRecipeIdEditRoute
+  '/_authenticated/library/recipes/$recipeId/prep': typeof AuthenticatedLibraryRecipesRecipeIdPrepRoute
   '/_authenticated/library/recipes/$recipeId/profiles': typeof AuthenticatedLibraryRecipesRecipeIdProfilesRoute
   '/_authenticated/library/recipes/$recipeId/scale': typeof AuthenticatedLibraryRecipesRecipeIdScaleRoute
   '/_authenticated/library/recipes/$recipeId/versions': typeof AuthenticatedLibraryRecipesRecipeIdVersionsRoute
@@ -291,6 +301,7 @@ export interface FileRouteTypes {
     | '/library/clients/$clientId/edit'
     | '/library/ingredients/$ingredientId/edit'
     | '/library/recipes/$recipeId/edit'
+    | '/library/recipes/$recipeId/prep'
     | '/library/recipes/$recipeId/profiles'
     | '/library/recipes/$recipeId/scale'
     | '/library/recipes/$recipeId/versions'
@@ -318,6 +329,7 @@ export interface FileRouteTypes {
     | '/library/clients/$clientId/edit'
     | '/library/ingredients/$ingredientId/edit'
     | '/library/recipes/$recipeId/edit'
+    | '/library/recipes/$recipeId/prep'
     | '/library/recipes/$recipeId/profiles'
     | '/library/recipes/$recipeId/scale'
     | '/library/recipes/$recipeId/versions'
@@ -346,6 +358,7 @@ export interface FileRouteTypes {
     | '/_authenticated/library/clients/$clientId/edit'
     | '/_authenticated/library/ingredients/$ingredientId/edit'
     | '/_authenticated/library/recipes/$recipeId/edit'
+    | '/_authenticated/library/recipes/$recipeId/prep'
     | '/_authenticated/library/recipes/$recipeId/profiles'
     | '/_authenticated/library/recipes/$recipeId/scale'
     | '/_authenticated/library/recipes/$recipeId/versions'
@@ -523,6 +536,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLibraryRecipesRecipeIdEditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/library/recipes/$recipeId/prep': {
+      id: '/_authenticated/library/recipes/$recipeId/prep'
+      path: '/library/recipes/$recipeId/prep'
+      fullPath: '/library/recipes/$recipeId/prep'
+      preLoaderRoute: typeof AuthenticatedLibraryRecipesRecipeIdPrepRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/library/recipes/$recipeId/profiles': {
       id: '/_authenticated/library/recipes/$recipeId/profiles'
       path: '/library/recipes/$recipeId/profiles'
@@ -565,6 +585,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLibraryClientsClientIdEditRoute: typeof AuthenticatedLibraryClientsClientIdEditRoute
   AuthenticatedLibraryIngredientsIngredientIdEditRoute: typeof AuthenticatedLibraryIngredientsIngredientIdEditRoute
   AuthenticatedLibraryRecipesRecipeIdEditRoute: typeof AuthenticatedLibraryRecipesRecipeIdEditRoute
+  AuthenticatedLibraryRecipesRecipeIdPrepRoute: typeof AuthenticatedLibraryRecipesRecipeIdPrepRoute
   AuthenticatedLibraryRecipesRecipeIdProfilesRoute: typeof AuthenticatedLibraryRecipesRecipeIdProfilesRoute
   AuthenticatedLibraryRecipesRecipeIdScaleRoute: typeof AuthenticatedLibraryRecipesRecipeIdScaleRoute
   AuthenticatedLibraryRecipesRecipeIdVersionsRoute: typeof AuthenticatedLibraryRecipesRecipeIdVersionsRoute
@@ -596,6 +617,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedLibraryIngredientsIngredientIdEditRoute,
   AuthenticatedLibraryRecipesRecipeIdEditRoute:
     AuthenticatedLibraryRecipesRecipeIdEditRoute,
+  AuthenticatedLibraryRecipesRecipeIdPrepRoute:
+    AuthenticatedLibraryRecipesRecipeIdPrepRoute,
   AuthenticatedLibraryRecipesRecipeIdProfilesRoute:
     AuthenticatedLibraryRecipesRecipeIdProfilesRoute,
   AuthenticatedLibraryRecipesRecipeIdScaleRoute:

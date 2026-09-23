@@ -39,6 +39,16 @@ type ShopCheckLite = { event_id: string; ingredient_id: string };
 type IngredientLite = { id: string; current_unit_cost: number | string | null };
 type RecipeIngredientLite = { recipe_version_id: string; ingredient_id: string };
 type RecipeComponentLite = { parent_recipe_version_id: string; child_recipe_version_id: string };
+export type TaskLite = {
+  id: string;
+  event_id: string;
+  name: string;
+  scheduled_date: string | null;
+  status: string;
+  approximate_minutes: number | null;
+  assignment: string;
+  source: string;
+};
 
 export type TodayData = {
   events: EventWithClient[];
@@ -56,6 +66,7 @@ export type TodayData = {
   ingredients: IngredientLite[];
   recipeIngredients: RecipeIngredientLite[];
   recipeComponents: RecipeComponentLite[];
+  tasks: TaskLite[];
 };
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
@@ -91,6 +102,7 @@ export async function fetchTodayData(client: ReadClient = supabase as unknown as
       ingredients,
       recipeIngredients,
       recipeComponents,
+      tasks,
     ] = await Promise.all([
       supabase
         .from("events")
@@ -112,6 +124,9 @@ export async function fetchTodayData(client: ReadClient = supabase as unknown as
       supabase.from("ingredients").select("id, current_unit_cost"),
       supabase.from("recipe_ingredients").select("recipe_version_id, ingredient_id"),
       supabase.from("recipe_components").select("parent_recipe_version_id, child_recipe_version_id"),
+      supabase
+        .from("event_tasks")
+        .select("id, event_id, name, scheduled_date, status, approximate_minutes, assignment, source"),
     ]);
 
     const items = unwrap<InvoiceItemRow[]>(invoiceItems);
@@ -139,6 +154,7 @@ export async function fetchTodayData(client: ReadClient = supabase as unknown as
       ingredients: unwrap<IngredientLite[]>(ingredients),
       recipeIngredients: unwrap<RecipeIngredientLite[]>(recipeIngredients),
       recipeComponents: unwrap<RecipeComponentLite[]>(recipeComponents),
+      tasks: unwrap<TaskLite[]>(tasks),
     };
   }
 }
@@ -588,5 +604,70 @@ export function moneySummary(derived: EventDerived[], today = new Date()): Money
     payouts: round2(payouts),
     payoutsIncomplete,
     confirmedThisMonth: round2(confirmedThisMonth),
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Prep tasks                                                           */
+/* ------------------------------------------------------------------ */
+
+export type PrepEventGroup = {
+  eventId: string;
+  title: string;
+  eventDate: string | null;
+  overdue: TaskLite[];
+  dueToday: TaskLite[];
+  upcoming: number;
+  minutes: number;
+};
+
+export type PrepSummary = {
+  groups: PrepEventGroup[];
+  taskCount: number;
+  minutes: number;
+};
+
+/**
+ * Prep work that is live right now: outstanding tasks due today or earlier for
+ * events that are still active. Completed, closed, cancelled and lost jobs
+ * never resurface here.
+ */
+export function prepSummary(derived: EventDerived[], data: TodayData, today = new Date(), upcomingDays = 3): PrepSummary {
+  const iso = (d: Date) => {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return new Date(x.getTime() - x.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  };
+  const todayKey = iso(today);
+  const horizon = new Date(today);
+  horizon.setDate(horizon.getDate() + upcomingDays);
+  const horizonKey = iso(horizon);
+
+  const groups: PrepEventGroup[] = [];
+  for (const d of derived) {
+    if (d.event.status === "completed" || d.closed) continue;
+    const open = data.tasks.filter((t) => t.event_id === d.event.id && t.status !== "done");
+    if (open.length === 0) continue;
+    const overdue = open.filter((t) => t.scheduled_date !== null && t.scheduled_date < todayKey);
+    const dueToday = open.filter((t) => t.scheduled_date === todayKey);
+    const upcoming = open.filter(
+      (t) => t.scheduled_date !== null && t.scheduled_date > todayKey && t.scheduled_date <= horizonKey,
+    ).length;
+    if (overdue.length === 0 && dueToday.length === 0 && upcoming === 0) continue;
+    groups.push({
+      eventId: d.event.id,
+      title: d.event.title,
+      eventDate: d.event.event_date,
+      overdue,
+      dueToday,
+      upcoming,
+      minutes: [...overdue, ...dueToday].reduce((s, t) => s + (t.approximate_minutes ?? 0), 0),
+    });
+  }
+  groups.sort((a, b) => b.overdue.length - a.overdue.length || (a.eventDate ?? "").localeCompare(b.eventDate ?? ""));
+  return {
+    groups,
+    taskCount: groups.reduce((s, g) => s + g.overdue.length + g.dueToday.length, 0),
+    minutes: groups.reduce((s, g) => s + g.minutes, 0),
   };
 }

@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, type AttentionItem, type Severity } from "@/lib/today";
+import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, prepSummary, type AttentionItem, type Severity } from "@/lib/today";
+import { fmtMinutes } from "@/lib/prep";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { statusLabel } from "@/lib/constants";
 import { PageTitle, SectionHeading, StatusPill, EmptyNote } from "@/components/inbtwn/bits";
@@ -66,6 +67,7 @@ function TodayPage() {
       upcoming: upcomingEvents(derived),
       ops: opsSummary(derived),
       money: moneySummary(derived),
+      prep: prepSummary(derived, data.data),
     };
   }, [data.data]);
 
@@ -73,7 +75,7 @@ function TodayPage() {
   if (data.isError) return <p className="font-mono text-[12px] text-s-lost">{(data.error as Error).message}</p>;
   if (!model) return null;
 
-  const { attention, upcoming, ops, money } = model;
+  const { attention, upcoming, ops, money, prep } = model;
   const shown = showAll ? attention : attention.slice(0, 6);
 
   return (
@@ -99,6 +101,45 @@ function TodayPage() {
           ))}
         </div>
       )}
+
+      {prep.groups.length > 0 ? (
+        <div className="mt-7">
+          <SectionHeading title="Prep today" />
+          <div className="flex flex-col gap-1.5">
+            {prep.groups.map((g) => {
+              const due = [...g.overdue, ...g.dueToday];
+              return (
+                <Link
+                  key={g.eventId}
+                  to="/events/$eventId"
+                  params={{ eventId: g.eventId }}
+                  search={{ s: "plan" }}
+                  className="block border border-ink/15 bg-cream px-3 py-2.5 text-ink"
+                >
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="truncate font-semibold text-[14px] leading-tight">{g.title}</span>
+                    <span className="shrink-0 label-mono text-ink-soft">View Plan →</span>
+                  </div>
+                  <p className={`font-mono text-[11px] ${g.overdue.length ? "text-flame" : "text-ink-soft"}`}>
+                    {due.length > 0
+                      ? `${due.length} ${due.length === 1 ? "task" : "tasks"} due${g.overdue.length ? ` · ${g.overdue.length} overdue` : ""}`
+                      : `${g.upcoming} coming up`}
+                    {fmtMinutes(g.minutes) ? ` · approx. ${fmtMinutes(g.minutes)}` : ""}
+                  </p>
+                  {due.slice(0, 3).map((t) => (
+                    <p key={t.id} className="font-mono text-[11px] text-ink-soft">
+                      {t.name}
+                    </p>
+                  ))}
+                  {due.length > 3 ? (
+                    <p className="font-mono text-[11px] text-ink-soft">+{due.length - 3} more</p>
+                  ) : null}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-7">
         <SectionHeading title="Money" />

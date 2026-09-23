@@ -80,6 +80,13 @@ function RecipeDetail() {
           Production profiles
         </Link>
         <Link
+          to="/library/recipes/$recipeId/prep"
+          params={{ recipeId }}
+          className="tap flex items-center justify-center rounded-sm border border-ink/20 bg-cream px-4 py-2.5 font-mono text-[12px]"
+        >
+          Prep &amp; production
+        </Link>
+        <Link
           to="/library/recipes/$recipeId/versions"
           params={{ recipeId }}
           className="tap flex items-center justify-center rounded-sm border border-ink/20 bg-cream px-4 py-2.5 font-mono text-[12px]"
