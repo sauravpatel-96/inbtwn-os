@@ -95,7 +95,7 @@ function TodayPage() {
       ) : (
         <div className="flex flex-col gap-1.5">
           {shown.map((a) => (
-            <AlertRow key={a.id} item={a} />
+            <AlertRow key={a.id} item={a} onComplete={() => setCompleting(a)} />
           ))}
         </div>
       )}
