@@ -237,7 +237,7 @@ export async function renderDocumentPdf(doc: AnyDoc): Promise<Uint8Array> {
     for (const section of q.menu) {
       d.heading(section.name);
       for (const item of section.items) {
-        d.text(`•  ${item}`, { size: 10, lineGap: 4, width: CONTENT - 12 });
+        d.text(`·  ${item}`, { size: 10, lineGap: 4, width: CONTENT - 12 });
       }
     }
     d.heading("Pricing");
@@ -246,7 +246,7 @@ export async function renderDocumentPdf(doc: AnyDoc): Promise<Uint8Array> {
     if (!q.vatEnabled) d.text("Prices are not subject to VAT.", { size: 8.5, color: SOFT });
     if (q.whatsIncluded.length) {
       d.heading("What's included");
-      for (const item of q.whatsIncluded) d.text(`•  ${item}`, { size: 10, lineGap: 4 });
+      for (const item of q.whatsIncluded) d.text(`·  ${item}`, { size: 10, lineGap: 4 });
     }
     if (q.notes) {
       d.heading("Notes");
@@ -254,7 +254,7 @@ export async function renderDocumentPdf(doc: AnyDoc): Promise<Uint8Array> {
     }
     if (q.terms.length) {
       d.heading("Terms");
-      for (const item of q.terms) d.text(`•  ${item}`, { size: 9.5, lineGap: 3.5, color: SOFT });
+      for (const item of q.terms) d.text(`·  ${item}`, { size: 9.5, lineGap: 3.5, color: SOFT });
     }
     bankBlock(d, q);
   } else {
