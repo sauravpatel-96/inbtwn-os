@@ -382,17 +382,24 @@ export function buildToday(data: TodayData, today = new Date()): {
     const urgency = away ?? 999;
 
     /* ----- Finance (always relevant, before and after the event) ----- */
+    // Past work still waiting to be marked completed leads with that; the money
+    // note rides along as secondary detail rather than a second row.
+    const lead = d.needsCompletion;
+    let financeNote: string | null = null;
     if (d.platform) {
       if (d.payoutOverdue) {
         const amount = d.expectedPayout !== null ? `${money(d.expectedPayout)} ` : "";
-        push(d, "payout", `${amount}platform payout overdue`, "high", "finance", "View Finance", urgency);
+        financeNote = `${amount}platform payout overdue`;
+        if (!lead) push(d, "payout", financeNote, "high", "finance", "View Finance", urgency);
       }
     } else {
       // A schedule obligation and its invoice are the same money — never both.
       if (d.scheduleOverdue > 0) {
-        push(d, "overdue", `${money(d.scheduleOverdue)} balance overdue`, "high", "finance", "View Finance", urgency);
+        financeNote = `${money(d.scheduleOverdue)} balance overdue`;
+        if (!lead) push(d, "overdue", financeNote, "high", "finance", "View Finance", urgency);
       } else if (d.invoiceOverdue > 0) {
-        push(d, "invoice", `${money(d.invoiceOverdue)} invoice overdue`, "high", "finance", "View Finance", urgency);
+        financeNote = `${money(d.invoiceOverdue)} invoice overdue`;
+        if (!lead) push(d, "invoice", financeNote, "high", "finance", "View Finance", urgency);
       }
       if (pre && d.scheduleOverdue === 0 && d.depositOutstanding > 0) {
         push(
@@ -405,6 +412,14 @@ export function buildToday(data: TodayData, today = new Date()): {
           urgency,
         );
       }
+    }
+
+    /* ----- Operational completion (never automatic) ----- */
+    if (lead) {
+      push(d, "complete", "Event has passed", "high", "overview", "Mark completed", urgency, {
+        action: "complete",
+        ...(financeNote ? { secondary: financeNote } : {}),
+      });
     }
 
     if (!pre || d.event.status === "completed") continue;
