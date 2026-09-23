@@ -435,7 +435,7 @@ export async function reconcileAllocations(args: {
     const t = invoiceTotals(inv, payments, allocations);
     let outstanding = round2(t.outstanding + inserts.filter((i) => i.invoice_id === inv.id).reduce((s, i) => s - i.amount, 0));
     if (outstanding <= 0.004) continue;
-    for (const category of ELIGIBLE[inv.kind] ?? ELIGIBLE.full) {
+    for (const category of ELIGIBLE[inv.kind] ?? ["full", "deposit", "balance"]) {
       for (const p of payments) {
         if (outstanding <= 0.004) break;
         if (p.category !== category) continue;
