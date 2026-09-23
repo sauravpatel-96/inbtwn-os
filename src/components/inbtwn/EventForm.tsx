@@ -43,6 +43,7 @@ const schema = z.object({
   source: z.enum(sourceValues),
   source_reference: z.string().trim().max(100),
   client_id: z.string().min(1, "Choose or create a client"),
+  contact_id: z.string(),
   budget: z.string().trim().refine((s) => s === "" || /^\d+(\.\d{1,2})?$/.test(s), "Budget must be a number"),
   budget_min: z.string().trim().refine((s) => s === "" || /^\d+(\.\d{1,2})?$/.test(s), "Minimum budget must be a number"),
   budget_max: z.string().trim().refine((s) => s === "" || /^\d+(\.\d{1,2})?$/.test(s), "Maximum budget must be a number"),
@@ -78,6 +79,7 @@ function toPayload(v: Values): EventInsert {
     source: v.source,
     source_reference: nn(v.source_reference),
     client_id: v.client_id,
+    contact_id: v.contact_id || null,
     budget: v.budget ? Number(v.budget) : null,
     budget_min: v.budget_min ? Number(v.budget_min) : null,
     budget_max: v.budget_max ? Number(v.budget_max) : null,
@@ -110,6 +112,7 @@ function fromRow(e: EventRow): Values {
     source: e.source,
     source_reference: e.source_reference ?? "",
     client_id: e.client_id ?? "",
+    contact_id: e.contact_id ?? "",
     budget: e.budget != null ? String(e.budget) : "",
     budget_min: e.budget_min != null ? String(e.budget_min) : "",
     budget_max: e.budget_max != null ? String(e.budget_max) : "",
@@ -140,6 +143,7 @@ const empty: Values = {
   source: "direct",
   source_reference: "",
   client_id: "",
+  contact_id: "",
   budget: "",
   budget_min: "",
   budget_max: "",
@@ -164,16 +168,20 @@ const empty: Values = {
 export function EventForm({
   initial,
   presetClientId,
+  presetContactId,
   onSaved,
 }: {
   initial?: EventRow | undefined;
   presetClientId?: string | undefined;
+  presetContactId?: string | undefined;
   onSaved: (event: EventRow) => void;
 }) {
   const qc = useQueryClient();
   const clients = useQuery(clientsQuery);
   const [v, setV] = useState<Values>(
-    initial ? fromRow(initial) : { ...empty, client_id: presetClientId ?? "" },
+    initial
+      ? fromRow(initial)
+      : { ...empty, client_id: presetClientId ?? "", contact_id: presetContactId ?? "" },
   );
   const [dietaries, setDietaries] = useState<QuickDietary[]>([]);
   const [newClient, setNewClient] = useState(false);
@@ -186,9 +194,19 @@ export function EventForm({
     [clients.data],
   );
 
+  const selectedClient = useMemo(
+    () => (clients.data ?? []).find((c) => c.id === v.client_id) ?? null,
+    [clients.data, v.client_id],
+  );
+  const contactOptions = useMemo(
+    () => (selectedClient?.contacts ?? []).filter((x) => x.active),
+    [selectedClient],
+  );
+
   const onClientCreated = (c: ClientRow) => {
     qc.invalidateQueries({ queryKey: ["clients"] });
     set("client_id", c.id);
+    set("contact_id", "");
     setNewClient(false);
     toast.success(`${clientDisplayName(c)} added`);
   };
@@ -300,14 +318,42 @@ export function EventForm({
         {newClient ? (
           <ClientForm compact submitLabel="Add client & attach" onSaved={onClientCreated} />
         ) : (
-          <SelectInput value={v.client_id} onChange={(e) => set("client_id", e.target.value)}>
-            <option value="">{clients.isLoading ? "Loading clients…" : "Select a client…"}</option>
-            {clientOptions.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </SelectInput>
+          <>
+            <SelectInput
+              value={v.client_id}
+              onChange={(e) => {
+                const id = e.target.value;
+                setV((s) => {
+                  const client = (clients.data ?? []).find((c) => c.id === id);
+                  const primary = (client?.contacts ?? []).find((x) => x.active && x.is_primary);
+                  return { ...s, client_id: id, contact_id: primary?.id ?? "" };
+                });
+              }}
+            >
+              <option value="">{clients.isLoading ? "Loading clients…" : "Select a client…"}</option>
+              {clientOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </SelectInput>
+            {contactOptions.length ? (
+              <div className="mt-3">
+                <Field label="Event contact">
+                  <SelectInput value={v.contact_id} onChange={(e) => set("contact_id", e.target.value)}>
+                    <option value="">No specific contact</option>
+                    {contactOptions.map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {[x.first_name, x.last_name].filter(Boolean).join(" ")}
+                        {x.is_primary ? " (primary)" : ""}
+                        {x.role ? ` — ${x.role}` : ""}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </Field>
+              </div>
+            ) : null}
+          </>
         )}
       </div>
 
