@@ -846,7 +846,9 @@ function InvoicesPanel({
               <button type="button" onClick={() => setOpen(expanded ? null : inv.id)} className="flex w-full items-baseline justify-between gap-3 text-left">
                 <span>
                   <span className="font-mono text-[13px]">{inv.invoice_number}</span>
-                  <span className="ml-2 font-mono text-[10px] text-ink-soft">{labelOf(INVOICE_STATUSES, inv.status)}</span>
+                  <span className="ml-2 font-mono text-[10px] text-ink-soft">
+                    {labelOf(INVOICE_STATUSES, inv.status)} · {PAYMENT_STATE_LABELS[state]}
+                  </span>
                 </span>
                 <span className="shrink-0 text-right font-mono text-[13px]">
                   {money(it.total)}
