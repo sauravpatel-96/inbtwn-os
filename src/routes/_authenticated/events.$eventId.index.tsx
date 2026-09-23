@@ -210,8 +210,11 @@ function EventDetailPage() {
         <div className="mt-2 font-mono text-[10px] text-ink-soft">Commercial stage: {stageLabel(stage)}</div>
       </div>
 
-      {/* Section nav */}
-      <div className="-mx-5 mt-4 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
+      {/* Section nav — horizontally scrollable on mobile, everything fits on desktop */}
+      <div
+        ref={tabsRef}
+        className="no-scrollbar -mx-5 mt-4 touch-pan-x overflow-x-auto overscroll-x-contain px-5 pb-1 [-webkit-overflow-scrolling:touch]"
+      >
         <div className="flex w-max gap-2">
           {SECTIONS.map((key) => (
             <Link
@@ -220,7 +223,8 @@ function EventDetailPage() {
               params={{ eventId }}
               search={{ s: key }}
               replace
-              className={`font-mono text-[11px] rounded-sm px-3 py-2 min-h-[36px] ${
+              data-active={s === key || undefined}
+              className={`shrink-0 font-mono text-[11px] rounded-sm px-3 py-2 min-h-[36px] ${
                 s === key ? "bg-ink text-cream" : "bg-cream text-ink-soft outline-1 outline-ink/15"
               }`}
             >
