@@ -135,9 +135,14 @@ function EventDetailPage() {
 
   const applyStatus = async (status: EventStatus) => {
     // Completion records when the catering happened; it never touches money.
-    const patch: Record<string, unknown> = { status };
-    if (status === "completed" && !e.completed_at) patch["completed_at"] = new Date().toISOString();
-    const { error } = await supabase.from("events").update(patch).eq("id", e.id);
+    const { error } = await supabase
+      .from("events")
+      .update(
+        status === "completed" && !e.completed_at
+          ? { status, completed_at: new Date().toISOString() }
+          : { status },
+      )
+      .eq("id", e.id);
     if (error) {
       toast.error(error.message);
       return;
