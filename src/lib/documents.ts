@@ -186,7 +186,7 @@ export function buildQuoteDoc(args: {
     menu,
     lines,
     subtotal: t.subtotal,
-    vatEnabled: quote.vat_enabled,
+    vatEnabled: Boolean(settings.vat_registered && quote.vat_enabled),
     vatRate: Number(quote.vat_rate),
     vat: t.vat,
     total: t.total,
@@ -255,7 +255,7 @@ export function buildInvoiceDoc(args: {
       amount: Number(i.quantity) * Number(i.unit_price),
     })),
     subtotal: totals.subtotal,
-    vatEnabled: invoice.vat_enabled,
+    vatEnabled: Boolean(settings.vat_registered && invoice.vat_enabled),
     vatRate: Number(invoice.vat_rate),
     vat: totals.vat,
     total: totals.total,
@@ -283,6 +283,7 @@ export function snapshotOf<T extends AnyDoc>(stored: unknown, live: T): T {
     const normalized = {
       ...frozen,
       meta: normalizeRows(frozen.meta),
+      vatEnabled: live.vatEnabled,
       footerNote: frozen.kind === "quote" && frozen.platform ? null : frozen.footerNote,
     } as T;
     if (normalized.kind === "quote") {
