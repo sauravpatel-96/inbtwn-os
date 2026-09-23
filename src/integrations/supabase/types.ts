@@ -1574,6 +1574,105 @@ export type Database = {
           },
         ]
       }
+      event_tasks: {
+        Row: {
+          approximate_minutes: number | null
+          assignment: string
+          completed_at: string | null
+          component_recipe_id: string | null
+          created_at: string
+          event_id: string
+          generated_at: string | null
+          id: string
+          name: string
+          notes: string | null
+          organisation_id: string
+          prep_step_id: string | null
+          recipe_id: string | null
+          scheduled_date: string | null
+          sort_order: number
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approximate_minutes?: number | null
+          assignment?: string
+          completed_at?: string | null
+          component_recipe_id?: string | null
+          created_at?: string
+          event_id: string
+          generated_at?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organisation_id?: string
+          prep_step_id?: string | null
+          recipe_id?: string | null
+          scheduled_date?: string | null
+          sort_order?: number
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approximate_minutes?: number | null
+          assignment?: string
+          completed_at?: string | null
+          component_recipe_id?: string | null
+          created_at?: string
+          event_id?: string
+          generated_at?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organisation_id?: string
+          prep_step_id?: string | null
+          recipe_id?: string | null
+          scheduled_date?: string | null
+          sort_order?: number
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_tasks_component_recipe_id_fkey"
+            columns: ["component_recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_tasks_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_tasks_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_tasks_prep_step_id_fkey"
+            columns: ["prep_step_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_prep_steps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_tasks_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           arrival_time: string | null
@@ -2008,6 +2107,85 @@ export type Database = {
           },
         ]
       }
+      recipe_prep_steps: {
+        Row: {
+          approximate_minutes: number | null
+          can_do_earlier: boolean
+          can_freeze: boolean
+          component_recipe_id: string | null
+          created_at: string
+          default_assignment: string
+          defrost_lead_days: number | null
+          id: string
+          name: string
+          notes: string | null
+          organisation_id: string
+          recipe_id: string
+          recommended_days_before: number
+          sort_order: number
+          target: string
+          updated_at: string
+        }
+        Insert: {
+          approximate_minutes?: number | null
+          can_do_earlier?: boolean
+          can_freeze?: boolean
+          component_recipe_id?: string | null
+          created_at?: string
+          default_assignment?: string
+          defrost_lead_days?: number | null
+          id?: string
+          name: string
+          notes?: string | null
+          organisation_id?: string
+          recipe_id: string
+          recommended_days_before?: number
+          sort_order?: number
+          target?: string
+          updated_at?: string
+        }
+        Update: {
+          approximate_minutes?: number | null
+          can_do_earlier?: boolean
+          can_freeze?: boolean
+          component_recipe_id?: string | null
+          created_at?: string
+          default_assignment?: string
+          defrost_lead_days?: number | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organisation_id?: string
+          recipe_id?: string
+          recommended_days_before?: number
+          sort_order?: number
+          target?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_prep_steps_component_recipe_id_fkey"
+            columns: ["component_recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_prep_steps_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_prep_steps_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipe_production_profiles: {
         Row: {
           active: boolean
@@ -2132,39 +2310,54 @@ export type Database = {
         Row: {
           active: boolean
           active_version_id: string | null
+          approximate_active_minutes: number | null
+          can_freeze: boolean
+          can_make_ahead: boolean
           category: string
           created_at: string
           cuisine: string | null
+          default_storage: string
           description: string | null
           id: string
           is_demo: boolean
           name: string
+          operational_notes: string | null
           organisation_id: string
           updated_at: string
         }
         Insert: {
           active?: boolean
           active_version_id?: string | null
+          approximate_active_minutes?: number | null
+          can_freeze?: boolean
+          can_make_ahead?: boolean
           category?: string
           created_at?: string
           cuisine?: string | null
+          default_storage?: string
           description?: string | null
           id?: string
           is_demo?: boolean
           name: string
+          operational_notes?: string | null
           organisation_id?: string
           updated_at?: string
         }
         Update: {
           active?: boolean
           active_version_id?: string | null
+          approximate_active_minutes?: number | null
+          can_freeze?: boolean
+          can_make_ahead?: boolean
           category?: string
           created_at?: string
           cuisine?: string | null
+          default_storage?: string
           description?: string | null
           id?: string
           is_demo?: boolean
           name?: string
+          operational_notes?: string | null
           organisation_id?: string
           updated_at?: string
         }
