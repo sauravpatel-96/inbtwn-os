@@ -63,10 +63,16 @@ function unwrap<T>(res: { data: T | null; error: { message: string } | null }): 
   return (res.data ?? []) as T;
 }
 
-/** One org-wide read used by every Today derivation. RLS scopes it to the organisation. */
-export const todayDataQuery = queryOptions({
-  queryKey: ["today-data"],
-  queryFn: async (): Promise<TodayData> => {
+/** Minimal shape both the browser client and an authenticated server client satisfy. */
+type ReadClient = { from: (table: string) => any };
+
+/**
+ * One org-wide read used by every Today derivation, and by the read-only Ask
+ * business-data layer on the server. RLS scopes it to the organisation.
+ */
+export async function fetchTodayData(client: ReadClient = supabase as unknown as ReadClient): Promise<TodayData> {
+  const supabase = client as unknown as typeof import("@/integrations/supabase/client")["supabase"];
+  {
     const [
       events,
       terms,
@@ -134,8 +140,14 @@ export const todayDataQuery = queryOptions({
       recipeIngredients: unwrap<RecipeIngredientLite[]>(recipeIngredients),
       recipeComponents: unwrap<RecipeComponentLite[]>(recipeComponents),
     };
-  },
+  }
+}
+
+export const todayDataQuery = queryOptions({
+  queryKey: ["today-data"],
+  queryFn: () => fetchTodayData(),
 });
+
 
 /* ------------------------------------------------------------------ */
 /* Per-event derived view                                              */
