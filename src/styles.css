@@ -137,6 +137,13 @@
 }
 
 /* Flat card container — clean straight edges, square corners */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @utility torn {
   border: 1px solid var(--color-border);
   border-radius: 0;
