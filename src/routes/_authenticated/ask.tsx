@@ -109,6 +109,7 @@ function AskPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const sendingRef = useRef(false);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
@@ -116,7 +117,8 @@ function AskPage() {
 
   async function ask(question: string) {
     const q = question.trim();
-    if (!q || busy) return;
+    if (!q || sendingRef.current) return;
+    sendingRef.current = true;
     setError(null);
     setInput("");
     const history: AskTurn[] = [...messages.filter((m) => !m.failed).map((m) => ({ role: m.role, content: m.content })), { role: "user", content: q }];
@@ -132,6 +134,7 @@ function AskPage() {
     } catch {
       setError("The assistant is unavailable right now. Everything else in INBTWN still works.");
     } finally {
+      sendingRef.current = false;
       setBusy(false);
     }
   }
