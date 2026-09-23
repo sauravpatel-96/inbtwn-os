@@ -90,10 +90,12 @@ export function EventFinance({ event }: { event: Ev }) {
   const terms = useQuery(paymentTermsQuery(eventId));
   const payments = useQuery(paymentsQuery(eventId));
   const invoices = useQuery(invoicesQuery(eventId));
+  const allocations = useQuery(allocationsQuery(eventId));
   const costs = useQuery(costsQuery(eventId));
   const quote = useQuery(quoteQuery(eventId));
 
   const [creating, setCreating] = useState(false);
+  const [allocating, setAllocating] = useState(false);
 
   useEffect(() => {
     if (terms.isLoading || terms.data || creating) return;
