@@ -856,7 +856,16 @@ function InvoicesPanel({
                 </span>
               </button>
               {expanded ? (
-                <InvoiceDetail invoice={inv} totals={it} money={money} qc={qc} eventId={eventId} onStatus={(s) => setStatus(inv.id, s)} />
+                <InvoiceDetail
+                  invoice={inv}
+                  totals={it}
+                  state={state}
+                  applied={applied}
+                  money={money}
+                  qc={qc}
+                  eventId={eventId}
+                  onStatus={(s) => setStatus(inv.id, s)}
+                />
               ) : null}
             </div>
           );
