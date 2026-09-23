@@ -166,6 +166,19 @@ export const costsQuery = (eventId: string) =>
       ) as CostRow[],
   });
 
+export const allocationsQuery = (eventId: string) =>
+  queryOptions({
+    queryKey: ["finance-allocations", eventId],
+    queryFn: async () =>
+      unwrap(
+        await supabase
+          .from("event_payment_allocations")
+          .select("*")
+          .eq("event_id", eventId)
+          .order("created_at", { ascending: true }),
+      ) as AllocationRow[],
+  });
+
 /** Creates the per-event terms row with INBTWN defaults when it does not exist yet. */
 export async function ensurePaymentTerms(
   eventId: string,
