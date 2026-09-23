@@ -261,9 +261,10 @@ export function deriveEvent(event: EventWithClient, data: TodayData, today: Date
   const packChecked = new Set(data.packingChecks.filter((c) => c.event_id === id).map((c) => c.item_key));
   const packingRemaining = packKeys.filter((k) => !packChecked.has(k)).length;
 
-  const dishesNeedingRecipes =
-    data.proposalItems.filter((p) => p.event_id === id && !p.recipe_id).length +
-    menuRows.filter((m) => !(m.recipe_version_id ?? m.recipe?.active_version_id)).length;
+  // Operational menu only — proposal dishes are client-facing and may be free text.
+  const dishesNeedingRecipes = menuRows.filter(
+    (m) => !(m.recipe_version_id ?? m.recipe?.active_version_id),
+  ).length;
 
   const d = daysUntil(event.event_date);
 
