@@ -177,6 +177,11 @@ function EventDetailPage() {
           <SourceBadge source={e.source} />
           {e.source_reference ? <span className="font-mono text-[10px] text-ink-soft">{e.source_reference}</span> : null}
           {e.is_demo ? <DemoTag /> : null}
+          {e.status === "completed" ? (
+            <span className="label-mono text-ink-soft">
+              Close-out: {isClosed(e) ? "Closed" : "Open"}
+            </span>
+          ) : null}
         </div>
         <h1 className="mt-2 font-display text-[28px] leading-none">{e.title}</h1>
         <div className="mt-3 grid grid-cols-3 gap-2">
