@@ -271,9 +271,14 @@ export function EventFinance({ event }: { event: Ev }) {
         <Line label="Estimated costs" value={cs.hasEstimates ? money(cs.estimated) : "Not recorded"} muted={!cs.hasEstimates} />
         <Line label="Actual costs" value={cs.actualComplete ? money(cs.actual) : costRows.length ? `${money(cs.actual)} (partial)` : "Not recorded"} muted={!cs.actualComplete} />
         <Line label="Estimated profit" value={estProfit.profit === null ? "Not enough data" : money(estProfit.profit)} muted={estProfit.profit === null} />
-        <Line label="Estimated margin" value={estProfit.margin === null ? "—" : `${estProfit.margin}%`} muted={estProfit.margin === null} />
-        <Line label="Actual profit" value={actProfit.profit === null ? "Not enough data" : money(actProfit.profit)} muted={actProfit.profit === null} />
-        <Line label="Actual margin" value={actProfit.margin === null ? "—" : `${actProfit.margin}%`} muted={actProfit.margin === null} />
+        <Line label="Estimated margin" value={pct(estProfit.margin)} muted={estProfit.margin === null} />
+        <Line label={`${profitWord} profit`} value={recProfit.profit === null ? "Not enough data" : money(recProfit.profit)} muted={recProfit.profit === null} />
+        <Line label={`${profitWord} margin`} value={pct(recProfit.margin)} muted={recProfit.margin === null} />
+        {!costingComplete && recProfit.profit !== null ? (
+          <p className="mt-2 font-mono text-[10px] text-flame">
+            Incomplete — ingredient costs are missing.
+          </p>
+        ) : null}
         {totals.revenue === null || totals.revenueProvisional ? (
           <p className="mt-2 font-mono text-[10px] text-flame">
             {totals.revenue === null
@@ -282,6 +287,21 @@ export function EventFinance({ event }: { event: Ev }) {
           </p>
         ) : null}
       </Panel>
+
+      {event.status === "completed" ? (
+        <EventCloseout
+          eventId={eventId}
+          summary={{
+            revenue: money(totals.revenue),
+            received: money(totals.received),
+            outstanding: money(totals.outstanding),
+            recordedCosts: recordedCosts === null ? "Not recorded" : money(recordedCosts),
+            recordedProfit: recProfit.profit === null ? "Not enough data" : money(recProfit.profit),
+            recordedMargin: pct(recProfit.margin),
+            costingComplete,
+          }}
+        />
+      ) : null}
     </div>
   );
 }
