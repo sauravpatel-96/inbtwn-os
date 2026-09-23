@@ -3,6 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Field, TextInput, TextArea, SelectInput, PrimaryButton, GhostButton, SectionHeading } from "@/components/inbtwn/bits";
+import { DocumentPreview, DocumentActions } from "@/components/inbtwn/DocumentPreview";
+import { businessSettingsQuery, type BusinessSettings } from "@/lib/business";
+import { buildInvoiceDoc, snapshotOf, issueInvoiceDocument, type InvoiceDoc } from "@/lib/documents";
 import { fmtMoney, fmtDateLong, todayISO } from "@/lib/format";
 import type { EventRow, ClientRow } from "@/lib/queries";
 import { clientDisplayName } from "@/lib/format";
@@ -93,6 +96,7 @@ export function EventFinance({ event }: { event: Ev }) {
   const allocations = useQuery(allocationsQuery(eventId));
   const costs = useQuery(costsQuery(eventId));
   const quote = useQuery(quoteQuery(eventId));
+  const settingsQ = useQuery(businessSettingsQuery());
 
   const [creating, setCreating] = useState(false);
   const [allocating, setAllocating] = useState(false);
@@ -245,6 +249,8 @@ export function EventFinance({ event }: { event: Ev }) {
         schedule={schedule}
         vatEnabled={Boolean(t?.vat_enabled)}
         vatRate={Number(t?.vat_rate ?? 20)}
+        settings={settingsQ.data ?? null}
+        platform={platform}
       />
 
       <CostsPanel eventId={eventId} costs={costRows} money={money} qc={qc} food={food} />
@@ -762,6 +768,8 @@ function InvoicesPanel({
   schedule,
   vatEnabled,
   vatRate,
+  settings,
+  platform,
 }: {
   event: Ev;
   invoices: Invoice[];
@@ -773,6 +781,8 @@ function InvoicesPanel({
   schedule: ReturnType<typeof buildSchedule>;
   vatEnabled: boolean;
   vatRate: number;
+  settings: BusinessSettings | null;
+  platform: boolean;
 }) {
   const eventId = event.id;
   const [open, setOpen] = useState<string | null>(null);
@@ -843,6 +853,13 @@ function InvoicesPanel({
             .filter((a) => a.invoice_id === inv.id)
             .map((a) => ({ alloc: a, payment: payments.find((p) => p.id === a.payment_id) ?? null }));
           const expanded = open === inv.id;
+          const liveDoc = settings
+            ? buildInvoiceDoc({ invoice: inv, event, settings, totals: it, platform })
+            : null;
+          /* Paid and amount due always reflect today's payments, even on an issued copy. */
+          const doc = liveDoc
+            ? { ...snapshotOf(inv.document_snapshot, liveDoc), paid: it.paid, outstanding: it.outstanding }
+            : null;
           return (
             <div key={inv.id} className="border-b border-ink/10 py-2 last:border-0">
               <button type="button" onClick={() => setOpen(expanded ? null : inv.id)} className="flex w-full items-baseline justify-between gap-3 text-left">
@@ -866,6 +883,8 @@ function InvoicesPanel({
                   money={money}
                   qc={qc}
                   eventId={eventId}
+                  doc={doc}
+                  liveDoc={liveDoc}
                   onStatus={(s) => setStatus(inv.id, s)}
                 />
               ) : null}
@@ -899,6 +918,8 @@ function InvoiceDetail({
   money,
   qc,
   eventId,
+  doc,
+  liveDoc,
   onStatus,
 }: {
   invoice: Invoice;
@@ -908,13 +929,30 @@ function InvoiceDetail({
   money: (n: number | null | undefined) => string;
   qc: ReturnType<typeof useQueryClient>;
   eventId: string;
+  doc: InvoiceDoc | null;
+  liveDoc: InvoiceDoc | null;
   onStatus: (status: string) => void;
 }) {
   const [desc, setDesc] = useState("");
   const [price, setPrice] = useState("");
   const [notes, setNotes] = useState(invoice.notes ?? "");
   const [instructions, setInstructions] = useState(invoice.payment_instructions ?? "");
+  const [showDoc, setShowDoc] = useState(false);
+  const [issuing, setIssuing] = useState(false);
   const invalidate = () => qc.invalidateQueries({ queryKey: ["finance-invoices", eventId] });
+
+  const issue = async () => {
+    if (!liveDoc) return;
+    setIssuing(true);
+    try {
+      await issueInvoiceDocument(invoice.id, liveDoc);
+      await invalidate();
+      toast.success("Invoice issued — this copy is now fixed");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+    setIssuing(false);
+  };
 
   const addItem = async () => {
     if (!desc.trim()) return void toast.error("Describe the line");
@@ -1017,6 +1055,27 @@ function InvoiceDetail({
       <PrimaryButton type="button" onClick={saveText}>
         Save invoice
       </PrimaryButton>
+
+      {doc ? (
+        <div className="space-y-2 border-t border-ink/10 pt-3">
+          <div className="label-mono text-ink-soft">Client document</div>
+          <DocumentActions doc={doc} />
+          <div className="grid grid-cols-2 gap-2">
+            <GhostButton type="button" onClick={() => setShowDoc(!showDoc)}>
+              {showDoc ? "Hide preview" : "Preview"}
+            </GhostButton>
+            <GhostButton type="button" disabled={issuing || Boolean(invoice.document_snapshot)} onClick={issue}>
+              {invoice.document_snapshot ? "Issued" : issuing ? "Issuing…" : "Issue"}
+            </GhostButton>
+          </div>
+          <p className="font-mono text-[10px] text-ink-soft">
+            {invoice.document_snapshot
+              ? `Issued copy fixed${invoice.issued_at ? ` on ${fmtDateLong(invoice.issued_at.slice(0, 10))}` : ""}. Paid and amount due stay up to date.`
+              : "Issuing freezes the wording and figures the client receives."}
+          </p>
+          {showDoc ? <DocumentPreview doc={doc} /> : null}
+        </div>
+      ) : null}
     </div>
   );
 }

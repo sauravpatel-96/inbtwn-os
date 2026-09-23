@@ -56,6 +56,15 @@ function LibraryPage() {
           </div>
           <div className="mt-1 font-mono text-[11px] text-ink-soft">Yields, costs, allergens</div>
         </Link>
+        <Link
+          to="/settings/business"
+          className="torn tap col-span-2 bg-cream px-4 py-4 text-ink shadow-card active:bg-panel"
+        >
+          <div className="font-display text-[22px] leading-none">Business &amp; Documents</div>
+          <div className="mt-1 font-mono text-[11px] text-ink-soft">
+            Your details, bank details and quote/invoice defaults
+          </div>
+        </Link>
         {LATER.map((l) => (
           <div key={l} className="torn bg-cream/70 px-4 py-4 opacity-70">
             <div className="font-display text-[20px] leading-none">{l}</div>
