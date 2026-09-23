@@ -16,6 +16,10 @@ import {
   paymentTermsQuery,
   paymentsQuery,
   invoicesQuery,
+  allocationsQuery,
+  reconcileAllocations,
+  invoicePaymentState,
+  PAYMENT_STATE_LABELS,
   costsQuery,
   ensurePaymentTerms,
   buildSchedule,
@@ -39,6 +43,7 @@ import {
   type TermsRow,
   type PaymentRow,
   type CostRow,
+  type AllocationRow,
 } from "@/lib/finance";
 
 type Ev = EventRow & { client: ClientRow | null };
@@ -85,10 +90,12 @@ export function EventFinance({ event }: { event: Ev }) {
   const terms = useQuery(paymentTermsQuery(eventId));
   const payments = useQuery(paymentsQuery(eventId));
   const invoices = useQuery(invoicesQuery(eventId));
+  const allocations = useQuery(allocationsQuery(eventId));
   const costs = useQuery(costsQuery(eventId));
   const quote = useQuery(quoteQuery(eventId));
 
   const [creating, setCreating] = useState(false);
+  const [allocating, setAllocating] = useState(false);
 
   useEffect(() => {
     if (terms.isLoading || terms.data || creating) return;
@@ -102,7 +109,27 @@ export function EventFinance({ event }: { event: Ev }) {
   const t = terms.data ?? null;
   const pays = payments.data ?? [];
   const invs = invoices.data ?? [];
+  const allocs = allocations.data ?? [];
   const costRows = costs.data ?? [];
+
+  /* Apply eligible unallocated payments to invoices (never creates or duplicates payments). */
+  useEffect(() => {
+    if (allocating || !payments.data || !invoices.data || !allocations.data) return;
+    if (invoices.data.length === 0 || payments.data.length === 0) return;
+    setAllocating(true);
+    reconcileAllocations({
+      eventId,
+      invoices: invoices.data,
+      payments: payments.data,
+      allocations: allocations.data,
+    })
+      .then((n) => {
+        if (n > 0) qc.invalidateQueries({ queryKey: ["finance-allocations", eventId] });
+      })
+      .catch((e: Error) => toast.error(e.message))
+      .finally(() => setAllocating(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, payments.data, invoices.data, allocations.data]);
 
   const quoteTotal = quote.data ? quoteTotals(quote.data).total : null;
   const accepted = quote.data?.status === "accepted";
@@ -211,6 +238,7 @@ export function EventFinance({ event }: { event: Ev }) {
         event={event}
         invoices={invs}
         payments={pays}
+        allocations={allocs}
         money={money}
         qc={qc}
         agreedTotal={agreedTotal}
@@ -619,6 +647,7 @@ function PaymentsPanel({
     setForm(blank);
     setAdding(false);
     qc.invalidateQueries({ queryKey: ["finance-payments", eventId] });
+    qc.invalidateQueries({ queryKey: ["finance-allocations", eventId] });
     toast.success("Payment recorded");
   };
 
@@ -626,6 +655,7 @@ function PaymentsPanel({
     const { error } = await supabase.from("event_payments").delete().eq("id", id);
     if (error) return void toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["finance-payments", eventId] });
+    qc.invalidateQueries({ queryKey: ["finance-allocations", eventId] });
   };
 
   return (
@@ -725,6 +755,7 @@ function InvoicesPanel({
   event,
   invoices,
   payments,
+  allocations,
   money,
   qc,
   agreedTotal,
@@ -735,6 +766,7 @@ function InvoicesPanel({
   event: Ev;
   invoices: Invoice[];
   payments: PaymentRow[];
+  allocations: AllocationRow[];
   money: (n: number | null | undefined) => string;
   qc: ReturnType<typeof useQueryClient>;
   agreedTotal: number | null;
@@ -805,14 +837,20 @@ function InvoicesPanel({
         <p className="font-mono text-[11px] text-ink-soft">No invoices yet.</p>
       ) : (
         invoices.map((inv) => {
-          const it = invoiceTotals(inv, payments);
+          const it = invoiceTotals(inv, payments, allocations);
+          const state = invoicePaymentState(inv, it);
+          const applied = allocations
+            .filter((a) => a.invoice_id === inv.id)
+            .map((a) => ({ alloc: a, payment: payments.find((p) => p.id === a.payment_id) ?? null }));
           const expanded = open === inv.id;
           return (
             <div key={inv.id} className="border-b border-ink/10 py-2 last:border-0">
               <button type="button" onClick={() => setOpen(expanded ? null : inv.id)} className="flex w-full items-baseline justify-between gap-3 text-left">
                 <span>
                   <span className="font-mono text-[13px]">{inv.invoice_number}</span>
-                  <span className="ml-2 font-mono text-[10px] text-ink-soft">{labelOf(INVOICE_STATUSES, inv.status)}</span>
+                  <span className="ml-2 font-mono text-[10px] text-ink-soft">
+                    {labelOf(INVOICE_STATUSES, inv.status)} · {PAYMENT_STATE_LABELS[state]}
+                  </span>
                 </span>
                 <span className="shrink-0 text-right font-mono text-[13px]">
                   {money(it.total)}
@@ -820,7 +858,16 @@ function InvoicesPanel({
                 </span>
               </button>
               {expanded ? (
-                <InvoiceDetail invoice={inv} totals={it} money={money} qc={qc} eventId={eventId} onStatus={(s) => setStatus(inv.id, s)} />
+                <InvoiceDetail
+                  invoice={inv}
+                  totals={it}
+                  state={state}
+                  applied={applied}
+                  money={money}
+                  qc={qc}
+                  eventId={eventId}
+                  onStatus={(s) => setStatus(inv.id, s)}
+                />
               ) : null}
             </div>
           );
@@ -847,6 +894,8 @@ function InvoicesPanel({
 function InvoiceDetail({
   invoice,
   totals,
+  state,
+  applied,
   money,
   qc,
   eventId,
@@ -854,6 +903,8 @@ function InvoiceDetail({
 }: {
   invoice: Invoice;
   totals: ReturnType<typeof invoiceTotals>;
+  state: keyof typeof PAYMENT_STATE_LABELS;
+  applied: { alloc: AllocationRow; payment: PaymentRow | null }[];
   money: (n: number | null | undefined) => string;
   qc: ReturnType<typeof useQueryClient>;
   eventId: string;
@@ -899,7 +950,10 @@ function InvoiceDetail({
   return (
     <div className="mt-2 space-y-3 border-t border-ink/10 pt-2">
       <Line label="Issued" value={fmtDateLong(invoice.issue_date)} />
-      <Line label="Due" value={invoice.due_date ? fmtDateLong(invoice.due_date) : "—"} />
+      <Line
+        label="Due"
+        value={invoice.due_date ? fmtDateLong(invoice.due_date) : invoice.kind === "deposit" ? "On booking" : "—"}
+      />
       {invoice.items.map((i) => (
         <div key={i.id} className="flex items-center justify-between gap-3 border-b border-ink/10 py-1.5">
           <span className="min-w-0 break-words text-[13px]">{i.description}</span>
@@ -923,6 +977,28 @@ function InvoiceDetail({
       <Line label="Total" value={money(totals.total)} />
       <Line label="Paid" value={money(totals.paid)} />
       <Line label="Outstanding" value={money(totals.outstanding)} />
+      <Line label="Payment state" value={PAYMENT_STATE_LABELS[state]} />
+
+      {applied.length ? (
+        <div className="border border-ink/15 px-3 py-2">
+          <div className="label-mono text-ink-soft">Payments applied</div>
+          {applied.map(({ alloc, payment }) => (
+            <div key={alloc.id} className="flex items-start justify-between gap-3 border-b border-ink/10 py-1.5 last:border-0">
+              <div className="min-w-0">
+                <div className="font-mono text-[11px]">
+                  {payment ? fmtDateLong(payment.payment_date) : "—"}
+                  {payment ? ` · ${labelOf(PAYMENT_METHODS, payment.method)}` : ""}
+                </div>
+                {payment?.notes || payment?.reference ? (
+                  <div className="font-mono text-[10px] text-ink-soft">{payment.notes ?? payment.reference}</div>
+                ) : null}
+              </div>
+              <span className="shrink-0 font-mono text-[13px]">{money(Number(alloc.amount))}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       <Field label="Status">
         <SelectInput value={invoice.status} onChange={(e) => onStatus(e.target.value)}>
           {INVOICE_STATUSES.map((s) => (

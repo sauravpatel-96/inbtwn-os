@@ -543,6 +543,68 @@ export type Database = {
           },
         ]
       }
+      event_payment_allocations: {
+        Row: {
+          amount: number
+          created_at: string
+          event_id: string
+          id: string
+          invoice_id: string
+          organisation_id: string
+          payment_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          event_id: string
+          id?: string
+          invoice_id: string
+          organisation_id?: string
+          payment_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          event_id?: string
+          id?: string
+          invoice_id?: string
+          organisation_id?: string
+          payment_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_payment_allocations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_payment_allocations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "event_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_payment_allocations_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_payment_allocations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "event_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_payment_terms: {
         Row: {
           actual_payout: number | null
