@@ -252,8 +252,8 @@ export function buildInvoiceDoc(args: {
     paymentInstructions: instructions,
     notes: invoice.notes?.trim() || null,
     bank: !platform && settings.bank_details_on_invoices ? bankDetailsOf(settings) : null,
-    footerNote:
-      !platform && settings.card_payments_available ? settings.card_wording?.trim() || null : null,
+    /* Card wording already appears in the payment instructions — never repeat it. */
+    footerNote: null,
   };
 }
 
