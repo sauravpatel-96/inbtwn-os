@@ -10,6 +10,8 @@ export type InvoiceRow = Database["public"]["Tables"]["event_invoices"]["Row"];
 export type InvoiceItemRow = Database["public"]["Tables"]["event_invoice_items"]["Row"];
 export type CostRow = Database["public"]["Tables"]["event_costs"]["Row"];
 
+export type AllocationRow = Database["public"]["Tables"]["event_payment_allocations"]["Row"];
+
 export type Invoice = InvoiceRow & { items: InvoiceItemRow[] };
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
