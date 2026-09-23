@@ -8,6 +8,7 @@
  * result tree (scaleVersion) and simply looks up the matching line.
  */
 import { queryOptions } from "@tanstack/react-query";
+import { format, isValid, parseISO, subDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import type { CalcGraph, ScaleResult } from "./recipe-calc";
