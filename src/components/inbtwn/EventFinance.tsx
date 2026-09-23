@@ -105,8 +105,17 @@ export function EventFinance({ event }: { event: Ev }) {
 
   const quoteTotal = quote.data ? quoteTotals(quote.data).total : null;
   const accepted = quote.data?.status === "accepted";
-  const agreedTotal =
-    maybeNum(t?.agreed_total_override) ?? maybeNum(quote.data?.agreed_total) ?? (quoteTotal ?? null);
+  const quoteValue = quote.data ? (maybeNum(quote.data.agreed_total) ?? quoteTotal) : null;
+  const agreed = resolveAgreedValue({ terms: t, quoteValue, quoteAccepted: accepted });
+  const agreedTotal = agreed.value;
+  const agreedNote =
+    agreed.source === "manual"
+      ? "Manual agreement"
+      : agreed.source === "quote"
+        ? accepted
+          ? "Accepted quote"
+          : "Quote not accepted"
+        : "No quote";
 
   const schedule = buildSchedule({ terms: t, agreedTotal, eventDate: event.event_date, payments: pays });
   const totals = financeTotals({ terms: t, agreedTotal, payments: pays, platform });
