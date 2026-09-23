@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Field, TextInput, TextArea, PrimaryButton, GhostButton } from "@/components/inbtwn/bits";
-import { fmtMoney, fmtDateLong } from "@/lib/format";
+import { DocumentPreview, DocumentActions } from "@/components/inbtwn/DocumentPreview";
+import { fmtMoney, fmtDateLong, todayISO } from "@/lib/format";
 import { pricingQuery, proposalQuery } from "@/lib/commercial";
+import { businessSettingsQuery } from "@/lib/business";
+import { buildQuoteDoc, snapshotOf, issueQuoteDocument, nextQuoteNumber, type QuoteDoc } from "@/lib/documents";
+import { isPlatformSource } from "@/lib/finance";
 import {
   quoteQuery,
   quoteTotals,
@@ -36,10 +40,12 @@ export function EventQuote({ event }: { event: EventRow & { client: ClientRow | 
   const quoteQ = useQuery(quoteQuery(eventId));
   const pricing = useQuery(pricingQuery(eventId));
   const proposal = useQuery(proposalQuery(eventId));
+  const settingsQ = useQuery(businessSettingsQuery());
 
   const [mode, setMode] = useState<Mode>("edit");
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const numbering = useRef(false);
 
   const quote = quoteQ.data ?? null;
 
@@ -48,6 +54,30 @@ export function EventQuote({ event }: { event: EventRow & { client: ClientRow | 
     const saved = window.localStorage.getItem(MODE_KEY);
     if (saved === "preview" || saved === "edit") setMode(saved);
   }, []);
+
+  /* Give every quote a stable reference number the first time it exists. */
+  useEffect(() => {
+    if (!quote || quote.quote_number || numbering.current || !settingsQ.data) return;
+    numbering.current = true;
+    const days = settingsQ.data.quote_validity_days ?? 14;
+    const valid = new Date();
+    valid.setDate(valid.getDate() + days);
+    nextQuoteNumber()
+      .then((number) =>
+        supabase
+          .from("event_quotes")
+          .update({
+            quote_number: number,
+            quote_date: quote.quote_date ?? todayISO(),
+            valid_until: quote.valid_until ?? valid.toISOString().slice(0, 10),
+          } as never)
+          .eq("id", quote.id),
+      )
+      .then(() => qc.invalidateQueries({ queryKey: ["quote", eventId] }))
+      .catch(() => {
+        numbering.current = false;
+      });
+  }, [quote, settingsQ.data, eventId, qc]);
 
   const setModeAndRemember = (m: Mode) => {
     setMode(m);
@@ -136,6 +166,12 @@ export function EventQuote({ event }: { event: EventRow & { client: ClientRow | 
     await invalidate();
   };
 
+  const platform = isPlatformSource(event.source);
+  const settings = settingsQ.data ?? null;
+  const liveDoc: QuoteDoc | null = settings ? buildQuoteDoc({ quote, event, settings, platform }) : null;
+  /* Once issued, the client's copy is frozen — later edits never rewrite it. */
+  const doc: QuoteDoc | null = liveDoc ? snapshotOf(quote.document_snapshot, liveDoc) : null;
+
   const setStatus = async (status: QuoteStatus) => {
     const values: Record<string, unknown> = { status };
     if (status === "sent") values["sent_at"] = new Date().toISOString();
@@ -146,6 +182,13 @@ export function EventQuote({ event }: { event: EventRow & { client: ClientRow | 
     }
     const { error } = await supabase.from("event_quotes").update(values as never).eq("id", quote.id);
     if (error) return void toast.error(error.message);
+    if (status === "sent" && !quote.document_snapshot && liveDoc) {
+      try {
+        await issueQuoteDocument(quote.id, liveDoc);
+      } catch (e) {
+        toast.error((e as Error).message);
+      }
+    }
     if (status === "sent" && event.status === "enquiry") {
       const res = await supabase.from("events").update({ status: "quoting" }).eq("id", eventId);
       if (!res.error) {
@@ -187,7 +230,19 @@ export function EventQuote({ event }: { event: EventRow & { client: ClientRow | 
       </div>
 
       {mode === "preview" ? (
-        <QuotePreview quote={quote} money={money} />
+        doc ? (
+          <div className="mt-3 space-y-3">
+            <DocumentActions doc={doc} />
+            {quote.document_snapshot ? (
+              <p className="font-mono text-[10px] text-ink-soft">
+                Showing the issued copy sent to the client{quote.issued_at ? ` on ${fmtDateLong(quote.issued_at.slice(0, 10))}` : ""}.
+              </p>
+            ) : null}
+            <DocumentPreview doc={doc} />
+          </div>
+        ) : (
+          <p className="mt-3 font-mono text-[12px] text-ink-soft">Loading your business details…</p>
+        )
       ) : (
         <QuoteEditor
           quote={quote}
@@ -507,150 +562,3 @@ function QuoteEditor({
   );
 }
 
-/* ---------- Preview mode ---------- */
-
-function lines(text: string | null | undefined) {
-  return (text ?? "")
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
-}
-
-function PreviewBlock({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="mt-7">
-      <h2 className="border-b border-ink/25 pb-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
-        {title}
-      </h2>
-      <div className="mt-3">{children}</div>
-    </section>
-  );
-}
-
-function QuotePreview({ quote, money }: { quote: Quote; money: (n: number) => string }) {
-  const t = quoteTotals(quote);
-  const included = quote.sections.filter((s) => s.included);
-  const includes = lines(quote.whats_included);
-  const shownCharges = quote.charges.filter((c) => c.show_on_quote);
-
-  return (
-    <article className="mx-auto mt-4 w-full max-w-[720px] border border-ink/20 bg-cream px-5 py-8 text-ink sm:px-10 sm:py-12">
-      <header className="border-b border-ink pb-5">
-        <div className="font-display text-[28px] leading-none tracking-wide">INBTWN</div>
-        <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.25em] text-ink-soft">Catering Quotation</div>
-        {quote.title ? <h1 className="mt-5 font-display text-[26px] leading-tight">{quote.title}</h1> : null}
-      </header>
-
-      <dl className="mt-5 grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
-        {[
-          ["Prepared for", quote.client_name],
-          ["Event", quote.event_name],
-          ["Date", quote.event_date ? fmtDateLong(quote.event_date) : null],
-          ["Location", quote.venue],
-          ["Guests", quote.guest_count != null ? String(quote.guest_count) : null],
-          ["Service", [quote.event_type, quote.cuisine, quote.service_style].filter(Boolean).join(" · ") || null],
-        ]
-          .filter(([, v]) => Boolean(v))
-          .map(([label, value]) => (
-            <div key={label as string} className="flex justify-between gap-4 border-b border-ink/10 py-1.5">
-              <dt className="font-mono text-[11px] uppercase tracking-wider text-ink-soft">{label}</dt>
-              <dd className="text-right text-sm font-medium">{value}</dd>
-            </div>
-          ))}
-      </dl>
-
-      {quote.introduction ? (
-        <PreviewBlock title="Introduction">
-          <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{quote.introduction}</p>
-        </PreviewBlock>
-      ) : null}
-
-      {included.length ? (
-        <PreviewBlock title="Proposed menu">
-          <div className="space-y-5">
-            {included.map((s) => (
-              <div key={s.id}>
-                <h3 className="font-display text-[19px] leading-none">{s.name}</h3>
-                <ul className="mt-2 space-y-1">
-                  {s.items
-                    .filter((i) => i.visible)
-                    .map((i) => (
-                      <li key={i.id} className="text-[15px] leading-relaxed">
-                        {i.name}
-                      </li>
-                    ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </PreviewBlock>
-      ) : null}
-
-      {includes.length ? (
-        <PreviewBlock title="What's included">
-          <ul className="space-y-1">
-            {includes.map((l, i) => (
-              <li key={i} className="text-[15px] leading-relaxed">
-                {l}
-              </li>
-            ))}
-          </ul>
-        </PreviewBlock>
-      ) : null}
-
-      <PreviewBlock title="Pricing">
-        <div className="text-[15px]">
-          <div className="flex items-baseline justify-between gap-4 border-b border-ink/10 py-2">
-            <span>
-              {quote.catering_label} — {t.guests} guests × {money(t.perHead)} per person
-            </span>
-            <span className="shrink-0 font-medium">{money(t.cateringTotal)}</span>
-          </div>
-          {shownCharges.map((c) => (
-            <div key={c.id} className="flex items-baseline justify-between gap-4 border-b border-ink/10 py-2">
-              <span>{c.description}</span>
-              <span className="shrink-0 font-medium">{money(Number(c.amount))}</span>
-            </div>
-          ))}
-          {quote.vat_enabled ? (
-            <>
-              <div className="flex items-baseline justify-between gap-4 border-b border-ink/10 py-2">
-                <span>Subtotal</span>
-                <span className="shrink-0 font-medium">{money(t.subtotal)}</span>
-              </div>
-              <div className="flex items-baseline justify-between gap-4 border-b border-ink/10 py-2">
-                <span>VAT at {Number(quote.vat_rate)}%</span>
-                <span className="shrink-0 font-medium">{money(t.vat)}</span>
-              </div>
-            </>
-          ) : null}
-          <div className="mt-2 flex items-baseline justify-between gap-4 border-t border-ink pt-3">
-            <span className="font-mono text-[12px] uppercase tracking-[0.18em]">Total</span>
-            <span className="font-display text-[26px] leading-none">{money(t.total)}</span>
-          </div>
-        </div>
-      </PreviewBlock>
-
-      {quote.client_notes ? (
-        <PreviewBlock title="Notes">
-          <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{quote.client_notes}</p>
-        </PreviewBlock>
-      ) : null}
-
-      {quote.card_fee_enabled && quote.card_fee_percentage != null ? (
-        <PreviewBlock title="Payment">
-          <p className="text-[15px] leading-relaxed">
-            Payment by bank transfer carries no processing fee. Card payments are subject to a{" "}
-            {Number(quote.card_fee_percentage)}% processing fee.
-          </p>
-        </PreviewBlock>
-      ) : null}
-
-      {quote.terms ? (
-        <PreviewBlock title="Terms">
-          <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{quote.terms}</p>
-        </PreviewBlock>
-      ) : null}
-    </article>
-  );
-}

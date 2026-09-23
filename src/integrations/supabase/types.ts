@@ -38,6 +38,119 @@ export type Database = {
         }
         Relationships: []
       }
+      business_settings: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          balance_due_days_before: number
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_details_on_invoices: boolean
+          bank_details_on_quotes: boolean
+          bank_sort_code: string | null
+          card_fee_percentage: number
+          card_payments_available: boolean
+          card_wording: string | null
+          city: string | null
+          company_number: string | null
+          country: string | null
+          created_at: string
+          currency: string
+          default_payment_method: string
+          deposit_percentage: number
+          deposit_wording: string | null
+          email: string | null
+          id: string
+          invoice_payment_terms: string | null
+          legal_name: string | null
+          organisation_id: string
+          phone: string | null
+          postcode: string | null
+          quote_terms: string | null
+          quote_validity_days: number
+          trading_name: string
+          updated_at: string
+          vat_rate: number
+          vat_registered: boolean
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          balance_due_days_before?: number
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_details_on_invoices?: boolean
+          bank_details_on_quotes?: boolean
+          bank_sort_code?: string | null
+          card_fee_percentage?: number
+          card_payments_available?: boolean
+          card_wording?: string | null
+          city?: string | null
+          company_number?: string | null
+          country?: string | null
+          created_at?: string
+          currency?: string
+          default_payment_method?: string
+          deposit_percentage?: number
+          deposit_wording?: string | null
+          email?: string | null
+          id?: string
+          invoice_payment_terms?: string | null
+          legal_name?: string | null
+          organisation_id?: string
+          phone?: string | null
+          postcode?: string | null
+          quote_terms?: string | null
+          quote_validity_days?: number
+          trading_name?: string
+          updated_at?: string
+          vat_rate?: number
+          vat_registered?: boolean
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          balance_due_days_before?: number
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_details_on_invoices?: boolean
+          bank_details_on_quotes?: boolean
+          bank_sort_code?: string | null
+          card_fee_percentage?: number
+          card_payments_available?: boolean
+          card_wording?: string | null
+          city?: string | null
+          company_number?: string | null
+          country?: string | null
+          created_at?: string
+          currency?: string
+          default_payment_method?: string
+          deposit_percentage?: number
+          deposit_wording?: string | null
+          email?: string | null
+          id?: string
+          invoice_payment_terms?: string | null
+          legal_name?: string | null
+          organisation_id?: string
+          phone?: string | null
+          postcode?: string | null
+          quote_terms?: string | null
+          quote_validity_days?: number
+          trading_name?: string
+          updated_at?: string
+          vat_rate?: number
+          vat_registered?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_settings_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: true
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           billing_address: string | null
@@ -309,11 +422,13 @@ export type Database = {
           billing_details: string | null
           client_name: string | null
           created_at: string
+          document_snapshot: Json | null
           due_date: string | null
           event_id: string
           id: string
           invoice_number: string
           issue_date: string
+          issued_at: string | null
           kind: string
           notes: string | null
           organisation_id: string
@@ -328,11 +443,13 @@ export type Database = {
           billing_details?: string | null
           client_name?: string | null
           created_at?: string
+          document_snapshot?: Json | null
           due_date?: string | null
           event_id: string
           id?: string
           invoice_number: string
           issue_date?: string
+          issued_at?: string | null
           kind?: string
           notes?: string | null
           organisation_id?: string
@@ -347,11 +464,13 @@ export type Database = {
           billing_details?: string | null
           client_name?: string | null
           created_at?: string
+          document_snapshot?: Json | null
           due_date?: string | null
           event_id?: string
           id?: string
           invoice_number?: string
           issue_date?: string
+          issued_at?: string | null
           kind?: string
           notes?: string | null
           organisation_id?: string
@@ -1212,6 +1331,7 @@ export type Database = {
           client_notes: string | null
           created_at: string
           cuisine: string | null
+          document_snapshot: Json | null
           event_date: string | null
           event_id: string
           event_name: string | null
@@ -1219,15 +1339,20 @@ export type Database = {
           guest_count: number | null
           id: string
           introduction: string | null
+          issued_at: string | null
           organisation_id: string
           price_per_head: number | null
           pricing_option_id: string | null
+          quote_date: string | null
+          quote_number: string | null
+          revision: number
           sent_at: string | null
           service_style: string | null
           status: string
           terms: string | null
           title: string | null
           updated_at: string
+          valid_until: string | null
           vat_enabled: boolean
           vat_rate: number
           venue: string | null
@@ -1243,6 +1368,7 @@ export type Database = {
           client_notes?: string | null
           created_at?: string
           cuisine?: string | null
+          document_snapshot?: Json | null
           event_date?: string | null
           event_id: string
           event_name?: string | null
@@ -1250,15 +1376,20 @@ export type Database = {
           guest_count?: number | null
           id?: string
           introduction?: string | null
+          issued_at?: string | null
           organisation_id?: string
           price_per_head?: number | null
           pricing_option_id?: string | null
+          quote_date?: string | null
+          quote_number?: string | null
+          revision?: number
           sent_at?: string | null
           service_style?: string | null
           status?: string
           terms?: string | null
           title?: string | null
           updated_at?: string
+          valid_until?: string | null
           vat_enabled?: boolean
           vat_rate?: number
           venue?: string | null
@@ -1274,6 +1405,7 @@ export type Database = {
           client_notes?: string | null
           created_at?: string
           cuisine?: string | null
+          document_snapshot?: Json | null
           event_date?: string | null
           event_id?: string
           event_name?: string | null
@@ -1281,15 +1413,20 @@ export type Database = {
           guest_count?: number | null
           id?: string
           introduction?: string | null
+          issued_at?: string | null
           organisation_id?: string
           price_per_head?: number | null
           pricing_option_id?: string | null
+          quote_date?: string | null
+          quote_number?: string | null
+          revision?: number
           sent_at?: string | null
           service_style?: string | null
           status?: string
           terms?: string | null
           title?: string | null
           updated_at?: string
+          valid_until?: string | null
           vat_enabled?: boolean
           vat_rate?: number
           venue?: string | null
