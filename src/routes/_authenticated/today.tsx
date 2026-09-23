@@ -39,7 +39,23 @@ const SEV_CLASS: Record<Severity, string> = {
 
 function TodayPage() {
   const data = useQuery(todayDataQuery);
+  const qc = useQueryClient();
   const [showAll, setShowAll] = useState(false);
+  const [completing, setCompleting] = useState<AttentionItem | null>(null);
+
+  const markCompleted = async (item: AttentionItem) => {
+    const { error } = await supabase
+      .from("events")
+      .update({ status: "completed", completed_at: new Date().toISOString() })
+      .eq("id", item.eventId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`${item.eventTitle} marked completed`);
+    qc.invalidateQueries({ queryKey: ["today-data"] });
+    qc.invalidateQueries({ queryKey: ["events"] });
+  };
 
   const model = useMemo(() => {
     if (!data.data) return null;
