@@ -188,7 +188,7 @@ function EventDetailPage() {
           {e.is_demo ? <DemoTag /> : null}
           {e.status === "completed" ? (
             <span className="label-mono text-ink-soft">
-              Close-out: {isClosed(e) ? "Closed" : "Open"}
+              Close-out: {isClosed(e) ? "Complete" : "Open"}
             </span>
           ) : null}
         </div>
@@ -310,7 +310,6 @@ function EventDetailPage() {
               </div>
             </div>
 
-            {e.status === "completed" ? <EventCloseout eventId={eventId} /> : null}
 
             <ClientBlock event={e} compact />
 
