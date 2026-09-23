@@ -25,6 +25,7 @@ import {
   costSummary,
   profitability,
   isPlatformSource,
+  resolveAgreedValue,
   defaultPayoutDate,
   labelOf,
   maybeNum,
@@ -105,8 +106,17 @@ export function EventFinance({ event }: { event: Ev }) {
 
   const quoteTotal = quote.data ? quoteTotals(quote.data).total : null;
   const accepted = quote.data?.status === "accepted";
-  const agreedTotal =
-    maybeNum(t?.agreed_total_override) ?? maybeNum(quote.data?.agreed_total) ?? (quoteTotal ?? null);
+  const quoteValue = quote.data ? (maybeNum(quote.data.agreed_total) ?? quoteTotal) : null;
+  const agreed = resolveAgreedValue({ terms: t, quoteValue, quoteAccepted: accepted });
+  const agreedTotal = agreed.value;
+  const agreedNote =
+    agreed.source === "manual"
+      ? "Manual agreement"
+      : agreed.source === "quote"
+        ? accepted
+          ? "Accepted quote"
+          : "Quote not accepted"
+        : "No quote";
 
   const schedule = buildSchedule({ terms: t, agreedTotal, eventDate: event.event_date, payments: pays });
   const totals = financeTotals({ terms: t, agreedTotal, payments: pays, platform });
@@ -164,12 +174,24 @@ export function EventFinance({ event }: { event: Ev }) {
           <Stat label="Payout status" value={t?.payout_status === "received" ? "Received" : "Awaiting"} />
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-2">
-          <Stat label="Agreed value" value={money(totals.revenue ?? agreedTotal)} note={accepted ? "Accepted quote" : quote.data ? "Quote not accepted" : "No quote"} />
-          <Stat label="Received" value={money(totals.received)} />
-          <Stat label="Outstanding" value={money(totals.outstanding)} />
+        <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            <Stat label="Agreed value" value={money(totals.revenue ?? agreedTotal)} note={agreedNote} />
+            <Stat label="Received" value={money(totals.received)} />
+            <Stat label="Outstanding" value={money(totals.outstanding)} />
+          </div>
+          <AgreedValueEditor
+            terms={t}
+            agreedSource={agreed.source}
+            manual={maybeNum(t?.agreed_total_override)}
+            quoteValue={quoteValue}
+            quoteAccepted={accepted}
+            money={money}
+            patch={patchTerms}
+          />
         </div>
       )}
+
 
       {platform ? (
         <PayoutPanel terms={t} event={event} money={money} patch={patchTerms} />
@@ -220,6 +242,102 @@ export function EventFinance({ event }: { event: Ev }) {
     </div>
   );
 }
+
+/* ---------- Agreed value (manual / offline agreements) ---------- */
+
+function AgreedValueEditor({
+  terms,
+  agreedSource,
+  manual,
+  quoteValue,
+  quoteAccepted,
+  money,
+  patch,
+}: {
+  terms: TermsRow | null;
+  agreedSource: "quote" | "manual" | null;
+  manual: number | null;
+  quoteValue: number | null;
+  quoteAccepted: boolean;
+  money: (n: number | null | undefined) => string;
+  patch: (v: Partial<TermsRow>) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState(manual != null ? String(manual) : "");
+
+  const save = async () => {
+    const value = Number(amount);
+    if (!amount.trim() || Number.isNaN(value) || value < 0) return void toast.error("Enter an agreed value");
+    await patch({ agreed_total_override: value, agreed_total_source: "manual" } as Partial<TermsRow>);
+    setOpen(false);
+    toast.success("Agreed value saved");
+  };
+
+  const clear = async () => {
+    await patch({ agreed_total_override: null, agreed_total_source: null } as Partial<TermsRow>);
+    setAmount("");
+    setOpen(false);
+    toast.success("Manual agreed value removed");
+  };
+
+  const useQuoteValue = async () => {
+    await patch({ agreed_total_source: "quote" } as Partial<TermsRow>);
+    toast.success("Using the accepted quote as the agreed value");
+  };
+
+  if (!terms) return null;
+  const conflict = quoteAccepted && manual != null && agreedSource === "manual";
+
+  return (
+    <div className="border border-ink/15 bg-cream px-3 py-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <span className="label-mono text-ink-soft">
+          {agreedSource === "manual" ? "Agreed outside INBTWN" : agreedSource === "quote" ? "From the quote" : "No agreed value set"}
+        </span>
+        <button type="button" onClick={() => setOpen((o) => !o)} className="font-mono text-[11px] text-flame">
+          {open ? "Close" : manual != null ? "Edit agreed value" : "Set agreed value"}
+        </button>
+      </div>
+
+      {conflict ? (
+        <div className="mt-2 border-t border-ink/10 pt-2">
+          <p className="font-mono text-[10px] text-flame">
+            A quote has been accepted at {money(quoteValue)}, but this event uses a manual agreed value of{" "}
+            {money(manual)}. Choose which one is the commercial source of truth — payments and invoices are kept either
+            way.
+          </p>
+          <div className="mt-2 flex gap-2">
+            <GhostButton type="button" onClick={useQuoteValue}>
+              Use accepted quote
+            </GhostButton>
+            <GhostButton type="button" onClick={() => toast.success("Keeping the manual agreed value")}>
+              Keep manual value
+            </GhostButton>
+          </div>
+        </div>
+      ) : null}
+
+      {open ? (
+        <div className="mt-2 space-y-2 border-t border-ink/10 pt-2">
+          <Field label="Agreed booking value" hint="the total price agreed with the client — not the budget">
+            <TextInput inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 1200" />
+          </Field>
+          <div className="flex gap-2">
+            <PrimaryButton type="button" onClick={save}>
+              Save agreed value
+            </PrimaryButton>
+            {manual != null ? (
+              <GhostButton type="button" onClick={clear}>
+                Remove
+              </GhostButton>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 
 /* ---------- Direct: deposit & balance schedule ---------- */
 

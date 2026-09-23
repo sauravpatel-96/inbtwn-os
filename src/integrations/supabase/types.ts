@@ -548,6 +548,7 @@ export type Database = {
           actual_payout: number | null
           actual_payout_date: string | null
           agreed_total_override: number | null
+          agreed_total_source: string | null
           balance_due_date: string | null
           balance_due_days_before: number
           card_fee_applied: boolean
@@ -572,6 +573,7 @@ export type Database = {
           actual_payout?: number | null
           actual_payout_date?: string | null
           agreed_total_override?: number | null
+          agreed_total_source?: string | null
           balance_due_date?: string | null
           balance_due_days_before?: number
           card_fee_applied?: boolean
@@ -596,6 +598,7 @@ export type Database = {
           actual_payout?: number | null
           actual_payout_date?: string | null
           agreed_total_override?: number | null
+          agreed_total_source?: string | null
           balance_due_date?: string | null
           balance_due_days_before?: number
           card_fee_applied?: boolean

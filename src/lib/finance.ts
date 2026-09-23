@@ -193,6 +193,30 @@ export async function ensurePaymentTerms(
   return res.data as TermsRow;
 }
 
+/* ---------- Agreed commercial value ---------- */
+
+export type AgreedSource = "quote" | "manual" | null;
+export type AgreedValue = { value: number | null; source: AgreedSource };
+
+/**
+ * The agreed booking value. An accepted INBTWN quote is normally the source of truth,
+ * but an offline/manual agreement may be entered when no accepted quote exists.
+ * The event budget is NEVER used as an agreed value.
+ */
+export function resolveAgreedValue(args: {
+  terms: TermsRow | null;
+  quoteValue: number | null;
+  quoteAccepted: boolean;
+}): AgreedValue {
+  const { terms, quoteValue, quoteAccepted } = args;
+  const manual = maybeNum(terms?.agreed_total_override);
+  const source = (terms?.agreed_total_source ?? null) as AgreedSource;
+  if (source === "quote" && quoteValue !== null) return { value: quoteValue, source: "quote" };
+  if (manual !== null) return { value: manual, source: "manual" };
+  if (quoteValue !== null) return { value: quoteValue, source: "quote" };
+  return { value: null, source: null };
+}
+
 /* ---------- Derived schedule ---------- */
 
 export type ScheduleLine = {
