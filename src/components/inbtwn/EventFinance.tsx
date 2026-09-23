@@ -238,6 +238,7 @@ export function EventFinance({ event }: { event: Ev }) {
         event={event}
         invoices={invs}
         payments={pays}
+        allocations={allocs}
         money={money}
         qc={qc}
         agreedTotal={agreedTotal}
