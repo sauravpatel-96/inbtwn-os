@@ -151,8 +151,72 @@ export type Database = {
           },
         ]
       }
+      client_contacts: {
+        Row: {
+          active: boolean
+          client_id: string
+          created_at: string
+          email: string | null
+          first_name: string | null
+          id: string
+          is_primary: boolean
+          last_name: string | null
+          notes: string | null
+          organisation_id: string
+          phone: string | null
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          client_id: string
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          is_primary?: boolean
+          last_name?: string | null
+          notes?: string | null
+          organisation_id?: string
+          phone?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          client_id?: string
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          is_primary?: boolean
+          last_name?: string | null
+          notes?: string | null
+          organisation_id?: string
+          phone?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_contacts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_contacts_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
+          active: boolean
           billing_address: string | null
           client_type: Database["public"]["Enums"]["client_type"]
           company_name: string | null
@@ -166,9 +230,12 @@ export type Database = {
           notes: string | null
           organisation_id: string
           phone: string | null
+          source: string | null
           updated_at: string
+          website: string | null
         }
         Insert: {
+          active?: boolean
           billing_address?: string | null
           client_type?: Database["public"]["Enums"]["client_type"]
           company_name?: string | null
@@ -182,9 +249,12 @@ export type Database = {
           notes?: string | null
           organisation_id?: string
           phone?: string | null
+          source?: string | null
           updated_at?: string
+          website?: string | null
         }
         Update: {
+          active?: boolean
           billing_address?: string | null
           client_type?: Database["public"]["Enums"]["client_type"]
           company_name?: string | null
@@ -198,7 +268,9 @@ export type Database = {
           notes?: string | null
           organisation_id?: string
           phone?: string | null
+          source?: string | null
           updated_at?: string
+          website?: string | null
         }
         Relationships: [
           {
@@ -1510,6 +1582,7 @@ export type Database = {
           budget_max: number | null
           budget_min: number | null
           client_id: string | null
+          contact_id: string | null
           created_at: string
           cuisine: string | null
           currency: string
@@ -1545,6 +1618,7 @@ export type Database = {
           budget_max?: number | null
           budget_min?: number | null
           client_id?: string | null
+          contact_id?: string | null
           created_at?: string
           cuisine?: string | null
           currency?: string
@@ -1580,6 +1654,7 @@ export type Database = {
           budget_max?: number | null
           budget_min?: number | null
           client_id?: string | null
+          contact_id?: string | null
           created_at?: string
           cuisine?: string | null
           currency?: string
@@ -1614,6 +1689,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "client_contacts"
             referencedColumns: ["id"]
           },
           {

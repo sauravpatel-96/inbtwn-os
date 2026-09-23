@@ -6,7 +6,10 @@ import { PageTitle } from "@/components/inbtwn/bits";
 import { EventForm } from "@/components/inbtwn/EventForm";
 
 export const Route = createFileRoute("/_authenticated/events/new")({
-  validateSearch: z.object({ clientId: z.string().uuid().optional() }),
+  validateSearch: z.object({
+    clientId: z.string().uuid().optional(),
+    contactId: z.string().uuid().optional(),
+  }),
   head: () => ({
     meta: [
       { title: "New enquiry — INBTWN OS" },
@@ -19,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/events/new")({
 });
 
 function NewEventPage() {
-  const { clientId } = Route.useSearch();
+  const { clientId, contactId } = Route.useSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
   return (
@@ -32,6 +35,7 @@ function NewEventPage() {
       <PageTitle title="New enquiry" aside="status: Enquiry" />
       <EventForm
         presetClientId={clientId}
+        presetContactId={contactId}
         onSaved={(e) => {
           qc.invalidateQueries({ queryKey: ["events"] });
           qc.invalidateQueries({ queryKey: ["clients"] });
