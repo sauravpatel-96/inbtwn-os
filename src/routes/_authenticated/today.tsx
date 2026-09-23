@@ -8,6 +8,16 @@ import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, t
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { statusLabel } from "@/lib/constants";
 import { PageTitle, SectionHeading, StatusPill, EmptyNote } from "@/components/inbtwn/bits";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/today")({
   head: () => ({
