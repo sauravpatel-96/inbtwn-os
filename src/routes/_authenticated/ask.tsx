@@ -60,20 +60,27 @@ function InlineMarkdown({ text }: { text: string }) {
 
 /** Allowlisted Markdown: paragraphs, line breaks, bullets, bold and safe in-app links. */
 function AnswerText({ text }: { text: string }) {
-  const blocks = text.trim().split(/\n\s*\n/);
+  const lines = text.trim().split("\n");
+  const blocks: Array<{ type: "paragraph" | "list"; lines: string[] }> = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const type = /^[-*]\s+/.test(trimmed) ? "list" : "paragraph";
+    const previous = blocks.at(-1);
+    if (previous?.type === type) previous.lines.push(trimmed);
+    else blocks.push({ type, lines: [trimmed] });
+  }
 
   return (
     <div className="space-y-2.5 text-[14px] leading-[1.55]">
       {blocks.map((block, blockIndex) => {
-        const lines = block.split("\n");
-        const isList = lines.every((line) => /^\s*[-*]\s+/.test(line));
-
-        if (isList) {
+        if (block.type === "list") {
           return (
             <ul key={blockIndex} className="space-y-1 pl-4">
-              {lines.map((line, lineIndex) => (
+              {block.lines.map((line, lineIndex) => (
                 <li key={lineIndex} className="list-disc pl-0.5 marker:text-flame">
-                  <InlineMarkdown text={line.replace(/^\s*[-*]\s+/, "")} />
+                  <InlineMarkdown text={line.replace(/^[-*]\s+/, "")} />
                 </li>
               ))}
             </ul>
@@ -82,7 +89,7 @@ function AnswerText({ text }: { text: string }) {
 
         return (
           <p key={blockIndex}>
-            {lines.map((line, lineIndex) => (
+            {block.lines.map((line, lineIndex) => (
               <span key={lineIndex}>
                 {lineIndex > 0 ? <br /> : null}
                 <InlineMarkdown text={line} />
