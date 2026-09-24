@@ -1,3 +1,4 @@
+import { allPurchaseOptionsQuery, purchaseFromScratch } from "@/lib/costing";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -112,6 +113,8 @@ export function EventShopping({ eventId, guestCount }: { eventId: string; guestC
   const checks = useQuery(shoppingChecksQuery(eventId));
   const kitItems = useQuery(kitItemsQuery);
   const kitRows = useQuery(eventKitQuery(eventId));
+  const purchaseOpts = useQuery(allPurchaseOptionsQuery);
+  const [showPacks, setShowPacks] = useState(false);
 
   const guests = guestCount ?? 0;
 
@@ -151,6 +154,7 @@ export function EventShopping({ eventId, guestCount }: { eventId: string; guestC
 
   const knownCost = lines.reduce((sum, l) => sum + (l.cost ?? 0), 0);
   const missingCost = lines.filter((l) => l.cost === null);
+  const scratch = useMemo(() => purchaseFromScratch(lines, purchaseOpts.data ?? []), [lines, purchaseOpts.data]);
 
   const toggle = async (line: ShoppingLine) => {
     const done = collectedSet.has(line.ingredientId);
@@ -239,7 +243,7 @@ export function EventShopping({ eventId, guestCount }: { eventId: string; guestC
 
       {lines.length ? (
         <div className="mt-4">
-          <SectionHeading title="Estimated purchase cost" />
+          <SectionHeading title="Ingredient usage cost" />
           <TornCard className="px-4 py-4 shadow-card">
             <div className="flex items-baseline justify-between gap-3">
               <span className="label-mono text-ink-soft">
@@ -267,6 +271,43 @@ export function EventShopping({ eventId, guestCount }: { eventId: string; guestC
                     {missingCost.map((l) => l.name).join(", ")}
                   </div>
                 ) : null}
+              </div>
+            ) : null}
+          </TornCard>
+        </div>
+      ) : null}
+
+      {lines.length ? (
+        <div className="mt-4">
+          <SectionHeading title="Purchase cost from scratch" />
+          <TornCard className="px-4 py-4 shadow-card">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="label-mono text-ink-soft">{scratch.complete ? "Whole packs" : "Known packs only"}</span>
+              <span className="font-mono text-[15px]">{scratch.priced.length ? fmtCost(scratch.total) : "—"}</span>
+            </div>
+            <div className="mt-1 font-mono text-[10px] text-ink-soft">
+              Cash needed buying full packs from your preferred options, ignoring stock you already have. Usage cost above can be lower.
+            </div>
+            {!scratch.complete ? (
+              <div className="mt-1 font-mono text-[11px] text-flame">
+                No pack price for {scratch.unavailable.length} ingredient{scratch.unavailable.length === 1 ? "" : "s"}
+              </div>
+            ) : null}
+            {scratch.priced.length ? (
+              <button type="button" onClick={() => setShowPacks((o) => !o)} className="label-mono mt-2 text-[10px] text-flame">
+                {showPacks ? "Hide packs" : "Show packs"}
+              </button>
+            ) : null}
+            {showPacks ? (
+              <div className="mt-2 space-y-1 font-mono text-[11px]">
+                {scratch.priced.map((p) => (
+                  <div key={p.ingredientId} className="flex justify-between gap-3">
+                    <span>
+                      {p.name} · {p.packs} × {p.packLabel} ({p.supplier})
+                    </span>
+                    <span>{fmtCost(p.cost)}</span>
+                  </div>
+                ))}
               </div>
             ) : null}
           </TornCard>
