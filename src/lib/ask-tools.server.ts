@@ -38,6 +38,7 @@ import {
 } from "./finance";
 import { statusLabel, sourceLabel } from "./constants";
 import { clientDisplayName } from "./format";
+import { calcShift, combinedCosts, labourTotals, shiftName, workTypeLabel } from "./staff";
 
 type ReadClient = { from: (table: string) => any };
 
@@ -100,7 +101,8 @@ function financeFor(ctx: AskContext, d: EventDerived, today: Date) {
     payments,
     today,
   });
-  const cs = costSummary(costs);
+  const shifts = ctx.data.shifts.filter((sh) => sh.event_id === id);
+  const cs = combinedCosts(costs, shifts);
   const revenue = d.platform ? totals.revenue : d.agreed;
   const prof = profitability(revenue, cs.actual);
   const estProf = profitability(revenue, cs.estimated);
@@ -165,6 +167,18 @@ function financeFor(ctx: AskContext, d: EventDerived, today: Date) {
       estimated: maybeNum(c.estimated_amount),
       actual: maybeNum(c.actual_amount),
     })),
+    staff_labour: cs.usesStaff
+      ? {
+          source: "From Staff shifts",
+          estimated: cs.labour.estimated,
+          actual_recorded: cs.labour.actual,
+          actual_complete: cs.labour.actualComplete,
+          shifts_without_actual_hours: cs.labour.actualMissing,
+          unpaid_to_staff: cs.labour.unpaid,
+        }
+      : null,
+    staff_labour_note:
+      "When staff_labour is present it is already included in the cost totals, and manual 'Staff' job costs are NOT counted (replaced by Staff shifts). Never add them together.",
     costs_estimated_total: cs.estimated,
     costs_actual_total: cs.actual,
     costs_actual_complete: cs.actualComplete,
@@ -554,6 +568,70 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
             };
           }),
           note: "Times are derived from the event's service time, arrival lead, travel and buffer. Read-only; edit on Event > Plan > Event day.",
+        });
+      },
+    }),
+    get_staff: tool({
+      description:
+        "Staff & labour: the casual staff directory and event shifts. Each shift has who (Me/owner, a named staff member, or an unassigned role still needed), work type (Prep/Event/Other), date, planned start/finish/break, planned paid hours, hourly rate, estimated cost, optional actual start/finish/break, actual hours and actual cost, and Paid/Unpaid. Use for 'who is working X', 'what time is Sam starting', 'how much will staff cost', 'what did I actually spend on staff', 'who haven't I paid', 'do I still need anyone'. Owner (Me) shifts never cost anything and are never owed wages. Read-only: shifts are edited on the event's Staff tab.",
+      inputSchema: z.object({
+        event_id: z.string().nullable().describe("One event id, or null"),
+        from: z.string().nullable().describe("Inclusive shift/event date yyyy-mm-dd"),
+        to: z.string().nullable().describe("Inclusive shift/event date yyyy-mm-dd"),
+        unpaid_only: z.boolean().nullable(),
+      }),
+      execute: async ({ event_id, from, to, unpaid_only }) => {
+        const byEvent = new Map(ctx.derived.map((d) => [d.event.id, d]));
+        const shifts = ctx.data.shifts
+          .filter((sh) => byEvent.has(sh.event_id))
+          .filter((sh) => (event_id ? sh.event_id === event_id : true))
+          .filter((sh) => (from || to ? inRange(sh.shift_date ?? byEvent.get(sh.event_id)!.event.event_date, from, to) : true))
+          .filter((sh) => (unpaid_only ? !sh.is_owner && !!sh.staff_member_id && sh.payment_status !== "paid" : true));
+        const eventIds = [...new Set(shifts.map((s) => s.event_id))];
+        return mark("get_staff", {
+          directory: ctx.data.staff.map((m) => ({ name: m.name, default_hourly_rate: maybeNum(m.default_hourly_rate), active: m.active, phone: m.phone, email: m.email })),
+          events: eventIds.map((eid) => {
+            const d = byEvent.get(eid)!;
+            const list = shifts.filter((s) => s.event_id === eid);
+            const lt = labourTotals(ctx.data.shifts.filter((s) => s.event_id === eid));
+            return {
+              event: d.event.title,
+              event_id: eid,
+              event_date: d.event.event_date,
+              estimated_labour: lt.estimated,
+              actual_labour_recorded: lt.actual,
+              actual_complete: lt.actualComplete,
+              shifts_without_actual_hours: lt.actualMissing,
+              unpaid_to_staff: lt.unpaid,
+              still_needed: lt.unassigned,
+              shifts: list.map((sh) => {
+                const c = calcShift(sh);
+                const r2 = (n: number | null) => (n == null ? null : round2(n));
+                return {
+                  who: sh.is_owner ? "Me (owner)" : shiftName(sh, ctx.data.staff),
+                  role: sh.role_label,
+                  assigned: sh.is_owner || !!sh.staff_member_id,
+                  owner: sh.is_owner,
+                  work_type: workTypeLabel(sh.work_type),
+                  date: sh.shift_date,
+                  start: sh.start_time?.slice(0, 5) ?? null,
+                  finish: sh.end_time?.slice(0, 5) ?? null,
+                  unpaid_break_minutes: sh.break_minutes,
+                  planned_hours: c.plannedHours,
+                  hourly_rate: sh.is_owner ? 0 : maybeNum(sh.hourly_rate),
+                  estimated_cost: sh.is_owner ? 0 : r2(c.plannedCost),
+                  actual_start: sh.actual_start_time?.slice(0, 5) ?? null,
+                  actual_finish: sh.actual_end_time?.slice(0, 5) ?? null,
+                  actual_hours: c.actualHours,
+                  actual_cost: sh.is_owner ? null : r2(c.actualCost),
+                  payment: sh.is_owner ? "n/a (owner)" : !sh.staff_member_id ? "n/a (unassigned)" : sh.payment_status,
+                  paid_at: sh.paid_at,
+                };
+              }),
+              link: eventLink(eid, "staff"),
+            };
+          }),
+          note: "Estimated and actual are separate: never present estimated cost as actual. If actual hours are missing say so. Read-only; changes happen on Event > Staff.",
         });
       },
     }),

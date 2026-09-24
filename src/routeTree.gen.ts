@@ -17,6 +17,7 @@ import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events.index'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 import { Route as AuthenticatedLibraryIndexRouteImport } from './routes/_authenticated/library.index'
+import { Route as AuthenticatedLibraryStaffRouteImport } from './routes/_authenticated/library.staff'
 import { Route as AuthenticatedSettingsBusinessRouteImport } from './routes/_authenticated/settings.business'
 import { Route as AuthenticatedEventsEventIdIndexRouteImport } from './routes/_authenticated/events.$eventId.index'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events.$eventId.edit'
@@ -76,6 +77,12 @@ const AuthenticatedLibraryIndexRoute =
   AuthenticatedLibraryIndexRouteImport.update({
     id: '/library/',
     path: '/library/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibraryStaffRoute =
+  AuthenticatedLibraryStaffRouteImport.update({
+    id: '/library/staff',
+    path: '/library/staff',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSettingsBusinessRoute =
@@ -199,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/ask': typeof AuthenticatedAskRoute
   '/today': typeof AuthenticatedTodayRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
+  '/library/staff': typeof AuthenticatedLibraryStaffRoute
   '/settings/business': typeof AuthenticatedSettingsBusinessRoute
   '/events/': typeof AuthenticatedEventsIndexRoute
   '/library/': typeof AuthenticatedLibraryIndexRoute
@@ -227,6 +235,7 @@ export interface FileRoutesByTo {
   '/ask': typeof AuthenticatedAskRoute
   '/today': typeof AuthenticatedTodayRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
+  '/library/staff': typeof AuthenticatedLibraryStaffRoute
   '/settings/business': typeof AuthenticatedSettingsBusinessRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/library': typeof AuthenticatedLibraryIndexRoute
@@ -257,6 +266,7 @@ export interface FileRoutesById {
   '/_authenticated/ask': typeof AuthenticatedAskRoute
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
+  '/_authenticated/library/staff': typeof AuthenticatedLibraryStaffRoute
   '/_authenticated/settings/business': typeof AuthenticatedSettingsBusinessRoute
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
   '/_authenticated/library/': typeof AuthenticatedLibraryIndexRoute
@@ -287,6 +297,7 @@ export interface FileRouteTypes {
     | '/ask'
     | '/today'
     | '/events/new'
+    | '/library/staff'
     | '/settings/business'
     | '/events/'
     | '/library/'
@@ -315,6 +326,7 @@ export interface FileRouteTypes {
     | '/ask'
     | '/today'
     | '/events/new'
+    | '/library/staff'
     | '/settings/business'
     | '/events'
     | '/library'
@@ -344,6 +356,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ask'
     | '/_authenticated/today'
     | '/_authenticated/events/new'
+    | '/_authenticated/library/staff'
     | '/_authenticated/settings/business'
     | '/_authenticated/events/'
     | '/_authenticated/library/'
@@ -429,6 +442,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library/'
       preLoaderRoute: typeof AuthenticatedLibraryIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/staff': {
+      id: '/_authenticated/library/staff'
+      path: '/library/staff'
+      fullPath: '/library/staff'
+      preLoaderRoute: typeof AuthenticatedLibraryStaffRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/business': {
@@ -571,6 +591,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAskRoute: typeof AuthenticatedAskRoute
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
+  AuthenticatedLibraryStaffRoute: typeof AuthenticatedLibraryStaffRoute
   AuthenticatedSettingsBusinessRoute: typeof AuthenticatedSettingsBusinessRoute
   AuthenticatedEventsIndexRoute: typeof AuthenticatedEventsIndexRoute
   AuthenticatedLibraryIndexRoute: typeof AuthenticatedLibraryIndexRoute
@@ -598,6 +619,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAskRoute: AuthenticatedAskRoute,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,
+  AuthenticatedLibraryStaffRoute: AuthenticatedLibraryStaffRoute,
   AuthenticatedSettingsBusinessRoute: AuthenticatedSettingsBusinessRoute,
   AuthenticatedEventsIndexRoute: AuthenticatedEventsIndexRoute,
   AuthenticatedLibraryIndexRoute: AuthenticatedLibraryIndexRoute,

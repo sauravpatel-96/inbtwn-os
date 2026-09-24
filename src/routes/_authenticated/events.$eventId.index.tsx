@@ -19,6 +19,7 @@ import { EventPricing } from "@/components/inbtwn/EventPricing";
 import { EventNotes } from "@/components/inbtwn/EventNotes";
 import { EventQuote } from "@/components/inbtwn/EventQuote";
 import { EventFinance } from "@/components/inbtwn/EventFinance";
+import { EventStaff } from "@/components/inbtwn/EventStaff";
 import { isClosed } from "@/lib/closeout";
 import { stageOf, stageLabel, accessLabel } from "@/lib/commercial";
 import {
@@ -378,6 +379,8 @@ function EventDetailPage() {
           <EventFinance event={e} />
         ) : s === "packing" ? (
           <EventPacking eventId={eventId} guestCount={e.guest_count} />
+        ) : s === "staff" ? (
+          <EventStaff event={e} />
         ) : (
           <div className="torn bg-cream px-5 py-8 text-center">
             <div className="font-display text-[22px] leading-none">{SECTION_LABEL[s]}</div>

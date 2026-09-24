@@ -49,6 +49,8 @@ import { fmtDateLong, todayISO } from "@/lib/format";
 import type { BaseUnit } from "@/lib/units";
 import type { EventRow } from "@/lib/queries";
 import { EventRunSheet } from "@/components/inbtwn/EventRunSheet";
+import { eventShiftsQuery, labourTotals, shiftName, staffMembersQuery } from "@/lib/staff";
+import { fmtMoney } from "@/lib/format";
 
 type Filter = "open" | "all" | "done";
 
@@ -152,6 +154,8 @@ export function EventPlan({ event }: { event: EventRow }) {
   const shopChecks = useQuery(shoppingChecksQuery(eventId));
   const packItems = useQuery(packingItemsQuery(eventId));
   const packChecks = useQuery(packingChecksQuery(eventId));
+  const shiftsQ = useQuery(eventShiftsQuery(eventId));
+  const staffQ = useQuery(staffMembersQuery);
 
   const [filter, setFilter] = useState<Filter>("open");
   const [open, setOpen] = useState(false);
@@ -377,6 +381,26 @@ export function EventPlan({ event }: { event: EventRow }) {
     return <p className="font-mono text-[12px] text-ink-soft">Loading…</p>;
 
   const hasLinkedMenu = dishes.length > 0;
+  const shifts = shiftsQ.data ?? [];
+  const helpOn = (date: string | null) =>
+    shifts.filter((sh) => !sh.is_owner && sh.work_type === "prep" && date && sh.shift_date === date);
+  const lt = labourTotals(shifts);
+  const staffDetail =
+    shifts.length === 0
+      ? "No staff planned"
+      : [
+          lt.unassigned > 0
+            ? `${lt.unassigned} ${lt.unassigned === 1 ? "person" : "people"} still needed`
+            : `${lt.people + (lt.owner ? 1 : 0)} ${lt.people + (lt.owner ? 1 : 0) === 1 ? "person" : "people"}`,
+          lt.unassigned > 0
+            ? null
+            : [lt.people ? `${lt.people} ${lt.people === 1 ? "helper" : "helpers"}` : null, lt.owner ? "1 owner" : null]
+                .filter(Boolean)
+                .join(" · "),
+          `Estimated labour ${fmtMoney(lt.estimated, event.currency) ?? "£0"}`,
+        ]
+          .filter(Boolean)
+          .join(" · ");
   const stepCount = (steps.data ?? []).length;
 
   return (
@@ -494,6 +518,17 @@ export function EventPlan({ event }: { event: EventRow }) {
                       />
                     ))}
                   </TornCard>
+                  {helpOn(day.date).length > 0 ? (
+                    <div className="mt-1.5 border border-ink/15 bg-cream px-4 py-2">
+                      <div className="label-mono text-ink-soft">Extra help</div>
+                      {helpOn(day.date).map((sh) => (
+                        <div key={sh.id} className="flex justify-between font-mono text-[12px]">
+                          <span className="font-semibold">{shiftName(sh, staffQ.data ?? [])}</span>
+                          <span>{sh.start_time?.slice(0, 5) ?? "--:--"}–{sh.end_time?.slice(0, 5) ?? "--:--"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               );
             })
@@ -520,7 +555,7 @@ export function EventPlan({ event }: { event: EventRow }) {
         />
         <SummaryRow
           label="Staff"
-          detail="Staffing will be added in a later build"
+          detail={staffDetail}
           eventId={eventId}
           section="staff"
           action="View Staff"
