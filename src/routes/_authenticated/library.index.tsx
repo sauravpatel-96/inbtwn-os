@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/library/")({
   component: LibraryPage,
 });
 
-const LATER = ["Equipment", "Suppliers", "Templates"];
+const LATER = ["Suppliers", "Templates"];
 
 function LibraryPage() {
   const clients = useQuery(clientsQuery);
@@ -55,6 +55,10 @@ function LibraryPage() {
             </div>
           </div>
           <div className="mt-1 font-mono text-[11px] text-ink-soft">Yields, costs, allergens</div>
+        </Link>
+        <Link to="/library/kit" className="torn tap col-span-2 bg-cream px-4 py-4 text-ink shadow-card active:bg-panel">
+          <div className="font-display text-[22px] leading-none">Event Kit</div>
+          <div className="mt-1 font-mono text-[11px] text-ink-soft">Equipment, serveware and consumables you own</div>
         </Link>
         <Link to="/library/staff" className="torn tap col-span-2 bg-cream px-4 py-4 text-ink shadow-card active:bg-panel">
           <div className="font-display text-[22px] leading-none">Staff</div>
