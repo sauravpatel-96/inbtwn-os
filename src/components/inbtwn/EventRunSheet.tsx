@@ -192,7 +192,7 @@ export function EventRunSheet({ event }: { event: EventRow }) {
           ].map(([l, v]) => (
             <div key={l} className="px-2 py-2.5 text-center">
               <div className="label-mono text-ink-soft">{l}</div>
-              <div className={`font-display text-[22px] leading-none ${l === "Service" ? "text-flame" : ""}`}>{v}</div>
+              <div className={`font-display leading-none ${l === "Travel" ? "pt-1 text-[14px]" : "text-[22px]"} ${l === "Service" ? "text-flame" : ""}`}>{v}</div>
             </div>
           ))}
         </div>
