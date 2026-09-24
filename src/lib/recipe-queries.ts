@@ -106,14 +106,19 @@ export const profilesQuery = (recipeId: string) =>
 /** Whole-library graph used for deterministic scaling, costing and allergens. */
 export const graphQuery = queryOptions({
   queryKey: ["recipe-graph"],
-  queryFn: async (): Promise<CalcGraph> => {
+  queryFn: () => loadCalcGraph(supabase),
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function loadCalcGraph(client: { from: (t: string) => any }): Promise<CalcGraph> {
+  {
     const [ings, versions] = await Promise.all([
-      supabase
+      client
         .from("ingredients")
         .select(
           "id, name, base_unit, yield_percentage, current_unit_cost, ingredient_allergens(allergen:allergens(name))",
         ),
-      supabase
+      client
         .from("recipe_versions")
         .select(
           "id, recipe_id, version_number, base_yield_quantity, base_yield_unit, default_portion_quantity, recipe:recipes!recipe_versions_recipe_id_fkey(name), recipe_ingredients(id, ingredient_id, quantity, prep_note, sort_order), recipe_components!recipe_components_parent_recipe_version_id_fkey(id, child_recipe_version_id, quantity, sort_order)",
