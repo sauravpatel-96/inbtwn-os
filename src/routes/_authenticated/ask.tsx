@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { PageTitle } from "@/components/inbtwn/bits";
-import { askInbtwn, type AskTurn } from "@/lib/ask.functions";
+import { askInbtwn, getAskConversation, newAskConversation, type AskTurn } from "@/lib/ask.functions";
 
 export const Route = createFileRoute("/_authenticated/ask")({
   head: () => ({
@@ -104,7 +104,32 @@ function AnswerText({ text }: { text: string }) {
 
 function AskPage() {
   const send = useServerFn(askInbtwn);
+  const load = useServerFn(getAskConversation);
+  const reset = useServerFn(newAskConversation);
   const [messages, setMessages] = useState<Msg[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    load()
+      .then((r) => live && setMessages(r.messages))
+      .catch(() => live && setError("Couldn't load your conversation."))
+      .finally(() => live && setLoaded(true));
+    return () => {
+      live = false;
+    };
+  }, [load]);
+
+  async function startNew() {
+    if (sendingRef.current) return;
+    try {
+      await reset();
+      setMessages([]);
+      setError(null);
+    } catch {
+      setError("Couldn't start a new conversation.");
+    }
+  }
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,11 +146,10 @@ function AskPage() {
     sendingRef.current = true;
     setError(null);
     setInput("");
-    const history: AskTurn[] = [...messages.filter((m) => !m.failed).map((m) => ({ role: m.role, content: m.content })), { role: "user", content: q }];
     setMessages((prev) => [...prev, { role: "user", content: q }]);
     setBusy(true);
     try {
-      const res = await send({ data: { messages: history.slice(-12) } });
+      const res = await send({ data: { question: q } });
       if (res.ok) {
         setMessages((prev) => [...prev, { role: "assistant", content: res.answer, used: res.used }]);
       } else {
@@ -142,8 +166,15 @@ function AskPage() {
   return (
     <div className="flex min-h-[calc(100dvh-190px)] flex-col">
       <PageTitle title="Ask INBTWN" aside="read only" />
+      {messages.length > 0 && (
+        <div className="-mt-2 mb-2 flex justify-end">
+          <button type="button" onClick={() => void startNew()} disabled={busy} className="label-mono text-flame disabled:opacity-40">
+            + New conversation
+          </button>
+        </div>
+      )}
 
-      {messages.length === 0 && (
+      {loaded && messages.length === 0 && (
         <div className="bg-cream px-5 py-6">
           <div className="font-display text-[22px] leading-tight">
             Ask about your events, money, recipes and prep.
