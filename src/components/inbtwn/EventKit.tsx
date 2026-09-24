@@ -1,3 +1,4 @@
+import type { Database } from "@/integrations/supabase/types";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -63,9 +64,9 @@ export function EventKit({ event }: { event: EventRow }) {
     qc.invalidateQueries({ queryKey: ["today-data"] });
   };
 
-  const update = async (id: string, patch: Record<string, unknown>) => {
+  const update = async (id: string, patch: Database["public"]["Tables"]["event_kit_items"]["Update"]) => {
     const { error } = await supabase.from("event_kit_items").update(patch).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     refresh();
   };
 
@@ -83,7 +84,7 @@ export function EventKit({ event }: { event: EventRow }) {
 
   const addItem = async () => {
     const item = items.data?.find((i) => i.id === addId);
-    if (!item) return toast.error("Pick an item");
+    if (!item) { toast.error("Pick an item"); return; }
     const q = addQty.trim() === "" ? null : Math.max(0, Math.round(Number(addQty) || 0));
     const usePerGuest = q == null && item.per_guest != null && Number(item.per_guest) > 0;
     const { error } = await supabase.from("event_kit_items").insert({
@@ -93,7 +94,7 @@ export function EventKit({ event }: { event: EventRow }) {
       base_quantity: usePerGuest ? null : (q ?? 1),
       sort_order: lines.length + 1,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(`${item.name} added`);
     setAddId("");
     setAddQty("");
@@ -118,7 +119,7 @@ export function EventKit({ event }: { event: EventRow }) {
   const removeLine = async () => {
     if (!edit) return;
     const { error } = await supabase.from("event_kit_items").delete().eq("id", edit.row.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Removed from this event");
     setEdit(null);
     refresh();
@@ -130,7 +131,7 @@ export function EventKit({ event }: { event: EventRow }) {
     const current = owned.line.item.owned_quantity ?? 0;
     const next = owned.kind === "add" ? current + n : Math.max(0, current - n);
     const { error } = await supabase.from("kit_items").update({ owned_quantity: next }).eq("id", owned.line.item.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(`You now own ${next} × ${owned.line.item.name}`);
     setOwned(null);
     qc.invalidateQueries({ queryKey: ["kit-items"] });

@@ -72,7 +72,7 @@ function KitLibraryPage() {
   };
 
   const save = async () => {
-    if (!d.name.trim()) return toast.error("Give the item a name");
+    if (!d.name.trim()) { toast.error("Give the item a name"); return; }
     const reusable = isReusable(d.category);
     const int = (s: string) => (s.trim() === "" ? null : Math.max(0, Math.round(Number(s) || 0)));
     const payload = {
@@ -83,14 +83,14 @@ function KitLibraryPage() {
       active: d.active,
       owned_quantity: reusable ? (int(d.owned) ?? 0) : null,
       per_guest: !reusable && d.perGuest.trim() !== "" ? Math.max(0, Number(d.perGuest) || 0) : null,
-      template_buffet: int(d.tpl.buffet ?? ""),
-      template_drop_off: int(d.tpl.drop_off ?? ""),
-      template_table: int(d.tpl.table ?? ""),
+      template_buffet: int(d.tpl["buffet"] ?? ""),
+      template_drop_off: int(d.tpl["drop_off"] ?? ""),
+      template_table: int(d.tpl["table"] ?? ""),
     };
     const { error } = editing
       ? await supabase.from("kit_items").update(payload).eq("id", editing.id)
       : await supabase.from("kit_items").insert(payload);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(editing ? "Saved" : `${payload.name} added`);
     qc.invalidateQueries({ queryKey: ["kit-items"] });
     setOpen(false);
