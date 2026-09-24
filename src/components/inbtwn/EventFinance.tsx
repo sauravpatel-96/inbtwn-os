@@ -16,7 +16,7 @@ import { quoteQuery, quoteTotals } from "@/lib/quote";
 import { graphQuery } from "@/lib/recipe-queries";
 import { menuItemsQuery } from "@/lib/menu-queries";
 import { versionBuffersQuery } from "@/lib/production";
-import { collectPurchases, type ShoppingLine } from "@/lib/shopping";
+import { ingredientCostStatusQuery, foodPurchasesQuery, summariseCost, suppliersQuery, pct1, type FoodPurchase, type MissingIngredient } from "@/lib/costing";
 import { scaleVersion, type ScaleResult } from "@/lib/recipe-calc";
 import {
   paymentTermsQuery,
@@ -160,10 +160,13 @@ export function EventFinance({ event }: { event: Ev }) {
   const menu = useQuery(menuItemsQuery(eventId));
   const graph = useQuery(graphQuery);
   const buffers = useQuery(versionBuffersQuery);
+  const costStatus = useQuery(ingredientCostStatusQuery);
+  const foodPurchases = useQuery(foodPurchasesQuery(eventId));
   const food = useMemo(() => {
     if (!graph.data || !menu.data) return null;
     const guests = event.guest_count ?? 0;
-    const map = new Map<string, ShoppingLine>();
+    const results: ScaleResult[] = [];
+    const recipes: { name: string; cost: number; complete: boolean }[] = [];
     for (const item of menu.data) {
       const perGuest = Number(item.quantity_per_guest ?? 0);
       const versionId = item.recipe_version_id ?? item.recipe?.active_version_id ?? null;
@@ -175,13 +178,15 @@ export function EventFinance({ event }: { event: Ev }) {
       } catch {
         result = null;
       }
-      if (result) collectPurchases(result, map);
+      if (result) {
+        results.push(result);
+        recipes.push({ name: result.recipeName, cost: result.cost, complete: result.missingCost.length === 0 });
+      }
     }
-    const lines = [...map.values()];
-    if (lines.length === 0) return null;
-    const missing = lines.filter((l) => l.cost === null).length;
-    return { known: round2(lines.reduce((s, l) => s + (l.cost ?? 0), 0)), missing, count: lines.length };
-  }, [graph.data, menu.data, buffers.data, event.guest_count]);
+    if (results.length === 0) return null;
+    const s = summariseCost(results, costStatus.data);
+    return { known: s.known, missing: s.missing.length, count: s.ingredientCount, complete: s.complete, missingList: s.missing, recipes };
+  }, [graph.data, menu.data, buffers.data, event.guest_count, costStatus.data]);
 
   /* Staff shifts are the labour source of truth once used; manual staff costs then stop counting. */
   const cs = combinedCosts(costRows, shiftsQ.data ?? []);
@@ -267,7 +272,7 @@ export function EventFinance({ event }: { event: Ev }) {
         platform={platform}
       />
 
-      <CostsPanel eventId={eventId} costs={costRows} money={money} qc={qc} food={food} staffLabour={cs.usesStaff ? cs.labour : null} />
+      <CostsPanel eventId={eventId} costs={costRows} money={money} qc={qc} food={food} revenue={totals.revenue} purchases={foodPurchases.data ?? []} staffLabour={cs.usesStaff ? cs.labour : null} />
 
       {/* Profitability */}
       <Panel title="Profitability">
@@ -1136,13 +1141,17 @@ function CostsPanel({
   money,
   qc,
   food,
+  revenue,
+  purchases,
   staffLabour,
 }: {
   eventId: string;
   costs: CostRow[];
   money: (n: number | null | undefined) => string;
   qc: ReturnType<typeof useQueryClient>;
-  food: { known: number; missing: number; count: number } | null;
+  food: FoodCosting | null;
+  revenue: number | null;
+  purchases: FoodPurchase[];
   staffLabour: LabourTotals | null;
 }) {
   const [adding, setAdding] = useState(false);
@@ -1191,17 +1200,8 @@ function CostsPanel({
         </button>
       }
     >
-      {food ? (
-        <div className="mb-2 border border-ink/15 bg-paper px-3 py-2">
-          <div className="label-mono text-ink-soft">Ingredient cost reference</div>
-          <div className="mt-0.5 font-mono text-[13px]">{money(food.known)}</div>
-          <div className="font-mono text-[10px] text-ink-soft">
-            {food.missing > 0
-              ? `Incomplete — ${food.missing} of ${food.count} ingredients have no cost recorded.`
-              : `From the current menu and shopping requirements (${food.count} ingredients).`}
-          </div>
-        </div>
-      ) : null}
+      <FoodCostingBox eventId={eventId} food={food} revenue={revenue} money={money} />
+      <FoodPurchasesBox eventId={eventId} purchases={purchases} money={money} qc={qc} />
 
       {staffLabour ? (
         <div className="mb-2 border border-ink/15 bg-paper px-3 py-2">
@@ -1284,5 +1284,176 @@ function CostsPanel({
         Estimated and actual costs are kept separately — entering an actual never overwrites the estimate.
       </p>
     </Panel>
+  );
+}
+
+type FoodCosting = {
+  known: number;
+  missing: number;
+  count: number;
+  complete: boolean;
+  missingList: MissingIngredient[];
+  recipes: { name: string; cost: number; complete: boolean }[];
+};
+
+/** A. Estimated ingredient usage from the operational Menu. Never merged with purchases. */
+function FoodCostingBox({
+  eventId,
+  food,
+  revenue,
+  money,
+}: {
+  eventId: string;
+  food: FoodCosting | null;
+  revenue: number | null;
+  money: (n: number | null | undefined) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  if (!food) {
+    return (
+      <div className="mb-2 border border-ink/15 bg-paper px-3 py-2">
+        <div className="label-mono text-ink-soft">Food costing · From recipes</div>
+        <div className="font-mono text-[11px] text-ink-soft">No operational menu with quantities yet.</div>
+      </div>
+    );
+  }
+  return (
+    <div className="mb-2 border border-ink/15 bg-paper px-3 py-2">
+      <div className="flex items-baseline justify-between">
+        <span className="label-mono text-ink-soft">Food costing · From recipes</span>
+        <button type="button" onClick={() => setOpen((o) => !o)} className="font-mono text-[10px] text-flame">
+          {open ? "Hide" : "Breakdown"}
+        </button>
+      </div>
+      <div className="mt-0.5 font-mono text-[10px] text-ink-soft">
+        {food.complete ? "Estimated ingredient usage" : "Known ingredient usage"}
+      </div>
+      <div className="font-mono text-[14px]">{money(food.known)}</div>
+      <div className={food.complete ? "font-mono text-[10px] text-ink-soft" : "font-mono text-[10px] text-flame"}>
+        {food.complete
+          ? `Costing complete · ${food.count} ingredients`
+          : `Incomplete — ${food.missing} of ${food.count} ingredients missing costs`}
+      </div>
+      {food.complete && revenue && revenue > 0 ? (
+        <div className="mt-1 font-mono text-[11px]">Food cost {pct1((food.known / revenue) * 100)} of revenue</div>
+      ) : null}
+      {open ? (
+        <div className="mt-2 space-y-0.5 border-t border-ink/10 pt-2 font-mono text-[11px]">
+          {food.recipes.map((r, i) => (
+            <div key={i} className="flex justify-between gap-3">
+              <span>{r.name}</span>
+              <span>
+                {money(r.cost)}
+                {r.complete ? "" : " (known)"}
+              </span>
+            </div>
+          ))}
+          {food.missingList.length ? (
+            <div className="pt-1 text-flame">
+              {food.missingList.map((m) => (
+                <Link key={m.id} to="/library/ingredients/$ingredientId" params={{ ingredientId: m.id }} className="block">
+                  {m.name} — {m.reason.toLowerCase()}
+                </Link>
+              ))}
+            </div>
+          ) : null}
+          <Link to="/events/$eventId" params={{ eventId }} search={{ s: "shopping" }} replace className="block pt-1 text-flame">
+            Purchase cost from scratch → Shopping
+          </Link>
+        </div>
+      ) : null}
+      <div className="mt-1 font-mono text-[10px] text-ink-soft">Reference only — not added to job costs below.</div>
+    </div>
+  );
+}
+
+/** C. Actual food purchases — cash spent shopping. Not ingredient usage. */
+function FoodPurchasesBox({
+  eventId,
+  purchases,
+  money,
+  qc,
+}: {
+  eventId: string;
+  purchases: FoodPurchase[];
+  money: (n: number | null | undefined) => string;
+  qc: ReturnType<typeof useQueryClient>;
+}) {
+  const sups = useQuery(suppliersQuery);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ supplier_id: "", purchase_date: todayISO(), amount: "", notes: "" });
+  const total = purchases.reduce((s, p) => s + p.amount, 0);
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["food-purchases", eventId] });
+  const add = async () => {
+    const amount = Number(form.amount);
+    if (form.amount.trim() === "" || !(amount >= 0)) return void toast.error("Enter the amount spent");
+    const { error } = await supabase.from("event_food_purchases").insert({
+      event_id: eventId,
+      supplier_id: form.supplier_id || null,
+      purchase_date: form.purchase_date,
+      amount,
+      notes: form.notes.trim() || null,
+    } as never);
+    if (error) return void toast.error(error.message);
+    setForm({ supplier_id: "", purchase_date: todayISO(), amount: "", notes: "" });
+    setAdding(false);
+    invalidate();
+    toast.success("Food purchase added");
+  };
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("event_food_purchases").delete().eq("id", id);
+    if (error) return void toast.error(error.message);
+    invalidate();
+  };
+  return (
+    <div className="mb-2 border border-ink/15 bg-paper px-3 py-2">
+      <div className="flex items-baseline justify-between">
+        <span className="label-mono text-ink-soft">Actual food purchases</span>
+        <button type="button" onClick={() => setAdding((a) => !a)} className="font-mono text-[10px] text-flame">
+          {adding ? "Close" : "+ Add receipt"}
+        </button>
+      </div>
+      <div className="font-mono text-[14px]">{purchases.length ? money(total) : "None recorded"}</div>
+      <div className="font-mono text-[10px] text-ink-soft">Cash spent shopping — not the same as ingredient usage, and not counted in profit.</div>
+      {purchases.map((p) => (
+        <div key={p.id} className="mt-1 flex items-baseline justify-between gap-2 font-mono text-[11px]">
+          <span>
+            {p.supplier?.name ?? "Unspecified"} · {fmtDateLong(p.purchase_date)}
+            {p.is_test ? <span className="ml-1 text-flame">TEST</span> : null}
+            {p.notes ? <span className="text-ink-soft"> · {p.notes}</span> : null}
+          </span>
+          <span className="flex items-baseline gap-2">
+            {money(p.amount)}
+            <button type="button" onClick={() => void remove(p.id)} className="text-ink-soft">×</button>
+          </span>
+        </div>
+      ))}
+      {adding ? (
+        <div className="mt-2 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Supplier">
+              <SelectInput value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })}>
+                <option value="">—</option>
+                {(sups.data ?? []).filter((s) => s.active).map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </SelectInput>
+            </Field>
+            <Field label="Amount £">
+              <TextInput inputMode="decimal" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Date">
+              <TextInput type="date" value={form.purchase_date} onChange={(e) => setForm({ ...form, purchase_date: e.target.value })} />
+            </Field>
+            <Field label="Note">
+              <TextInput value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            </Field>
+          </div>
+          <PrimaryButton type="button" onClick={() => void add()}>Save purchase</PrimaryButton>
+        </div>
+      ) : null}
+    </div>
   );
 }
