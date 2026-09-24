@@ -22,6 +22,8 @@ import { daysUntil } from "./format";
 import type { EventWithClient } from "./queries";
 import { CLIENT_SUMMARY } from "./queries";
 import { manualKey } from "./packing";
+import { labourTotals, shiftName, type ShiftRow, type StaffMemberRow } from "./staff";
+import { parseClock } from "./runsheet";
 
 /* ------------------------------------------------------------------ */
 /* Raw org-wide data                                                    */
@@ -69,6 +71,8 @@ export type TodayData = {
   recipeComponents: RecipeComponentLite[];
   tasks: TaskLite[];
   runSheet: RunSheetItemRow[];
+  shifts: ShiftRow[];
+  staff: StaffMemberRow[];
 };
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
@@ -106,6 +110,8 @@ export async function fetchTodayData(client: ReadClient = supabase as unknown as
       recipeComponents,
       tasks,
       runSheet,
+      shifts,
+      staff,
     ] = await Promise.all([
       supabase
         .from("events")
@@ -131,6 +137,8 @@ export async function fetchTodayData(client: ReadClient = supabase as unknown as
         .from("event_tasks")
         .select("id, event_id, name, scheduled_date, status, approximate_minutes, assignment, source"),
       supabase.from("event_run_sheet_items").select("*"),
+      supabase.from("event_staff_shifts").select("*"),
+      supabase.from("staff_members").select("*"),
     ]);
 
     const items = unwrap<InvoiceItemRow[]>(invoiceItems);
@@ -160,6 +168,8 @@ export async function fetchTodayData(client: ReadClient = supabase as unknown as
       recipeComponents: unwrap<RecipeComponentLite[]>(recipeComponents),
       tasks: unwrap<TaskLite[]>(tasks),
       runSheet: unwrap<RunSheetItemRow[]>(runSheet),
+      shifts: unwrap<ShiftRow[]>(shifts),
+      staff: unwrap<StaffMemberRow[]>(staff),
     };
   }
 }
@@ -443,6 +453,14 @@ export function buildToday(data: TodayData, today = new Date()): {
       });
     }
 
+    /* ----- Staff still to pay after the job ----- */
+    if (away !== null && away < 0 && !d.closed) {
+      const lt = labourTotals(data.shifts.filter((sh) => sh.event_id === d.event.id));
+      if (lt.unpaid > 0) {
+        push(d, "staff-unpaid", `${money(lt.unpaid)} staff not yet paid`, "low", "staff", "View Staff", urgency);
+      }
+    }
+
     if (!pre || d.event.status === "completed") continue;
 
     /* ----- Commercial ----- */
@@ -483,6 +501,14 @@ export function buildToday(data: TodayData, today = new Date()): {
         "View Production",
         urgency,
       );
+    }
+
+    /* ----- Staff still needed ----- */
+    if (confirmed && away !== null && away >= 0 && away <= 7) {
+      const need = data.shifts.filter((sh) => sh.event_id === d.event.id && !sh.is_owner && !sh.staff_member_id).length;
+      if (need > 0) {
+        push(d, "staff-needed", `${need} ${need === 1 ? "person" : "people"} still needed`, "medium", "staff", "View Staff", urgency);
+      }
     }
 
     /* ----- Operations ----- */
@@ -678,7 +704,24 @@ export function prepSummary(derived: EventDerived[], data: TodayData, today = ne
 
 /* ---------------- Event Day (run sheet) ---------------- */
 
-export type EventDayCard = { eventId: string; title: string; anchors: Anchors; next: TimedItem | null; remaining: number; total: number };
+export type StaffCall = { name: string; time: string; unassigned: boolean };
+export type EventDayCard = { eventId: string; title: string; anchors: Anchors; next: TimedItem | null; remaining: number; total: number; staffCalls: StaffCall[] };
+
+/** Non-owner event-day staff with a start time, earliest first (display only). */
+export function staffCallsFor(eventId: string, eventDate: string | null, data: TodayData): StaffCall[] {
+  return data.shifts
+    .filter((sh) => sh.event_id === eventId && !sh.is_owner && sh.work_type === "event" && sh.start_time && (!sh.shift_date || sh.shift_date === eventDate))
+    .sort((a, b) => (parseClock(a.start_time) ?? 0) - (parseClock(b.start_time) ?? 0))
+    .map((sh) => ({ name: shiftName(sh, data.staff), time: sh.start_time!.slice(0, 5), unassigned: !sh.staff_member_id }));
+}
+
+/** One-line staffing state for an upcoming event, or null when there is nothing to say. */
+export function staffLine(eventId: string, data: TodayData): string | null {
+  const lt = labourTotals(data.shifts.filter((sh) => sh.event_id === eventId));
+  if (lt.unassigned > 0) return `Staff: ${lt.unassigned} ${lt.unassigned === 1 ? "person" : "people"} still needed`;
+  if (lt.people > 0) return `Staff: ${lt.people} ${lt.people === 1 ? "helper" : "helpers"} confirmed`;
+  return null;
+}
 export type EventDaySummary = { today: EventDayCard[]; missing: { eventId: string; title: string; eventDate: string | null }[] };
 
 /** Today: live run sheets for events happening today. Before: upcoming 7-day events with no run sheet yet. */
@@ -702,6 +745,7 @@ export function eventDaySummary(derived: EventDerived[], data: TodayData, today 
         next: nextItem(tl),
         remaining: tl.filter((i) => i.status !== "done").length,
         total: tl.length,
+        staffCalls: staffCallsFor(e.id, e.event_date, data),
       });
     } else if (e.event_date > todayKey && e.event_date <= horizonKey && items.length === 0) {
       out.missing.push({ eventId: e.id, title: e.title, eventDate: e.event_date });

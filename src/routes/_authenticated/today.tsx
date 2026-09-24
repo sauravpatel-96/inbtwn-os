@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, prepSummary, eventDaySummary, type AttentionItem, type Severity, type PrepEventGroup } from "@/lib/today";
+import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, prepSummary, eventDaySummary, staffLine, type AttentionItem, type Severity, type PrepEventGroup } from "@/lib/today";
 import { fmtMinutes, assignmentLabel } from "@/lib/prep";
 import { fmtClock } from "@/lib/runsheet";
 import { fmtDate, fmtMoney } from "@/lib/format";
@@ -97,6 +97,16 @@ function TodayPage() {
                   <div><span className="text-ink-soft">Arrive </span>{fmtClock(c.anchors.arrival)}</div>
                   <div><span className="text-ink-soft">Service </span><span className="text-flame">{fmtClock(c.anchors.service)}</span></div>
                 </div>
+                {c.staffCalls.length > 0 ? (
+                  <div className="border-t border-ink/10 px-4 py-2 font-mono text-[11px]">
+                    {c.staffCalls.map((sc, i) => (
+                      <div key={i} className={sc.unassigned ? "text-flame" : ""}>
+                        <span className="font-semibold">{sc.unassigned ? `${sc.name} (unassigned)` : sc.name}</span>
+                        <span className="text-ink-soft"> · Staff call {sc.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
                 <div className="border-t border-ink/10 px-4 py-2.5">
                   {c.total === 0 ? (
                     <span className="font-mono text-[11px] text-ink-soft">No run sheet generated.</span>
@@ -232,6 +242,9 @@ function TodayPage() {
                     {d.event.guest_count != null ? `${d.event.guest_count} guests` : "Guests TBC"} ·{" "}
                     {statusLabel(d.event.status)}
                   </p>
+                  {data.data && staffLine(d.event.id, data.data) ? (
+                    <p className="font-mono text-[11px] text-ink-soft">{staffLine(d.event.id, data.data)}</p>
+                  ) : null}
                 </div>
                 <StatusPill status={d.event.status} />
               </Link>
