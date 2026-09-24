@@ -381,6 +381,8 @@ function EventDetailPage() {
           <EventPacking eventId={eventId} guestCount={e.guest_count} />
         ) : s === "staff" ? (
           <EventStaff event={e} />
+        ) : s === "more" ? (
+          <EventKit event={e} />
         ) : (
           <div className="torn bg-cream px-5 py-8 text-center">
             <div className="font-display text-[22px] leading-none">{SECTION_LABEL[s]}</div>
