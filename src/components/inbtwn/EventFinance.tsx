@@ -96,6 +96,7 @@ export function EventFinance({ event }: { event: Ev }) {
   const invoices = useQuery(invoicesQuery(eventId));
   const allocations = useQuery(allocationsQuery(eventId));
   const costs = useQuery(costsQuery(eventId));
+  const shiftsQ = useQuery(eventShiftsQuery(eventId));
   const quote = useQuery(quoteQuery(eventId));
   const settingsQ = useQuery(businessSettingsQuery());
 
@@ -180,16 +181,17 @@ export function EventFinance({ event }: { event: Ev }) {
     return { known: round2(lines.reduce((s, l) => s + (l.cost ?? 0), 0)), missing, count: lines.length };
   }, [graph.data, menu.data, buffers.data, event.guest_count]);
 
-  const cs = costSummary(costRows);
+  /* Staff shifts are the labour source of truth once used; manual staff costs then stop counting. */
+  const cs = combinedCosts(costRows, shiftsQ.data ?? []);
   const estProfit = profitability(totals.revenue, cs.hasEstimates ? cs.estimated : null);
   /**
    * Profit from costs that have actually been recorded. When ingredient costs
    * or actual job costs are still missing this is truthful but not final, so
    * it is labelled "Recorded" rather than "Actual".
    */
-  const recordedCosts = costRows.length ? cs.actual : null;
+  const recordedCosts = cs.hasAny ? cs.actual : null;
   const recProfit = profitability(totals.revenue, recordedCosts);
-  const costingComplete = cs.actualComplete && costRows.length > 0 && (food ? food.missing === 0 : true);
+  const costingComplete = cs.actualComplete && (food ? food.missing === 0 : true);
   const profitWord = costingComplete ? "Actual" : "Recorded";
   const pct = (n: number | null) => (n === null ? "—" : `${n.toFixed(1)}%`);
 
@@ -263,14 +265,24 @@ export function EventFinance({ event }: { event: Ev }) {
         platform={platform}
       />
 
-      <CostsPanel eventId={eventId} costs={costRows} money={money} qc={qc} food={food} />
+      <CostsPanel eventId={eventId} costs={costRows} money={money} qc={qc} food={food} staffLabour={cs.usesStaff ? cs.labour : null} />
 
       {/* Profitability */}
       <Panel title="Profitability">
         <Line label="Revenue" value={money(totals.revenue)} />
         {totals.cardFee > 0 ? <Line label="Card fee included" value={money(totals.cardFee)} muted /> : null}
         <Line label="Estimated costs" value={cs.hasEstimates ? money(cs.estimated) : "Not recorded"} muted={!cs.hasEstimates} />
-        <Line label="Actual costs" value={cs.actualComplete ? money(cs.actual) : costRows.length ? `${money(cs.actual)} (partial)` : "Not recorded"} muted={!cs.actualComplete} />
+        <Line label="Actual costs" value={cs.actualComplete ? money(cs.actual) : cs.hasAny ? `${money(cs.actual)} (partial)` : "Not recorded"} muted={!cs.actualComplete} />
+        {cs.usesStaff ? (
+          <>
+            <Line label="Staff labour · estimated (From Staff)" value={money(cs.labour.estimated)} muted />
+            <Line
+              label="Staff labour · actual (From Staff)"
+              value={cs.labour.actualComplete ? money(cs.labour.actual) : `${money(cs.labour.actual)} (${cs.labour.actualMissing} ${cs.labour.actualMissing === 1 ? "shift" : "shifts"} without actual hours)`}
+              muted
+            />
+          </>
+        ) : null}
         <Line label="Estimated profit" value={estProfit.profit === null ? "Not enough data" : money(estProfit.profit)} muted={estProfit.profit === null} />
         <Line label="Estimated margin" value={pct(estProfit.margin)} muted={estProfit.margin === null} />
         <Line label={`${profitWord} profit`} value={recProfit.profit === null ? "Not enough data" : money(recProfit.profit)} muted={recProfit.profit === null} />
@@ -279,7 +291,9 @@ export function EventFinance({ event }: { event: Ev }) {
           <p className="mt-2 font-mono text-[10px] text-flame">
             {food && food.missing > 0
               ? "Incomplete — ingredient costs are missing."
-              : "Incomplete — some costs have no actual amount recorded."}
+              : cs.usesStaff && !cs.labour.actualComplete
+                ? "Incomplete — some staff shifts have no actual hours yet."
+                : "Incomplete — some costs have no actual amount recorded."}
           </p>
         ) : null}
         {totals.revenue === null || totals.revenueProvisional ? (
@@ -1120,12 +1134,14 @@ function CostsPanel({
   money,
   qc,
   food,
+  staffLabour,
 }: {
   eventId: string;
   costs: CostRow[];
   money: (n: number | null | undefined) => string;
   qc: ReturnType<typeof useQueryClient>;
   food: { known: number; missing: number; count: number } | null;
+  staffLabour: LabourTotals | null;
 }) {
   const [adding, setAdding] = useState(false);
   const blank = { category: "food", description: "", estimated_amount: "", actual_amount: "", cost_date: "" };
@@ -1185,14 +1201,31 @@ function CostsPanel({
         </div>
       ) : null}
 
+      {staffLabour ? (
+        <div className="mb-2 border border-ink/15 bg-paper px-3 py-2">
+          <div className="flex items-baseline justify-between">
+            <span className="label-mono text-ink-soft">Staff labour · From Staff</span>
+            <Link to="/events/$eventId" params={{ eventId }} search={{ s: "staff" }} replace className="font-mono text-[10px] text-flame">
+              View Staff →
+            </Link>
+          </div>
+          <div className="mt-0.5 font-mono text-[13px]">
+            Est {money(staffLabour.estimated)} · Actual {staffLabour.actualComplete ? money(staffLabour.actual) : `${money(staffLabour.actual)} (partial)`}
+          </div>
+          <div className="font-mono text-[10px] text-ink-soft">Worked out from shifts. Manual staff costs below are kept but not counted.</div>
+        </div>
+      ) : null}
       {costs.length === 0 ? (
-        <p className="font-mono text-[11px] text-ink-soft">No costs recorded yet.</p>
+        <p className="font-mono text-[11px] text-ink-soft">{staffLabour ? "No other costs recorded yet." : "No costs recorded yet."}</p>
       ) : (
         costs.map((c) => (
           <div key={c.id} className="border-b border-ink/10 py-2 last:border-0">
             <div className="flex items-baseline justify-between gap-3">
               <span className="min-w-0 break-words text-[14px] leading-tight">{c.description}</span>
-              <span className="shrink-0 font-mono text-[10px] text-ink-soft">{labelOf(COST_CATEGORIES, c.category)}</span>
+              <span className="shrink-0 font-mono text-[10px] text-ink-soft">
+                {labelOf(COST_CATEGORIES, c.category)}
+                {staffLabour && c.category === "staff" ? " · not counted (From Staff)" : ""}
+              </span>
             </div>
             <div className="mt-1 flex items-center justify-between gap-3">
               <span className="font-mono text-[11px] text-ink-soft">
