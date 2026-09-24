@@ -16,8 +16,50 @@ const Turn = z.object({
 });
 
 const AskInput = z.object({
-  messages: z.array(Turn).min(1).max(24),
+  question: z.string().trim().min(1).max(4000),
 });
+
+type Sb = { from: (t: string) => any; rpc: (f: string) => any };
+
+async function activeThread(sb: Sb, userId: string, create: boolean): Promise<string | null> {
+  const found = await sb.from("ask_threads").select("id").eq("user_id", userId).eq("is_active", true).maybeSingle();
+  if (found.error) throw new Error(found.error.message);
+  if (found.data) return found.data.id as string;
+  if (!create) return null;
+  const org = await sb.rpc("current_organisation_id");
+  if (org.error) throw new Error(org.error.message);
+  const ins = await sb.from("ask_threads").insert({ user_id: userId, organisation_id: org.data, is_active: true }).select("id").single();
+  if (ins.error) throw new Error(ins.error.message);
+  return ins.data.id as string;
+}
+
+async function saveMessage(sb: Sb, userId: string, threadId: string, role: string, content: string, metadata: object = {}) {
+  const org = await sb.rpc("current_organisation_id");
+  const res = await sb.from("ask_messages").insert({ thread_id: threadId, user_id: userId, organisation_id: org.data, role, content, metadata });
+  if (res.error) throw new Error(res.error.message);
+}
+
+/** The signed-in user's current conversation, restored on every visit. */
+export const getAskConversation = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const sb = context.supabase as unknown as Sb;
+    const id = await activeThread(sb, context.userId, false);
+    if (!id) return { threadId: null as string | null, messages: [] as AskTurn[] };
+    const res = await sb.from("ask_messages").select("role, content").eq("thread_id", id).order("created_at");
+    if (res.error) throw new Error(res.error.message);
+    return { threadId: id as string | null, messages: (res.data ?? []) as AskTurn[] };
+  });
+
+/** Starts a fresh conversation. The previous one is kept, just no longer active. */
+export const newAskConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const sb = context.supabase as unknown as Sb;
+    const res = await sb.from("ask_threads").update({ is_active: false }).eq("user_id", context.userId).eq("is_active", true);
+    if (res.error) throw new Error(res.error.message);
+    return { ok: true };
+  });
 
 export type AskTurn = z.infer<typeof Turn>;
 
@@ -79,6 +121,7 @@ STYLE
 - For write requests, briefly state the current fact when known, say "Ask INBTWN is read-only, so I can't [action] here", and offer the relevant returned link. Never imply the action happened.
 - When a tool returns a link, offer it at the end as a markdown link, e.g. [View Finance](/events/abc?s=finance).
   Only use links returned by tools. Never invent a URL.
+- Food costing: use get_food_costing. Keep (A) ingredient usage cost, (B) purchase cost from scratch (whole packs) and (C) actual food purchases separate; never add them. If costing is incomplete, say 'known ingredient cost' and name what's missing. Only give a food cost % when returned. Price/supplier changes are refused and linked.
 - Markdown is allowed only for **bold emphasis**, short bullet lists and returned in-app links. Do not output headings with #, tables, code blocks or HTML.
 `;
 
@@ -97,8 +140,17 @@ export const askInbtwn = createServerFn({ method: "POST" })
 
     const today = new Date();
     const client = context.supabase as unknown as { from: (t: string) => any };
+    const sb = context.supabase as unknown as Sb;
 
     try {
+      const threadId = (await activeThread(sb, context.userId, true))!;
+      const prior = await sb.from("ask_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: false }).limit(12);
+      if (prior.error) throw new Error(prior.error.message);
+      const history: AskTurn[] = [...((prior.data ?? []) as AskTurn[])].reverse();
+      await saveMessage(sb, context.userId, threadId, "user", data.question);
+      const title = history.length === 0 ? data.question.slice(0, 80) : null;
+      if (title) await sb.from("ask_threads").update({ title }).eq("id", threadId);
+      const modelMessages: AskTurn[] = [...history, { role: "user", content: data.question }];
       const ctx = await loadAskContext(client, today);
       const { tools, log } = buildAskTools(ctx, today, client);
 
@@ -111,7 +163,7 @@ export const askInbtwn = createServerFn({ method: "POST" })
       const result = streamText({
         model: lovable.responses("openai/gpt-6-astra"),
         system: SYSTEM(dateContext(today)),
-        messages: data.messages,
+        messages: modelMessages,
         tools,
         stopWhen: stepCountIs(24),
         onError: (e) => console.error("[ask] stream error", JSON.stringify(e).slice(0, 600)),
@@ -126,10 +178,12 @@ export const askInbtwn = createServerFn({ method: "POST" })
         },
       });
 
-      const answer = (await result.text).trim();
+      const answer = (await result.text).trim() || "I couldn't find anything to answer that.";
+      await saveMessage(sb, context.userId, threadId, "assistant", answer, { tools: [...new Set(log)] });
+      await sb.from("ask_threads").update({ updated_at: new Date().toISOString() }).eq("id", threadId);
       return {
         ok: true,
-        answer: answer || "I couldn't find anything to answer that.",
+        answer,
         used: [...new Set(log)],
         error: null,
       };

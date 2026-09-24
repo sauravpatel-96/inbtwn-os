@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { PageTitle, SectionHeading, TornCard, EmptyNote } from "@/components/inbtwn/bits";
 import { ingredientQuery } from "@/lib/recipe-queries";
 import { fmtCost, fmtUnitCost, type BaseUnit } from "@/lib/units";
+import { IngredientCosting } from "@/components/inbtwn/IngredientCosting";
+import { costReason } from "@/lib/costing";
 
 export const Route = createFileRoute("/_authenticated/library/ingredients/$ingredientId/")({
   head: () => ({
@@ -63,8 +65,14 @@ function IngredientDetail() {
       <TornCard className="px-4 py-3 shadow-card">
         <Row label="Base unit" value={base} />
         <Row label="Usable yield" value={`${Number(i.yield_percentage)}%`} />
-        <Row label="Unit cost" value={fmtUnitCost(i.current_unit_cost, base)} />
-        {i.cost_price != null && i.cost_quantity != null ? (
+        <Row
+          label="Unit cost (purchased)"
+          value={i.current_unit_cost == null ? costReason(i.cost_status) : fmtUnitCost(i.current_unit_cost, base)}
+        />
+        {i.current_unit_cost != null ? (
+          <Row label="Usable cost" value={fmtUnitCost(Number(i.current_unit_cost) / (Number(i.yield_percentage) / 100), base)} />
+        ) : null}
+        {i.cost_source === "manual" && i.cost_price != null && i.cost_quantity != null ? (
           <Row
             label="Entered as"
             value={`${fmtCost(Number(i.cost_price))} for ${Number(i.cost_quantity)} ${i.cost_unit}`}
@@ -72,6 +80,13 @@ function IngredientDetail() {
         ) : null}
         <Row label="Inventory tracked" value={i.track_inventory ? "Yes" : "No"} />
       </TornCard>
+
+      <IngredientCosting
+        ingredientId={ingredientId}
+        base={base}
+        yieldPct={Number(i.yield_percentage)}
+        costStatus={i.cost_status}
+      />
 
       <div className="mt-5">
         <SectionHeading title="Allergens" />

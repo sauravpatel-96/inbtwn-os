@@ -24,15 +24,18 @@ function IngredientsPage() {
   const q = useQuery(ingredientsQuery);
   const [term, setTerm] = useState("");
   const [cat, setCat] = useState<string | null>(null);
+  const [costFilter, setCostFilter] = useState<"all" | "costed" | "needs">("all");
 
   const list = useMemo(() => {
     const t = term.trim().toLowerCase();
     return (q.data ?? []).filter((i) => {
       if (cat && i.category !== cat) return false;
+      if (costFilter === "costed" && i.current_unit_cost == null) return false;
+      if (costFilter === "needs" && i.current_unit_cost != null) return false;
       if (!t) return true;
       return i.name.toLowerCase().includes(t) || i.category.toLowerCase().includes(t);
     });
-  }, [q.data, term, cat]);
+  }, [q.data, term, cat, costFilter]);
 
   const used = INGREDIENT_CATEGORIES.filter((c) => (q.data ?? []).some((i) => i.category === c));
 
@@ -47,6 +50,13 @@ function IngredientsPage() {
 
       <div className="space-y-3">
         <TextInput placeholder="Search ingredients" value={term} onChange={(e) => setTerm(e.target.value)} />
+        <div className="flex gap-2">
+          {(["all", "costed", "needs"] as const).map((f) => (
+            <Chip key={f} active={costFilter === f} onClick={() => setCostFilter(f)}>
+              {f === "all" ? "All" : f === "costed" ? "Costed" : `Needs price (${(q.data ?? []).filter((i) => i.current_unit_cost == null).length})`}
+            </Chip>
+          ))}
+        </div>
         <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
           <Chip active={!cat} onClick={() => setCat(null)}>
             All
@@ -75,7 +85,11 @@ function IngredientsPage() {
                 <div className="flex items-baseline justify-between gap-3">
                   <div className="font-semibold leading-tight">{i.name}</div>
                   <div className="font-mono text-[12px] text-ink">
-                    {fmtUnitCost(i.current_unit_cost, i.base_unit as BaseUnit)}
+                    {i.current_unit_cost == null ? (
+                      <span className="text-flame">{i.cost_status === "no_preferred" ? "Set preferred" : i.cost_status === "unit_mismatch" ? "Unit mismatch" : "Needs price"}</span>
+                    ) : (
+                      fmtUnitCost(i.current_unit_cost, i.base_unit as BaseUnit)
+                    )}
                   </div>
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2 font-mono text-[11px] text-ink-soft">

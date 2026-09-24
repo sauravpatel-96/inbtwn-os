@@ -4,6 +4,7 @@ import { PageTitle, SectionHeading, TornCard, EmptyNote } from "@/components/inb
 import { graphQuery, profilesQuery, recipeQuery } from "@/lib/recipe-queries";
 import { scaleVersion, versionAllergens, type ScaleResult } from "@/lib/recipe-calc";
 import { fmtCost, fmtQty, fmtUnitCost, type BaseUnit } from "@/lib/units";
+import { ingredientCostStatusQuery, summariseCost } from "@/lib/costing";
 
 export const Route = createFileRoute("/_authenticated/library/recipes/$recipeId/")({
   head: () => ({
@@ -24,6 +25,7 @@ function RecipeDetail() {
   const recipe = useQuery(recipeQuery(recipeId));
   const graph = useQuery(graphQuery);
   const profiles = useQuery(profilesQuery(recipeId));
+  const costStatus = useQuery(ingredientCostStatusQuery);
 
   if (recipe.isLoading || graph.isLoading) return <EmptyNote>Loading…</EmptyNote>;
   const r = recipe.data;
@@ -41,7 +43,8 @@ function RecipeDetail() {
     }
   }
   const allergens = v && graph.data ? versionAllergens(v.id, graph.data) : [];
-  const costComplete = batch ? batch.missingCost.length === 0 : false;
+  const summary = batch ? summariseCost([batch], costStatus.data) : null;
+  const costComplete = summary?.complete ?? false;
   const portion = v?.default_portion_quantity ? Number(v.default_portion_quantity) : null;
 
   return (
@@ -214,27 +217,46 @@ function RecipeDetail() {
         <TornCard className="px-4 py-3 shadow-card">
           {batch ? (
             <>
+              <div className="label-mono mb-1 flex justify-between">
+                <span className={costComplete ? "text-ink" : "text-flame"}>{costComplete ? "Costing complete" : "Costing incomplete"}</span>
+                <span className="text-ink-soft">
+                  {summary?.costedCount} of {summary?.ingredientCount} ingredients costed
+                </span>
+              </div>
               <div className="flex items-baseline justify-between py-1">
-                <span className="label-mono text-ink-soft">Base batch</span>
+                <span className="label-mono text-ink-soft">{costComplete ? "Ingredient usage cost" : "Known ingredient cost"}</span>
                 <span className="font-mono text-[13px]">{fmtCost(batch.cost)}</span>
               </div>
               <div className="flex items-baseline justify-between py-1">
-                <span className="label-mono text-ink-soft">Per output</span>
+                <span className="label-mono text-ink-soft">Yield</span>
                 <span className="font-mono text-[13px]">
-                  {fmtUnitCost(batch.cost / batch.baseYield, base)}
+                  {fmtQty(batch.baseYield, base)}
+                  {portion ? ` · ${Math.round((batch.baseYield / portion) * 10) / 10} portions` : ""}
                 </span>
+              </div>
+              <div className="flex items-baseline justify-between py-1">
+                <span className="label-mono text-ink-soft">{costComplete ? "Per output" : "Known per output"}</span>
+                <span className="font-mono text-[13px]">{fmtUnitCost(batch.cost / batch.baseYield, base)}</span>
               </div>
               {portion ? (
                 <div className="flex items-baseline justify-between py-1">
-                  <span className="label-mono text-ink-soft">Per portion</span>
+                  <span className="label-mono text-ink-soft">{costComplete ? "Cost per portion" : "Known cost per portion"}</span>
                   <span className="font-mono text-[13px]">
                     {fmtCost((batch.cost / batch.baseYield) * portion)}
+                    {costComplete ? "" : " · incomplete"}
                   </span>
                 </div>
               ) : null}
-              {!costComplete ? (
-                <div className="mt-2 rounded-sm bg-flame/10 px-3 py-2 font-mono text-[11px] text-flame">
-                  Cost incomplete — no cost for: {batch.missingCost.join(", ")}
+              {summary && summary.missing.length ? (
+                <div className="mt-2 bg-flame/10 px-3 py-2 font-mono text-[11px] text-flame">
+                  <div className="mb-1">
+                    {summary.missing.length} ingredient{summary.missing.length === 1 ? "" : "s"} need attention
+                  </div>
+                  {summary.missing.map((m) => (
+                    <Link key={m.id} to="/library/ingredients/$ingredientId" params={{ ingredientId: m.id }} className="block underline-offset-2 hover:underline">
+                      {m.name} — {m.reason.toLowerCase()}
+                    </Link>
+                  ))}
                 </div>
               ) : null}
             </>

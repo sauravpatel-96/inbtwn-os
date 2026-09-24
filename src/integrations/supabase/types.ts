@@ -38,6 +38,92 @@ export type Database = {
         }
         Relationships: []
       }
+      ask_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          metadata: Json
+          organisation_id: string
+          role: string
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          organisation_id?: string
+          role: string
+          thread_id: string
+          user_id?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          organisation_id?: string
+          role?: string
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ask_messages_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ask_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "ask_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ask_threads: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          organisation_id: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          organisation_id?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          organisation_id?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ask_threads_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_settings: {
         Row: {
           address_line1: string | null
@@ -434,6 +520,67 @@ export type Database = {
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_food_purchases: {
+        Row: {
+          amount: number
+          created_at: string
+          event_id: string
+          id: string
+          is_test: boolean
+          notes: string | null
+          organisation_id: string
+          purchase_date: string
+          supplier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          event_id: string
+          id?: string
+          is_test?: boolean
+          notes?: string | null
+          organisation_id?: string
+          purchase_date?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_test?: boolean
+          notes?: string | null
+          organisation_id?: string
+          purchase_date?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_food_purchases_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_food_purchases_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_food_purchases_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -2128,13 +2275,128 @@ export type Database = {
           },
         ]
       }
+      ingredient_purchase_options: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          ingredient_id: string
+          is_preferred: boolean
+          is_test: boolean
+          notes: string | null
+          organisation_id: string
+          pack_quantity: number
+          pack_unit: string
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          is_preferred?: boolean
+          is_test?: boolean
+          notes?: string | null
+          organisation_id?: string
+          pack_quantity: number
+          pack_unit: string
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          is_preferred?: boolean
+          is_test?: boolean
+          notes?: string | null
+          organisation_id?: string
+          pack_quantity?: number
+          pack_unit?: string
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_purchase_options_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_purchase_options_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_purchase_options_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingredient_purchase_prices: {
+        Row: {
+          created_at: string
+          effective_date: string
+          id: string
+          notes: string | null
+          option_id: string
+          organisation_id: string
+          pack_price: number
+        }
+        Insert: {
+          created_at?: string
+          effective_date?: string
+          id?: string
+          notes?: string | null
+          option_id: string
+          organisation_id?: string
+          pack_price: number
+        }
+        Update: {
+          created_at?: string
+          effective_date?: string
+          id?: string
+          notes?: string | null
+          option_id?: string
+          organisation_id?: string
+          pack_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_purchase_prices_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "ingredient_purchase_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_purchase_prices_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingredients: {
         Row: {
           active: boolean
           base_unit: Database["public"]["Enums"]["base_unit"]
           category: string
+          cost_option_id: string | null
           cost_price: number | null
           cost_quantity: number | null
+          cost_source: string | null
+          cost_status: string | null
           cost_unit: string | null
           created_at: string
           current_unit_cost: number | null
@@ -2152,8 +2414,11 @@ export type Database = {
           active?: boolean
           base_unit?: Database["public"]["Enums"]["base_unit"]
           category?: string
+          cost_option_id?: string | null
           cost_price?: number | null
           cost_quantity?: number | null
+          cost_source?: string | null
+          cost_status?: string | null
           cost_unit?: string | null
           created_at?: string
           current_unit_cost?: number | null
@@ -2171,8 +2436,11 @@ export type Database = {
           active?: boolean
           base_unit?: Database["public"]["Enums"]["base_unit"]
           category?: string
+          cost_option_id?: string | null
           cost_price?: number | null
           cost_quantity?: number | null
+          cost_source?: string | null
+          cost_status?: string | null
           cost_unit?: string | null
           created_at?: string
           current_unit_cost?: number | null
@@ -2832,6 +3100,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "staff_members_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          active: boolean
+          created_at: string
+          delivery_available: boolean
+          id: string
+          name: string
+          notes: string | null
+          organisation_id: string
+          preference_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          delivery_available?: boolean
+          id?: string
+          name: string
+          notes?: string | null
+          organisation_id?: string
+          preference_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          delivery_available?: boolean
+          id?: string
+          name?: string
+          notes?: string | null
+          organisation_id?: string
+          preference_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_organisation_id_fkey"
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
