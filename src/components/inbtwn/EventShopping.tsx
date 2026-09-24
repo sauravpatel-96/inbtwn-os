@@ -10,6 +10,7 @@ import { versionBuffersQuery } from "@/lib/production";
 import { collectPurchases, fmtShopQty, shoppingChecksQuery, type ShoppingLine } from "@/lib/shopping";
 import { scaleVersion, type ScaleResult } from "@/lib/recipe-calc";
 import { fmtCost, type BaseUnit } from "@/lib/units";
+import { eventKitQuery, kitItemsQuery, kitLines } from "@/lib/kit";
 
 type Filter = "all" | "tobuy" | "collected";
 
@@ -78,6 +79,29 @@ function ShoppingRow({
   );
 }
 
+
+function NonFood({ eventId, lines }: { eventId: string; lines: { id: string; name: string; qty: number; reusable: boolean }[] }) {
+  if (!lines.length) return null;
+  return (
+    <div className="mt-4">
+      <SectionHeading title="Non-food to buy" />
+      <TornCard className="px-4 py-2 shadow-card">
+        {lines.map((l) => (
+          <div key={l.id} className="flex items-baseline justify-between gap-3 border-b border-ink/10 py-2 last:border-0">
+            <span className="text-[14px]">{l.name}</span>
+            <span className="shrink-0 font-mono text-[13px]">
+              {l.qty} × <span className="text-ink-soft">{l.reusable ? "to own" : "consumable"}</span>
+            </span>
+          </div>
+        ))}
+        <Link to="/events/$eventId" params={{ eventId }} search={{ s: "more" }} replace className="mt-1 block py-2 font-mono text-[11px] text-flame">
+          From Event Kit →
+        </Link>
+      </TornCard>
+    </div>
+  );
+}
+
 export function EventShopping({ eventId, guestCount }: { eventId: string; guestCount: number | null }) {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("tobuy");
@@ -86,6 +110,8 @@ export function EventShopping({ eventId, guestCount }: { eventId: string; guestC
   const graph = useQuery(graphQuery);
   const buffers = useQuery(versionBuffersQuery);
   const checks = useQuery(shoppingChecksQuery(eventId));
+  const kitItems = useQuery(kitItemsQuery);
+  const kitRows = useQuery(eventKitQuery(eventId));
 
   const guests = guestCount ?? 0;
 
@@ -108,6 +134,12 @@ export function EventShopping({ eventId, guestCount }: { eventId: string; guestC
     }
     return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, [menu.data, graph.data, buffers.data, guests]);
+
+  // Non-food purchases: derived from Event Kit only; never mixed into ingredients.
+  const nonFood = useMemo(
+    () => kitLines(kitRows.data ?? [], kitItems.data ?? [], guestCount ?? 0).filter((l) => l.toBuy > 0),
+    [kitRows.data, kitItems.data, guestCount],
+  );
 
   const collectedSet = useMemo(() => new Set(checks.data ?? []), [checks.data]);
   const collectedCount = lines.filter((l) => collectedSet.has(l.ingredientId)).length;
@@ -148,6 +180,7 @@ export function EventShopping({ eventId, guestCount }: { eventId: string; guestC
         <Link to="/events/$eventId" params={{ eventId }} search={{ s: "menu" }} replace className="mt-3 block">
           <GhostButton className="w-full">Go to menu</GhostButton>
         </Link>
+        <NonFood eventId={eventId} lines={nonFood.map((l) => ({ id: l.row.id, name: l.item.name, qty: l.toBuy, reusable: l.reusable }))} />
       </div>
     );
 
@@ -239,6 +272,8 @@ export function EventShopping({ eventId, guestCount }: { eventId: string; guestC
           </TornCard>
         </div>
       ) : null}
+
+      <NonFood eventId={eventId} lines={nonFood.map((l) => ({ id: l.row.id, name: l.item.name, qty: l.toBuy, reusable: l.reusable }))} />
     </div>
   );
 }
