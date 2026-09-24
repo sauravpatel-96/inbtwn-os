@@ -720,7 +720,7 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
         const out: Record<string, unknown> = {};
         if (ingredient_name) {
           const q = ingredient_name.toLowerCase();
-          out.ingredients = (statusRes.data ?? [])
+          out["ingredients"] = (statusRes.data ?? [])
             .filter((i: any) => i.name.toLowerCase().includes(q))
             .slice(0, 5)
             .map((i: any) => {
@@ -757,7 +757,7 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
               const res = scaleVersion(v.id, v.base_yield_quantity, graph);
               const s = summariseCost([res], status);
               const portion = v.default_portion_quantity;
-              out.recipe = {
+              out["recipe"] = {
                 name: v.recipe_name,
                 costing_complete: s.complete,
                 ingredients_costed: `${s.costedCount} of ${s.ingredientCount}`,
@@ -769,9 +769,9 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
                 link: `/library/recipes/${recipe_id}`,
               };
             } catch (e) {
-              out.recipe = { error: (e as Error).message };
+              out["recipe"] = { error: (e as Error).message };
             }
-          } else out.recipe = { error: "Recipe has no active version or is not accessible." };
+          } else out["recipe"] = { error: "Recipe has no active version or is not accessible." };
         }
         if (event_id) {
           const d = findEvent(ctx, event_id);
@@ -801,7 +801,7 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
           const fin = financeFor(ctx, d, today) as any;
           const revenue = fin?.revenue ?? null;
           const purchases = (buys.data ?? []).map((b: any) => ({ supplier: b.supplier?.name ?? null, date: b.purchase_date, amount: Number(b.amount), notes: b.notes, test: b.is_test }));
-          out.event = {
+          out["event"] = {
             title: d.event.title,
             guests,
             A_ingredient_usage_cost: { amount: s.known, complete: s.complete, ingredients_costed: `${s.costedCount} of ${s.ingredientCount}`, missing: s.missing },
@@ -811,7 +811,7 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
             links: { finance: eventLink(event_id, "finance"), shopping: eventLink(event_id, "shopping") },
           };
         }
-        out.note = "Read-only. Prices, suppliers and purchases are changed in Library > Ingredients / Suppliers or Event > Finance.";
+        out["note"] = "Read-only. Prices, suppliers and purchases are changed in Library > Ingredients / Suppliers or Event > Finance.";
         return mark("get_food_costing", out);
       },
     }),
