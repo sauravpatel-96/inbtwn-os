@@ -22,6 +22,8 @@ import {
   type TimedItem,
 } from "@/lib/runsheet";
 import type { EventRow } from "@/lib/queries";
+import { eventShiftsQuery, shiftName, staffMembersQuery } from "@/lib/staff";
+import { parseClock } from "@/lib/runsheet";
 
 const nextStatus = (s: string): TaskStatus => (s === "todo" ? "in_progress" : s === "in_progress" ? "done" : "todo");
 const num = (s: string) => (s.trim() === "" ? null : Math.max(0, Math.round(Number(s))) || 0);
@@ -52,6 +54,8 @@ const emptyDraft: Draft = {
 export function EventRunSheet({ event }: { event: EventRow }) {
   const qc = useQueryClient();
   const items = useQuery(runSheetQuery(event.id));
+  const shiftsQ = useQuery(eventShiftsQuery(event.id));
+  const staffQ = useQuery(staffMembersQuery);
   const [timing, setTiming] = useState({ service: "", lead: "", travel: "", buffer: "" });
   const [editingTiming, setEditingTiming] = useState(false);
   const [open, setOpen] = useState(false);
@@ -71,6 +75,19 @@ export function EventRunSheet({ event }: { event: EventRow }) {
   const anchors = computeAnchors(event);
   const rows = useMemo(() => timeline(items.data ?? [], anchors), [items.data, anchors.service, anchors.arrival, anchors.departure]);
   const next = nextItem(rows);
+  /* Staff calls are derived from event-day shifts for display only — no run-sheet records are created. */
+  const calls = (shiftsQ.data ?? [])
+    .filter((sh) => sh.work_type === "event" && (!sh.shift_date || sh.shift_date === event.event_date) && sh.start_time)
+    .map((sh) => ({ id: sh.id, time: parseClock(sh.start_time)!, name: shiftName(sh, staffQ.data ?? []), owner: sh.is_owner, unassigned: !sh.is_owner && !sh.staff_member_id, role: sh.role_label }));
+  type Merged = { kind: "item"; item: TimedItem } | { kind: "call"; call: (typeof calls)[number] };
+  const merged: Merged[] = [
+    ...rows.map((item) => ({ kind: "item" as const, item })),
+    ...calls.map((call) => ({ kind: "call" as const, call })),
+  ].sort((a, b) => {
+    const ta = a.kind === "item" ? (a.item.time ?? 99999) : a.call.time;
+    const tb = b.kind === "item" ? (b.item.time ?? 99999) : b.call.time;
+    return ta - tb || (a.kind === "call" ? -1 : 1);
+  });
   const refresh = () => qc.invalidateQueries({ queryKey: ["run-sheet", event.id] });
 
   const saveTiming = async () => {
@@ -239,9 +256,18 @@ export function EventRunSheet({ event }: { event: EventRow }) {
           </div>
         ) : (
           <div className="border border-ink/15 bg-cream">
-            {rows.map((i) => (
-              <RunRow key={i.id} item={i} isNext={next?.id === i.id} onToggle={() => toggle(i)} onEdit={() => openEdit(i)} />
-            ))}
+            {merged.map((m) =>
+              m.kind === "item" ? (
+                <RunRow key={m.item.id} item={m.item} isNext={next?.id === m.item.id} onToggle={() => toggle(m.item)} onEdit={() => openEdit(m.item)} />
+              ) : (
+                <div key={`call-${m.call.id}`} className="flex items-start gap-3 border-b border-ink/10 px-3 py-2 last:border-0">
+                  <div className="w-[58px] shrink-0 font-display text-[18px] leading-none text-ink-soft">{fmtClock(m.call.time)}</div>
+                  <div className="min-w-0 flex-1 font-mono text-[11px] uppercase tracking-wide text-ink-soft">
+                    {m.call.unassigned ? `${m.call.role ?? "Staff"} (unassigned)` : m.call.name} — {m.call.owner ? "Start" : "Staff call"}
+                  </div>
+                </div>
+              ),
+            )}
           </div>
         )}
         <div className="mt-3 grid grid-cols-2 gap-2">
