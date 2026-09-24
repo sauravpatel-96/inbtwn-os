@@ -177,5 +177,5 @@ export async function loadCalcGraph(client: { from: (t: string) => any }): Promi
       };
     }
     return { ingredients, versions: vmap };
-  },
-});
+  }
+}
