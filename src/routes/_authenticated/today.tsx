@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, prepSummary, eventDaySummary, staffLine, type AttentionItem, type Severity, type PrepEventGroup } from "@/lib/today";
+import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, prepSummary, eventDaySummary, staffLine, kitTodayLine, type AttentionItem, type Severity, type PrepEventGroup } from "@/lib/today";
 import { fmtMinutes, assignmentLabel } from "@/lib/prep";
 import { fmtClock } from "@/lib/runsheet";
 import { fmtDate, fmtMoney } from "@/lib/format";

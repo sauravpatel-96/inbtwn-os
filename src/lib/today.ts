@@ -1,3 +1,5 @@
+import { kitLines, kitSummary, type KitItemRow, type EventKitRow } from "./kit";
+import { addDays as _kitAddDays, format as _kitFormat } from "date-fns";
 import { computeAnchors, nextItem, timeline, type Anchors, type RunSheetItemRow, type TimedItem } from "./runsheet";
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,6 +75,8 @@ export type TodayData = {
   runSheet: RunSheetItemRow[];
   shifts: ShiftRow[];
   staff: StaffMemberRow[];
+  kitItems: KitItemRow[];
+  eventKit: EventKitRow[];
 };
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
@@ -112,6 +116,8 @@ export async function fetchTodayData(client: ReadClient = supabase as unknown as
       runSheet,
       shifts,
       staff,
+      kitItems,
+      eventKit,
     ] = await Promise.all([
       supabase
         .from("events")
@@ -139,6 +145,8 @@ export async function fetchTodayData(client: ReadClient = supabase as unknown as
       supabase.from("event_run_sheet_items").select("*"),
       supabase.from("event_staff_shifts").select("*"),
       supabase.from("staff_members").select("*"),
+      supabase.from("kit_items").select("*"),
+      supabase.from("event_kit_items").select("*"),
     ]);
 
     const items = unwrap<InvoiceItemRow[]>(invoiceItems);
@@ -170,6 +178,8 @@ export async function fetchTodayData(client: ReadClient = supabase as unknown as
       runSheet: unwrap<RunSheetItemRow[]>(runSheet),
       shifts: unwrap<ShiftRow[]>(shifts),
       staff: unwrap<StaffMemberRow[]>(staff),
+      kitItems: unwrap<KitItemRow[]>(kitItems),
+      eventKit: unwrap<EventKitRow[]>(eventKit),
     };
   }
 }
@@ -720,6 +730,22 @@ export function staffLine(eventId: string, data: TodayData): string | null {
   const lt = labourTotals(data.shifts.filter((sh) => sh.event_id === eventId));
   if (lt.unassigned > 0) return `Staff: ${lt.unassigned} ${lt.unassigned === 1 ? "person" : "people"} still needed`;
   if (lt.people > 0) return `Staff: ${lt.people} ${lt.people === 1 ? "helper" : "helpers"} confirmed`;
+  return null;
+}
+/**
+ * One-line Event Kit state for an upcoming event, only when actionable:
+ * items still to buy, or — within 2 days — reusable kit not fully packed.
+ */
+export function kitTodayLine(eventId: string, eventDate: string | null, guests: number | null, data: TodayData, today = new Date()): string | null {
+  const rows = data.eventKit.filter((r) => r.event_id === eventId);
+  if (!rows.length) return null;
+  const k = kitSummary(kitLines(rows, data.kitItems, guests ?? 0));
+  if (k.toBuy > 0) return `Kit: ${k.toBuy} ${k.toBuy === 1 ? "item" : "items"} still to buy`;
+  if (eventDate) {
+    const soon = _kitFormat(_kitAddDays(today, 2), "yyyy-MM-dd");
+    if (eventDate <= soon && k.reusableTotal > 0 && k.reusablePacked < k.reusableTotal)
+      return `Equipment: ${k.reusablePacked}/${k.reusableTotal} packed`;
+  }
   return null;
 }
 export type EventDaySummary = { today: EventDayCard[]; missing: { eventId: string; title: string; eventDate: string | null }[] };
