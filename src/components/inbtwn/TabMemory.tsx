@@ -71,7 +71,7 @@ export function useTabMemoryRecorder() {
       t = setTimeout(() => {
         if (Date.now() < suppressUntil) return;
         const { href: h, tab } = current.current;
-        if (!tab) return;
+        if (!tab || window.location.pathname + window.location.search !== h) return;
         const mem = getTabMemory(tab);
         if (mem?.href === h) setTabMemory(tab, { href: h, y: Math.round(window.scrollY) });
       }, 150);
@@ -110,6 +110,13 @@ export function useOpenTab() {
   return useCallback(
     async (tab: TabKey) => {
       const here = tabForPath(pathname);
+      // Snapshot the scroll position of the screen we are leaving.
+      if (here) {
+        const cur = window.location.pathname + window.location.search;
+        const m = getTabMemory(here);
+        if (m?.href === cur) setTabMemory(here, { href: cur, y: Math.round(window.scrollY) });
+      }
+      suppressUntil = Date.now() + 600;
       // Today always opens its dashboard; re-tapping the active tab goes to its root.
       const mem = tab === "today" || here === tab ? undefined : getTabMemory(tab);
       if (tab === "today") {
