@@ -487,6 +487,15 @@ export function EventPlan({ event }: { event: EventRow }) {
             Done
           </Chip>
         </div>
+        {filter === "open" && allTasks.length - outstanding > 0 ? (
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
+            className="mt-2 font-mono text-[11px] text-ink-soft underline"
+          >
+            {allTasks.length - outstanding} done {allTasks.length - outstanding === 1 ? "task" : "tasks"} hidden · show all
+          </button>
+        ) : null}
 
         <div className="mt-4 space-y-5">
           {days.length === 0 ? (
