@@ -188,7 +188,7 @@ export function EventRunSheet({ event }: { event: EventRow }) {
             ["Service", fmtClock(anchors.service)],
             ["Arrive", fmtClock(anchors.arrival)],
             ["Depart", fmtClock(anchors.departure)],
-            ["Travel", anchors.travel || anchors.buffer ? `${fmtMinutes(anchors.travel) ?? "0"}` : "—"],
+            ["Travel", anchors.travel || anchors.buffer ? `${fmtMinutes(anchors.travel) ?? "0 min"}${anchors.buffer ? ` + ${anchors.buffer}` : ""}` : "—"],
           ].map(([l, v]) => (
             <div key={l} className="px-2 py-2.5 text-center">
               <div className="label-mono text-ink-soft">{l}</div>
