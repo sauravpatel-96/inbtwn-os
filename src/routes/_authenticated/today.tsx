@@ -245,6 +245,11 @@ function TodayPage() {
                   {data.data && staffLine(d.event.id, data.data) ? (
                     <p className="font-mono text-[11px] text-ink-soft">{staffLine(d.event.id, data.data)}</p>
                   ) : null}
+                  {data.data && kitTodayLine(d.event.id, d.event.event_date, d.event.guest_count, data.data) ? (
+                    <p className="font-mono text-[11px] text-flame">
+                      {kitTodayLine(d.event.id, d.event.event_date, d.event.guest_count, data.data)}
+                    </p>
+                  ) : null}
                 </div>
                 <StatusPill status={d.event.status} />
               </Link>
