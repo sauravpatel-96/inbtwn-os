@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { tabForPath, type TabKey } from "@/lib/tab-memory";
 import { useOpenTab, useTabMemoryRecorder } from "./TabMemory";
-import { useState, type ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
 import { fmtDate, todayISO } from "@/lib/format";
@@ -20,7 +20,7 @@ function useTabLink(tab: TabKey) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const open = useOpenTab();
   const active = tabForPath(pathname) === tab;
-  const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
     void open(tab);
