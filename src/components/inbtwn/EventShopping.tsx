@@ -1,4 +1,5 @@
 import { allPurchaseOptionsQuery, purchaseFromScratch } from "@/lib/costing";
+import { usePersistentState } from "@/lib/tab-memory";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -105,7 +106,7 @@ function NonFood({ eventId, lines }: { eventId: string; lines: { id: string; nam
 
 export function EventShopping({ eventId, guestCount }: { eventId: string; guestCount: number | null }) {
   const qc = useQueryClient();
-  const [filter, setFilter] = useState<Filter>("tobuy");
+  const [filter, setFilter] = usePersistentState<Filter>(`shopping.${eventId}`, "tobuy", ["all","tobuy","collected"] as const);
   const [showMissing, setShowMissing] = useState(false);
   const menu = useQuery(menuItemsQuery(eventId));
   const graph = useQuery(graphQuery);

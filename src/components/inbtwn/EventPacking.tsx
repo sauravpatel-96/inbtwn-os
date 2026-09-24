@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { usePersistentState } from "@/lib/tab-memory";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
@@ -102,7 +103,7 @@ export function EventPacking({ eventId, guestCount }: { eventId: string; guestCo
   const kitItems = useQuery(kitItemsQuery);
   const kitRows = useQuery(eventKitQuery(eventId));
 
-  const [filter, setFilter] = useState<Filter>("topack");
+  const [filter, setFilter] = usePersistentState<Filter>(`packing.${eventId}`, "topack", ["all","topack","packed"] as const);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<PackingItemRow | null>(null);
   const [name, setName] = useState("");
