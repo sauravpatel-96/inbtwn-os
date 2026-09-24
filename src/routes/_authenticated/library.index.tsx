@@ -56,6 +56,10 @@ function LibraryPage() {
           </div>
           <div className="mt-1 font-mono text-[11px] text-ink-soft">Yields, costs, allergens</div>
         </Link>
+        <Link to="/library/staff" className="torn tap col-span-2 bg-cream px-4 py-4 text-ink shadow-card active:bg-panel">
+          <div className="font-display text-[22px] leading-none">Staff</div>
+          <div className="mt-1 font-mono text-[11px] text-ink-soft">Casual helpers and hourly rates</div>
+        </Link>
         <Link
           to="/settings/business"
           className="torn tap col-span-2 bg-cream px-4 py-4 text-ink shadow-card active:bg-panel"
