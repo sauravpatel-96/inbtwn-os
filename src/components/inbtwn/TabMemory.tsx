@@ -15,12 +15,20 @@ let suppressUntil = 0;
 
 function restoreScroll(y: number) {
   if (y <= 0) return;
-  suppressUntil = Date.now() + 2500;
+  suppressUntil = Date.now() + 3000;
   const started = Date.now();
+  let heldSince = 0;
   const tick = () => {
     const max = document.documentElement.scrollHeight - window.innerHeight;
-    if (max >= y - 4 || Date.now() - started > 2500) {
-      window.scrollTo(0, Math.min(y, Math.max(0, max)));
+    const target = Math.min(y, Math.max(0, max));
+    if (Math.abs(window.scrollY - target) > 2) {
+      window.scrollTo(0, target);
+      heldSince = 0;
+    } else if (max >= y - 4) {
+      heldSince ||= Date.now();
+    }
+    // Keep re-applying until content has loaded and the position has held (router may reset to top).
+    if ((heldSince && Date.now() - heldSince > 400) || Date.now() - started > 3000) {
       suppressUntil = Date.now() + 200;
       return;
     }
