@@ -19,6 +19,7 @@ import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authentica
 import { Route as AuthenticatedLibraryIndexRouteImport } from './routes/_authenticated/library.index'
 import { Route as AuthenticatedLibraryKitRouteImport } from './routes/_authenticated/library.kit'
 import { Route as AuthenticatedLibraryStaffRouteImport } from './routes/_authenticated/library.staff'
+import { Route as AuthenticatedLibrarySuppliersRouteImport } from './routes/_authenticated/library.suppliers'
 import { Route as AuthenticatedSettingsBusinessRouteImport } from './routes/_authenticated/settings.business'
 import { Route as AuthenticatedEventsEventIdIndexRouteImport } from './routes/_authenticated/events.$eventId.index'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events.$eventId.edit'
@@ -89,6 +90,12 @@ const AuthenticatedLibraryStaffRoute =
   AuthenticatedLibraryStaffRouteImport.update({
     id: '/library/staff',
     path: '/library/staff',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLibrarySuppliersRoute =
+  AuthenticatedLibrarySuppliersRouteImport.update({
+    id: '/library/suppliers',
+    path: '/library/suppliers',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSettingsBusinessRoute =
@@ -214,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/library/kit': typeof AuthenticatedLibraryKitRoute
   '/library/staff': typeof AuthenticatedLibraryStaffRoute
+  '/library/suppliers': typeof AuthenticatedLibrarySuppliersRoute
   '/settings/business': typeof AuthenticatedSettingsBusinessRoute
   '/events/': typeof AuthenticatedEventsIndexRoute
   '/library/': typeof AuthenticatedLibraryIndexRoute
@@ -244,6 +252,7 @@ export interface FileRoutesByTo {
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/library/kit': typeof AuthenticatedLibraryKitRoute
   '/library/staff': typeof AuthenticatedLibraryStaffRoute
+  '/library/suppliers': typeof AuthenticatedLibrarySuppliersRoute
   '/settings/business': typeof AuthenticatedSettingsBusinessRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/library': typeof AuthenticatedLibraryIndexRoute
@@ -276,6 +285,7 @@ export interface FileRoutesById {
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
   '/_authenticated/library/kit': typeof AuthenticatedLibraryKitRoute
   '/_authenticated/library/staff': typeof AuthenticatedLibraryStaffRoute
+  '/_authenticated/library/suppliers': typeof AuthenticatedLibrarySuppliersRoute
   '/_authenticated/settings/business': typeof AuthenticatedSettingsBusinessRoute
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
   '/_authenticated/library/': typeof AuthenticatedLibraryIndexRoute
@@ -308,6 +318,7 @@ export interface FileRouteTypes {
     | '/events/new'
     | '/library/kit'
     | '/library/staff'
+    | '/library/suppliers'
     | '/settings/business'
     | '/events/'
     | '/library/'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/events/new'
     | '/library/kit'
     | '/library/staff'
+    | '/library/suppliers'
     | '/settings/business'
     | '/events'
     | '/library'
@@ -369,6 +381,7 @@ export interface FileRouteTypes {
     | '/_authenticated/events/new'
     | '/_authenticated/library/kit'
     | '/_authenticated/library/staff'
+    | '/_authenticated/library/suppliers'
     | '/_authenticated/settings/business'
     | '/_authenticated/events/'
     | '/_authenticated/library/'
@@ -468,6 +481,13 @@ declare module '@tanstack/react-router' {
       path: '/library/staff'
       fullPath: '/library/staff'
       preLoaderRoute: typeof AuthenticatedLibraryStaffRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library/suppliers': {
+      id: '/_authenticated/library/suppliers'
+      path: '/library/suppliers'
+      fullPath: '/library/suppliers'
+      preLoaderRoute: typeof AuthenticatedLibrarySuppliersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/business': {
@@ -612,6 +632,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
   AuthenticatedLibraryKitRoute: typeof AuthenticatedLibraryKitRoute
   AuthenticatedLibraryStaffRoute: typeof AuthenticatedLibraryStaffRoute
+  AuthenticatedLibrarySuppliersRoute: typeof AuthenticatedLibrarySuppliersRoute
   AuthenticatedSettingsBusinessRoute: typeof AuthenticatedSettingsBusinessRoute
   AuthenticatedEventsIndexRoute: typeof AuthenticatedEventsIndexRoute
   AuthenticatedLibraryIndexRoute: typeof AuthenticatedLibraryIndexRoute
@@ -641,6 +662,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,
   AuthenticatedLibraryKitRoute: AuthenticatedLibraryKitRoute,
   AuthenticatedLibraryStaffRoute: AuthenticatedLibraryStaffRoute,
+  AuthenticatedLibrarySuppliersRoute: AuthenticatedLibrarySuppliersRoute,
   AuthenticatedSettingsBusinessRoute: AuthenticatedSettingsBusinessRoute,
   AuthenticatedEventsIndexRoute: AuthenticatedEventsIndexRoute,
   AuthenticatedLibraryIndexRoute: AuthenticatedLibraryIndexRoute,
