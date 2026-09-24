@@ -85,7 +85,7 @@ export function EventRunSheet({ event }: { event: EventRow }) {
       })
       .eq("id", event.id);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setEditingTiming(false);
     qc.invalidateQueries({ queryKey: ["events"] });
     qc.invalidateQueries({ queryKey: ["today-data"] });
@@ -111,7 +111,7 @@ export function EventRunSheet({ event }: { event: EventRow }) {
       .from("event_run_sheet_items")
       .update({ status, completed_at: status === "done" ? new Date().toISOString() : null })
       .eq("id", i.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     refresh();
     qc.invalidateQueries({ queryKey: ["today-data"] });
   };
@@ -138,7 +138,7 @@ export function EventRunSheet({ event }: { event: EventRow }) {
   };
 
   const save = async () => {
-    if (!draft.name.trim()) return toast.error("Name is required");
+    if (!draft.name.trim()) { toast.error("Name is required"); return; }
     const fixed = draft.anchor_type === "fixed";
     const off = (num(draft.offset) ?? 0) * (draft.direction === "before" ? -1 : 1);
     const payload = {
@@ -164,7 +164,7 @@ export function EventRunSheet({ event }: { event: EventRow }) {
           sort_order: 100 + (items.data?.length ?? 0),
         });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setOpen(false);
     refresh();
   };
@@ -172,7 +172,7 @@ export function EventRunSheet({ event }: { event: EventRow }) {
   const remove = async () => {
     if (!editing) return;
     const { error } = await supabase.from("event_run_sheet_items").delete().eq("id", editing.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setOpen(false);
     refresh();
   };
