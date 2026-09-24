@@ -1662,6 +1662,103 @@ export type Database = {
           },
         ]
       }
+      event_staff_shifts: {
+        Row: {
+          actual_break_minutes: number | null
+          actual_end_time: string | null
+          actual_start_time: string | null
+          break_minutes: number | null
+          created_at: string
+          end_time: string | null
+          event_id: string
+          hourly_rate: number
+          id: string
+          is_owner: boolean
+          notes: string | null
+          organisation_id: string
+          paid_at: string | null
+          payment_note: string | null
+          payment_status: string
+          role_label: string | null
+          shift_date: string | null
+          sort_order: number
+          staff_member_id: string | null
+          start_time: string | null
+          updated_at: string
+          work_type: string
+        }
+        Insert: {
+          actual_break_minutes?: number | null
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          break_minutes?: number | null
+          created_at?: string
+          end_time?: string | null
+          event_id: string
+          hourly_rate?: number
+          id?: string
+          is_owner?: boolean
+          notes?: string | null
+          organisation_id?: string
+          paid_at?: string | null
+          payment_note?: string | null
+          payment_status?: string
+          role_label?: string | null
+          shift_date?: string | null
+          sort_order?: number
+          staff_member_id?: string | null
+          start_time?: string | null
+          updated_at?: string
+          work_type?: string
+        }
+        Update: {
+          actual_break_minutes?: number | null
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          break_minutes?: number | null
+          created_at?: string
+          end_time?: string | null
+          event_id?: string
+          hourly_rate?: number
+          id?: string
+          is_owner?: boolean
+          notes?: string | null
+          organisation_id?: string
+          paid_at?: string | null
+          payment_note?: string | null
+          payment_status?: string
+          role_label?: string | null
+          shift_date?: string | null
+          sort_order?: number
+          staff_member_id?: string | null
+          start_time?: string | null
+          updated_at?: string
+          work_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_staff_shifts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_staff_shifts_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_staff_shifts_staff_member_id_fkey"
+            columns: ["staff_member_id"]
+            isOneToOne: false
+            referencedRelation: "staff_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_tasks: {
         Row: {
           approximate_minutes: number | null
@@ -2553,6 +2650,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "run_sheet_templates_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_members: {
+        Row: {
+          active: boolean
+          created_at: string
+          default_hourly_rate: number
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          organisation_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          default_hourly_rate?: number
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organisation_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          default_hourly_rate?: number
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organisation_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_members_organisation_id_fkey"
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
