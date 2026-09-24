@@ -1,4 +1,5 @@
 import { eventKitQuery, kitItemsQuery, kitLines, kitSummary } from "@/lib/kit";
+import { usePersistentState } from "@/lib/tab-memory";
 /**
  * Event Plan — "what work needs doing, and when".
  *
@@ -160,7 +161,7 @@ export function EventPlan({ event }: { event: EventRow }) {
   const kitItemsQ = useQuery(kitItemsQuery);
   const kitRowsQ = useQuery(eventKitQuery(event.id));
 
-  const [filter, setFilter] = useState<Filter>("open");
+  const [filter, setFilter] = usePersistentState<Filter>(`plan.${eventId}`, "open", ["open","all","done"] as const);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<EventTaskRow | null>(null);
   const [draft, setDraft] = useState<Draft>(emptyDraft(event.event_date ?? todayISO()));

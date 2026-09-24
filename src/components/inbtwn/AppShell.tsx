@@ -1,29 +1,63 @@
-import { Link, useNavigate } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { tabForPath, type TabKey } from "@/lib/tab-memory";
+import { useOpenTab, useTabMemoryRecorder } from "./TabMemory";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
 import { fmtDate, todayISO } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 
 const NAV = [
-  { to: "/today", label: "Today", glyph: "◕" },
-  { to: "/events", label: "Events", glyph: "▤" },
+  { to: "/today", tab: "today", label: "Today", glyph: "◕" },
+  { to: "/events", tab: "events", label: "Events", glyph: "▤" },
 ] as const;
 const NAV_RIGHT = [
-  { to: "/library", label: "Library", glyph: "▦" },
-  { to: "/ask", label: "Ask", glyph: "?" },
+  { to: "/library", tab: "library", label: "Library", glyph: "▦" },
+  { to: "/ask", tab: "ask", label: "Ask", glyph: "?" },
 ] as const;
 
-function NavItem({ to, label, glyph }: { to: string; label: string; glyph: string }) {
+function useTabLink(tab: TabKey) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const open = useOpenTab();
+  const active = tabForPath(pathname) === tab;
+  const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    void open(tab);
+  };
+  return { active, onClick };
+}
+
+function NavItem({ to, tab, label, glyph }: { to: string; tab: TabKey; label: string; glyph: string }) {
+  const { active, onClick } = useTabLink(tab);
   return (
-    <Link
-      to={to}
-      className="tap flex flex-col items-center justify-center gap-1 py-1.5 text-ink-soft"
-      activeProps={{ className: "text-ink" }}
+    <a
+      href={to}
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+      className={cn("tap flex flex-col items-center justify-center gap-1 py-1.5", active ? "text-ink" : "text-ink-soft")}
     >
       <span className="font-display text-[16px] leading-none">{glyph}</span>
       <span className="label-mono text-[9px]">{label}</span>
-    </Link>
+    </a>
+  );
+}
+
+function SideItem({ to, tab, label, glyph }: { to: string; tab: TabKey; label: string; glyph: string }) {
+  const { active, onClick } = useTabLink(tab);
+  return (
+    <a
+      href={to}
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "tap flex items-center gap-3 rounded-sm px-3 font-mono text-[12px] hover:bg-cream",
+        active ? "bg-cream text-ink" : "text-ink-soft",
+      )}
+    >
+      <span className="font-display text-[14px]">{glyph}</span>
+      {label}
+    </a>
   );
 }
 
@@ -101,6 +135,7 @@ export function QuickAddSheet({
 export function AppShell({ children, orgName }: { children: ReactNode; orgName?: string | undefined }) {
   const [quickOpen, setQuickOpen] = useState(false);
   const navigate = useNavigate();
+  useTabMemoryRecorder();
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -116,15 +151,7 @@ export function AppShell({ children, orgName }: { children: ReactNode; orgName?:
             INBTWN<span className="ml-1 align-top font-hand text-[11px]">OS</span>
           </div>
           {[...NAV, ...NAV_RIGHT].map((n) => (
-            <Link
-              key={n.to}
-              to={n.to}
-              className="tap flex items-center gap-3 rounded-sm px-3 font-mono text-[12px] text-ink-soft hover:bg-cream"
-              activeProps={{ className: "bg-cream text-ink" }}
-            >
-              <span className="font-display text-[14px]">{n.glyph}</span>
-              {n.label}
-            </Link>
+            <SideItem key={n.to} {...n} />
           ))}
           <button
             onClick={() => setQuickOpen(true)}
