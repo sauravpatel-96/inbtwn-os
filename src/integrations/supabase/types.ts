@@ -1528,6 +1528,94 @@ export type Database = {
           },
         ]
       }
+      event_run_sheet_items: {
+        Row: {
+          anchor_type: string
+          assignment: string
+          completed_at: string | null
+          created_at: string
+          duration_minutes: number | null
+          event_id: string
+          fixed_time: string | null
+          generated_at: string | null
+          id: string
+          is_milestone: boolean
+          name: string
+          notes: string | null
+          offset_minutes: number
+          organisation_id: string
+          sort_order: number
+          source: string
+          status: string
+          template_item_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          anchor_type: string
+          assignment?: string
+          completed_at?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          event_id: string
+          fixed_time?: string | null
+          generated_at?: string | null
+          id?: string
+          is_milestone?: boolean
+          name: string
+          notes?: string | null
+          offset_minutes?: number
+          organisation_id: string
+          sort_order?: number
+          source?: string
+          status?: string
+          template_item_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          anchor_type?: string
+          assignment?: string
+          completed_at?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          event_id?: string
+          fixed_time?: string | null
+          generated_at?: string | null
+          id?: string
+          is_milestone?: boolean
+          name?: string
+          notes?: string | null
+          offset_minutes?: number
+          organisation_id?: string
+          sort_order?: number
+          source?: string
+          status?: string
+          template_item_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_run_sheet_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_run_sheet_items_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_run_sheet_items_template_item_id_fkey"
+            columns: ["template_item_id"]
+            isOneToOne: false
+            referencedRelation: "run_sheet_template_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_shopping_checks: {
         Row: {
           created_at: string
@@ -1675,6 +1763,7 @@ export type Database = {
       }
       events: {
         Row: {
+          arrival_lead_minutes: number | null
           arrival_time: string | null
           budget: number | null
           budget_flexible: boolean | null
@@ -1705,6 +1794,8 @@ export type Database = {
           source_reference: string | null
           status: Database["public"]["Enums"]["event_status"]
           title: string
+          travel_buffer_minutes: number | null
+          travel_minutes: number | null
           updated_at: string
           venue_address: string | null
           venue_contact_name: string | null
@@ -1714,6 +1805,7 @@ export type Database = {
           water_access: string | null
         }
         Insert: {
+          arrival_lead_minutes?: number | null
           arrival_time?: string | null
           budget?: number | null
           budget_flexible?: boolean | null
@@ -1744,6 +1836,8 @@ export type Database = {
           source_reference?: string | null
           status?: Database["public"]["Enums"]["event_status"]
           title: string
+          travel_buffer_minutes?: number | null
+          travel_minutes?: number | null
           updated_at?: string
           venue_address?: string | null
           venue_contact_name?: string | null
@@ -1753,6 +1847,7 @@ export type Database = {
           water_access?: string | null
         }
         Update: {
+          arrival_lead_minutes?: number | null
           arrival_time?: string | null
           budget?: number | null
           budget_flexible?: boolean | null
@@ -1783,6 +1878,8 @@ export type Database = {
           source_reference?: string | null
           status?: Database["public"]["Enums"]["event_status"]
           title?: string
+          travel_buffer_minutes?: number | null
+          travel_minutes?: number | null
           updated_at?: string
           venue_address?: string | null
           venue_contact_name?: string | null
@@ -2371,6 +2468,91 @@ export type Database = {
           },
           {
             foreignKeyName: "recipes_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      run_sheet_template_items: {
+        Row: {
+          anchor_type: string
+          assignment: string
+          created_at: string
+          duration_minutes: number | null
+          fixed_time: string | null
+          id: string
+          is_milestone: boolean
+          name: string
+          offset_minutes: number
+          sort_order: number
+          template_id: string
+        }
+        Insert: {
+          anchor_type: string
+          assignment?: string
+          created_at?: string
+          duration_minutes?: number | null
+          fixed_time?: string | null
+          id?: string
+          is_milestone?: boolean
+          name: string
+          offset_minutes?: number
+          sort_order?: number
+          template_id: string
+        }
+        Update: {
+          anchor_type?: string
+          assignment?: string
+          created_at?: string
+          duration_minutes?: number | null
+          fixed_time?: string | null
+          id?: string
+          is_milestone?: boolean
+          name?: string
+          offset_minutes?: number
+          sort_order?: number
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "run_sheet_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "run_sheet_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      run_sheet_templates: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          name: string
+          organisation_id: string | null
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          name: string
+          organisation_id?: string | null
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          name?: string
+          organisation_id?: string | null
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "run_sheet_templates_organisation_id_fkey"
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"

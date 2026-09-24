@@ -48,6 +48,7 @@ import {
 import { fmtDateLong, todayISO } from "@/lib/format";
 import type { BaseUnit } from "@/lib/units";
 import type { EventRow } from "@/lib/queries";
+import { EventRunSheet } from "@/components/inbtwn/EventRunSheet";
 
 type Filter = "open" | "all" | "done";
 
@@ -526,14 +527,9 @@ export function EventPlan({ event }: { event: EventRow }) {
         />
       </div>
 
-      <div className="mt-7">
-        <SectionHeading title="Event day" />
-        <TornCard className="px-4 py-4 shadow-card">
-          <p className="font-mono text-[11px] leading-relaxed text-ink-soft">
-            Event-day prep appears in the list above, dated {event.event_date ? fmtDateLong(event.event_date) : "on the event date"}.
-            A full run sheet — staff call, load, departure, arrival, setup, service and breakdown — comes in a later build.
-          </p>
-        </TornCard>
+      <div className="mt-7" id="event-day">
+        <SectionHeading title={`Event day${event.event_date ? ` · ${fmtDateLong(event.event_date)}` : ""}`} />
+        <EventRunSheet event={event} />
       </div>
 
       <Drawer open={open} onOpenChange={(o) => !o && closeSheet()} shouldScaleBackground={false}>

@@ -1,3 +1,4 @@
+import { computeAnchors, fmtClock, nextItem, ruleLabel, timeline } from "./runsheet";
 /**
  * Ask INBTWN — read-only business data layer.
  *
@@ -506,6 +507,56 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
       },
     }),
 
+
+    get_run_sheet: tool({
+      description:
+        "Event-day run sheet for one event or events on a date: service, arrival and departure times (derived: arrival = service - arrival lead; departure = arrival - travel - travel buffer), travel and buffer minutes, and each run-sheet item with calculated clock time, rule (anchor + offset or fixed), duration, assignment and status, plus the next incomplete item. Use for 'what time do I leave', 'what time do I arrive', 'run sheet for Saturday', 'what's next', 'what do I do before leaving' (items before departure), 'what happens after I arrive' (items at/after arrival). Read-only: edit on Event > Plan > Event day.",
+      inputSchema: z.object({
+        event_id: z.string().nullable().describe("One event id, or null to use date"),
+        date: z.string().nullable().describe("Event date yyyy-mm-dd when event_id is null; null = today and upcoming 7 days"),
+      }),
+      execute: async ({ event_id, date }) => {
+        const from = iso(today);
+        const to = iso(addDays(today, 7));
+        const events = ctx.derived
+          .filter((d) => (event_id ? d.event.id === event_id : date ? d.event.event_date === date : inRange(d.event.event_date, from, to)))
+          .filter((d) => !["cancelled", "lost"].includes(d.event.status));
+        return mark("get_run_sheet", {
+          events: events.map((d) => {
+            const e = d.event;
+            const a = computeAnchors(e);
+            const tl = timeline(ctx.data.runSheet.filter((r) => r.event_id === e.id), a);
+            const nx = nextItem(tl);
+            return {
+              event: e.title,
+              event_id: e.id,
+              event_date: e.event_date,
+              service_time: a.service != null ? fmtClock(a.service) : null,
+              arrival_time: a.arrival != null ? fmtClock(a.arrival) : null,
+              departure_time: a.departure != null ? fmtClock(a.departure) : null,
+              arrival_lead_minutes: e.arrival_lead_minutes,
+              travel_minutes: e.travel_minutes,
+              travel_buffer_minutes: e.travel_buffer_minutes,
+              generated: tl.length > 0,
+              next: nx ? { time: fmtClock(nx.time), name: nx.name } : null,
+              items: tl.map((i) => ({
+                time: i.time != null ? fmtClock(i.time) : null,
+                end: i.end != null ? fmtClock(i.end) : null,
+                name: i.name,
+                rule: ruleLabel(i),
+                anchor: i.anchor_type,
+                duration_minutes: i.duration_minutes,
+                assignment: i.assignment,
+                status: i.status,
+                source: i.source,
+              })),
+              link: eventLink(e.id, "plan"),
+            };
+          }),
+          note: "Times are derived from the event's service time, arrival lead, travel and buffer. Read-only; edit on Event > Plan > Event day.",
+        });
+      },
+    }),
     get_prep_tasks: tool({
       description:
         "Prep plan tasks across events: name, scheduled date, status, assignment, approximate minutes, whether the task came from a recipe prep step or was added manually, and the event it belongs to. Use for 'what do I need to do today', 'what prep is on Friday', 'what is left for Y11 Banquet'. Read-only: tasks can only be changed on the event's Plan tab.",

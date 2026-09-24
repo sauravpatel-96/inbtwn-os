@@ -1,3 +1,4 @@
+import { computeAnchors, nextItem, timeline, type Anchors, type RunSheetItemRow, type TimedItem } from "./runsheet";
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -67,6 +68,7 @@ export type TodayData = {
   recipeIngredients: RecipeIngredientLite[];
   recipeComponents: RecipeComponentLite[];
   tasks: TaskLite[];
+  runSheet: RunSheetItemRow[];
 };
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
@@ -103,6 +105,7 @@ export async function fetchTodayData(client: ReadClient = supabase as unknown as
       recipeIngredients,
       recipeComponents,
       tasks,
+      runSheet,
     ] = await Promise.all([
       supabase
         .from("events")
@@ -127,6 +130,7 @@ export async function fetchTodayData(client: ReadClient = supabase as unknown as
       supabase
         .from("event_tasks")
         .select("id, event_id, name, scheduled_date, status, approximate_minutes, assignment, source"),
+      supabase.from("event_run_sheet_items").select("*"),
     ]);
 
     const items = unwrap<InvoiceItemRow[]>(invoiceItems);
@@ -155,6 +159,7 @@ export async function fetchTodayData(client: ReadClient = supabase as unknown as
       recipeIngredients: unwrap<RecipeIngredientLite[]>(recipeIngredients),
       recipeComponents: unwrap<RecipeComponentLite[]>(recipeComponents),
       tasks: unwrap<TaskLite[]>(tasks),
+      runSheet: unwrap<RunSheetItemRow[]>(runSheet),
     };
   }
 }
@@ -669,4 +674,38 @@ export function prepSummary(derived: EventDerived[], data: TodayData, today = ne
     taskCount: groups.reduce((s, g) => s + g.overdue.length + g.dueToday.length + g.upcoming.length, 0),
     minutes: groups.reduce((s, g) => s + g.minutes, 0),
   };
+}
+
+/* ---------------- Event Day (run sheet) ---------------- */
+
+export type EventDayCard = { eventId: string; title: string; anchors: Anchors; next: TimedItem | null; remaining: number; total: number };
+export type EventDaySummary = { today: EventDayCard[]; missing: { eventId: string; title: string; eventDate: string | null }[] };
+
+/** Today: live run sheets for events happening today. Before: upcoming 7-day events with no run sheet yet. */
+export function eventDaySummary(derived: EventDerived[], data: TodayData, today = new Date(), windowDays = 7): EventDaySummary {
+  const key = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const todayKey = key(today);
+  const horizonKey = key(new Date(today.getFullYear(), today.getMonth(), today.getDate() + windowDays));
+  const out: EventDaySummary = { today: [], missing: [] };
+  for (const d of derived) {
+    const e = d.event;
+    if (!["confirmed", "in_progress"].includes(e.status) || d.closed || !e.event_date) continue;
+    const items = data.runSheet.filter((r) => r.event_id === e.id);
+    if (e.event_date === todayKey) {
+      const anchors = computeAnchors(e);
+      const tl = timeline(items, anchors);
+      out.today.push({
+        eventId: e.id,
+        title: e.title,
+        anchors,
+        next: nextItem(tl),
+        remaining: tl.filter((i) => i.status !== "done").length,
+        total: tl.length,
+      });
+    } else if (e.event_date > todayKey && e.event_date <= horizonKey && items.length === 0) {
+      out.missing.push({ eventId: e.id, title: e.title, eventDate: e.event_date });
+    }
+  }
+  return out;
 }
