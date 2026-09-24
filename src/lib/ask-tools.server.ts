@@ -799,7 +799,7 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
           for (const r of results) collectPurchases(r, lines);
           const scratch = purchaseFromScratch([...lines.values()], options);
           const fin = financeFor(ctx, d, today) as any;
-          const revenue = fin?.agreed_value ?? fin?.totals?.revenue ?? null;
+          const revenue = fin?.revenue ?? null;
           const purchases = (buys.data ?? []).map((b: any) => ({ supplier: b.supplier?.name ?? null, date: b.purchase_date, amount: Number(b.amount), notes: b.notes, test: b.is_test }));
           out.event = {
             title: d.event.title,
