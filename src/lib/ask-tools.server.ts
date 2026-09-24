@@ -1,3 +1,4 @@
+import { isReusable, kitCategoryLabel, kitLines, kitSummary, purchaseLabel } from "./kit";
 import { computeAnchors, fmtClock, nextItem, ruleLabel, timeline } from "./runsheet";
 /**
  * Ask INBTWN — read-only business data layer.
@@ -632,6 +633,67 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
             };
           }),
           note: "Estimated and actual are separate: never present estimated cost as actual. If actual hours are missing say so. Read-only; changes happen on Event > Staff.",
+        });
+      },
+    }),
+    get_event_kit: tool({
+      description:
+        "Event Kit: equipment, reusable serveware and consumables. Returns the kit library (owned quantities for reusable items, per-guest rules for consumables) and each event's kit list: required quantity, owned, how many to buy (reusable shortage = required - owned; consumables only when purchase status is Need to buy), consumable purchase status (Need to buy / Have enough / Bought), packed quantity and whether fully packed, and for reusable items packed-out vs returned and missing. Use for 'what equipment do I need for X', 'do I need to buy anything', 'have I packed everything', 'how many buffet units do I own', 'what's missing', 'what hasn't come back'. Consumables never return. No hire. Read-only: changes happen on Event > Kit & more, Packing, or Library > Event Kit.",
+      inputSchema: z.object({
+        event_id: z.string().nullable().describe("One event id, or null for library / all events"),
+        from: z.string().nullable().describe("Inclusive event date yyyy-mm-dd"),
+        to: z.string().nullable().describe("Inclusive event date yyyy-mm-dd"),
+      }),
+      execute: async ({ event_id, from, to }) => {
+        const byEvent = new Map(ctx.derived.map((d) => [d.event.id, d]));
+        const eventIds = [...new Set(ctx.data.eventKit.map((r) => r.event_id))]
+          .filter((id) => byEvent.has(id))
+          .filter((id) => (event_id ? id === event_id : true))
+          .filter((id) => (from || to ? inRange(byEvent.get(id)!.event.event_date, from, to) : true));
+        return mark("get_event_kit", {
+          library: ctx.data.kitItems
+            .filter((i) => i.active)
+            .map((i) => ({
+              name: i.name,
+              category: kitCategoryLabel(i.category),
+              owned: isReusable(i.category) ? (i.owned_quantity ?? 0) : null,
+              per_guest: i.per_guest == null ? null : Number(i.per_guest),
+            })),
+          library_link: "/library/kit",
+          events: eventIds.map((eid) => {
+            const e = byEvent.get(eid)!.event;
+            const lines = kitLines(ctx.data.eventKit.filter((r) => r.event_id === eid), ctx.data.kitItems, e.guest_count ?? 0);
+            const k = kitSummary(lines);
+            return {
+              event: e.title,
+              event_id: eid,
+              event_date: e.event_date,
+              guests: e.guest_count,
+              summary: {
+                items: k.total,
+                still_to_buy: k.toBuy,
+                not_fully_packed: k.notPacked,
+                reusable_awaiting_return_check: k.returnPending,
+                missing_after_return: k.missing,
+              },
+              items: lines.map((l) => ({
+                name: l.item.name,
+                category: kitCategoryLabel(l.category),
+                required: l.required,
+                owned: l.owned,
+                to_buy: l.toBuy,
+                status: l.reusable ? (l.toBuy > 0 ? `Buy ${l.toBuy}` : "Ready") : purchaseLabel(l.row.purchase_status),
+                packed: `${l.packed}/${l.required}`,
+                fully_packed: l.packedComplete,
+                returned: l.reusable ? l.returned : "n/a (consumable)",
+                missing: l.reusable ? l.missing : null,
+                notes: l.row.notes,
+              })),
+              kit_link: eventLink(eid, "more"),
+              packing_link: eventLink(eid, "packing"),
+            };
+          }),
+          note: "Read-only. Never change owned quantities, packed or returned counts, or purchase statuses — direct the user to the kit/packing link.",
         });
       },
     }),

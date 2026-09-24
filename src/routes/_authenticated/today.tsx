@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, prepSummary, eventDaySummary, staffLine, type AttentionItem, type Severity, type PrepEventGroup } from "@/lib/today";
+import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, prepSummary, eventDaySummary, staffLine, kitTodayLine, type AttentionItem, type Severity, type PrepEventGroup } from "@/lib/today";
 import { fmtMinutes, assignmentLabel } from "@/lib/prep";
 import { fmtClock } from "@/lib/runsheet";
 import { fmtDate, fmtMoney } from "@/lib/format";
@@ -244,6 +244,11 @@ function TodayPage() {
                   </p>
                   {data.data && staffLine(d.event.id, data.data) ? (
                     <p className="font-mono text-[11px] text-ink-soft">{staffLine(d.event.id, data.data)}</p>
+                  ) : null}
+                  {data.data && kitTodayLine(d.event.id, d.event.event_date, d.event.guest_count, data.data) ? (
+                    <p className="font-mono text-[11px] text-flame">
+                      {kitTodayLine(d.event.id, d.event.event_date, d.event.guest_count, data.data)}
+                    </p>
                   ) : null}
                 </div>
                 <StatusPill status={d.event.status} />

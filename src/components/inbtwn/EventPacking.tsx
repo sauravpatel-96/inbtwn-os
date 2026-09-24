@@ -29,6 +29,8 @@ import {
 } from "@/lib/packing";
 import { scaleVersion, type ScaleResult } from "@/lib/recipe-calc";
 import type { BaseUnit } from "@/lib/units";
+import { eventKitQuery, kitItemsQuery, kitLines, type KitLine } from "@/lib/kit";
+import { KitPackRow } from "@/components/inbtwn/KitPackRow";
 
 type Filter = "all" | "topack" | "packed";
 
@@ -97,6 +99,8 @@ export function EventPacking({ eventId, guestCount }: { eventId: string; guestCo
   const buffers = useQuery(versionBuffersQuery);
   const manual = useQuery(packingItemsQuery(eventId));
   const checks = useQuery(packingChecksQuery(eventId));
+  const kitItems = useQuery(kitItemsQuery);
+  const kitRows = useQuery(eventKitQuery(eventId));
 
   const [filter, setFilter] = useState<Filter>("topack");
   const [open, setOpen] = useState(false);
@@ -139,32 +143,47 @@ export function EventPacking({ eventId, guestCount }: { eventId: string; guestCo
   const manualRows = manual.data ?? [];
   const packedSet = useMemo(() => new Set(checks.data ?? []), [checks.data]);
 
+  const kit = useMemo<KitLine[]>(
+    () => kitLines(kitRows.data ?? [], kitItems.data ?? [], guests).filter((l) => l.required > 0),
+    [kitRows.data, kitItems.data, guests],
+  );
+
   const groups = useMemo(() => {
-    const byCategory: { title: string; rows: Row[] }[] = [{ title: "Food", rows: food }];
-    for (const c of PACKING_CATEGORIES) {
-      const rows = manualRows
-        .filter((m) => m.category === c.value)
-        .map<Row>((m) => ({
-          key: manualKey(m.id),
-          name: m.name,
-          quantity: String(m.quantity),
-          manual: m,
-        }));
-      byCategory.push({ title: c.label, rows });
-    }
-    return byCategory;
-  }, [food, manualRows]);
+    const manualOf = (cat: string) =>
+      manualRows
+        .filter((m) => m.category === cat)
+        .map<Row>((m) => ({ key: manualKey(m.id), name: m.name, quantity: String(m.quantity), manual: m }));
+    return [
+      { title: "Food", rows: food, kit: [] as KitLine[] },
+      { title: "Equipment", rows: manualOf("equipment"), kit: kit.filter((l) => l.category === "equipment") },
+      { title: "Serveware", rows: [] as Row[], kit: kit.filter((l) => l.category === "serveware") },
+      { title: "Consumables", rows: manualOf("disposables"), kit: kit.filter((l) => l.category === "consumable") },
+      { title: "Other", rows: manualOf("other"), kit: [] as KitLine[] },
+    ];
+  }, [food, manualRows, kit]);
 
   const allRows = groups.flatMap((g) => g.rows);
-  const packedCount = allRows.filter((r) => packedSet.has(r.key)).length;
+  const totalCount = allRows.length + kit.length;
+  const packedCount = allRows.filter((r) => packedSet.has(r.key)).length + kit.filter((l) => l.packedComplete).length;
 
   const show = (r: Row) => {
     const done = packedSet.has(r.key);
     return filter === "all" ? true : filter === "packed" ? done : !done;
   };
+  const showKit = (l: KitLine) => (filter === "all" ? true : filter === "packed" ? l.packedComplete : !l.packedComplete);
   const visibleGroups = groups
-    .map((g) => ({ ...g, rows: g.rows.filter(show) }))
-    .filter((g) => g.rows.length > 0);
+    .map((g) => ({ ...g, rows: g.rows.filter(show), kit: g.kit.filter(showKit) }))
+    .filter((g) => g.rows.length + g.kit.length > 0);
+
+  const setKitPacked = async (l: KitLine, n: number) => {
+    const { error } = await supabase.from("event_kit_items").update({ packed_quantity: n }).eq("id", l.row.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    qc.invalidateQueries({ queryKey: ["event-kit", eventId] });
+    qc.invalidateQueries({ queryKey: ["today-data"] });
+  };
 
   const toggle = async (row: Row) => {
     const done = packedSet.has(row.key);
@@ -277,12 +296,12 @@ export function EventPacking({ eventId, guestCount }: { eventId: string; guestCo
 
       <TornCard className="mt-4 px-4 py-3 shadow-card">
         <div className="font-mono text-[13px]">
-          {packedCount} / {allRows.length} items packed
+          {packedCount} / {totalCount} items packed
         </div>
         <div className="mt-2 h-1.5 w-full bg-ink/10">
           <div
             className="h-full bg-ink"
-            style={{ width: `${allRows.length ? (packedCount / allRows.length) * 100 : 0}%` }}
+            style={{ width: `${totalCount ? (packedCount / totalCount) * 100 : 0}%` }}
           />
         </div>
       </TornCard>
@@ -308,7 +327,7 @@ export function EventPacking({ eventId, guestCount }: { eventId: string; guestCo
       </div>
 
       <div className="mt-4 space-y-5">
-        {allRows.length === 0 ? (
+        {totalCount === 0 ? (
           <EmptyNote>No packing items yet.</EmptyNote>
         ) : visibleGroups.length === 0 ? (
           <EmptyNote>{filter === "packed" ? "No items packed yet." : "Everything is packed."}</EmptyNote>
@@ -317,6 +336,9 @@ export function EventPacking({ eventId, guestCount }: { eventId: string; guestCo
             <div key={g.title}>
               <SectionHeading title={g.title} />
               <TornCard className="px-4 pb-4 pt-1 shadow-card">
+                {g.kit.map((l) => (
+                  <KitPackRow key={l.row.id} line={l} onPacked={(n) => setKitPacked(l, n)} />
+                ))}
                 {g.rows.map((r) => (
                   <PackRow
                     key={r.key}
