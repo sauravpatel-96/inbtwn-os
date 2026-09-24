@@ -617,7 +617,7 @@ export type PrepEventGroup = {
   eventDate: string | null;
   overdue: TaskLite[];
   dueToday: TaskLite[];
-  upcoming: number;
+  upcoming: TaskLite[];
   minutes: number;
 };
 
@@ -632,28 +632,27 @@ export type PrepSummary = {
  * events that are still active. Completed, closed, cancelled and lost jobs
  * never resurface here.
  */
-export function prepSummary(derived: EventDerived[], data: TodayData, today = new Date(), upcomingDays = 3): PrepSummary {
-  const iso = (d: Date) => {
-    const x = new Date(d);
-    x.setHours(0, 0, 0, 0);
-    return new Date(x.getTime() - x.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  };
-  const todayKey = iso(today);
-  const horizon = new Date(today);
-  horizon.setDate(horizon.getDate() + upcomingDays);
-  const horizonKey = iso(horizon);
+export function prepSummary(derived: EventDerived[], data: TodayData, today = new Date(), windowDays = 7): PrepSummary {
+  // Local calendar keys only (yyyy-MM-dd) — never via UTC.
+  const key = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const todayKey = key(today);
+  const horizon = new Date(today.getFullYear(), today.getMonth(), today.getDate() + windowDays);
+  const horizonKey = key(horizon);
+  const byDate = (a: TaskLite, b: TaskLite) => (a.scheduled_date ?? "").localeCompare(b.scheduled_date ?? "");
 
   const groups: PrepEventGroup[] = [];
   for (const d of derived) {
-    if (d.event.status === "completed" || d.closed) continue;
+    const st = d.event.status;
+    if (st === "completed" || st === "cancelled" || st === "lost" || d.closed) continue;
     const open = data.tasks.filter((t) => t.event_id === d.event.id && t.status !== "done");
     if (open.length === 0) continue;
-    const overdue = open.filter((t) => t.scheduled_date !== null && t.scheduled_date < todayKey);
+    const overdue = open.filter((t) => t.scheduled_date !== null && t.scheduled_date < todayKey).sort(byDate);
     const dueToday = open.filter((t) => t.scheduled_date === todayKey);
-    const upcoming = open.filter(
-      (t) => t.scheduled_date !== null && t.scheduled_date > todayKey && t.scheduled_date <= horizonKey,
-    ).length;
-    if (overdue.length === 0 && dueToday.length === 0 && upcoming === 0) continue;
+    const upcoming = open
+      .filter((t) => t.scheduled_date !== null && t.scheduled_date > todayKey && t.scheduled_date <= horizonKey)
+      .sort(byDate);
+    if (overdue.length === 0 && dueToday.length === 0 && upcoming.length === 0) continue;
     groups.push({
       eventId: d.event.id,
       title: d.event.title,
@@ -661,13 +660,13 @@ export function prepSummary(derived: EventDerived[], data: TodayData, today = ne
       overdue,
       dueToday,
       upcoming,
-      minutes: [...overdue, ...dueToday].reduce((s, t) => s + (t.approximate_minutes ?? 0), 0),
+      minutes: [...overdue, ...dueToday, ...upcoming].reduce((s, t) => s + (t.approximate_minutes ?? 0), 0),
     });
   }
   groups.sort((a, b) => b.overdue.length - a.overdue.length || (a.eventDate ?? "").localeCompare(b.eventDate ?? ""));
   return {
     groups,
-    taskCount: groups.reduce((s, g) => s + g.overdue.length + g.dueToday.length, 0),
+    taskCount: groups.reduce((s, g) => s + g.overdue.length + g.dueToday.length + g.upcoming.length, 0),
     minutes: groups.reduce((s, g) => s + g.minutes, 0),
   };
 }

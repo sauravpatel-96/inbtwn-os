@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, prepSummary, type AttentionItem, type Severity } from "@/lib/today";
-import { fmtMinutes } from "@/lib/prep";
+import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, prepSummary, type AttentionItem, type Severity, type PrepEventGroup } from "@/lib/today";
+import { fmtMinutes, assignmentLabel } from "@/lib/prep";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { statusLabel } from "@/lib/constants";
 import { PageTitle, SectionHeading, StatusPill, EmptyNote } from "@/components/inbtwn/bits";
@@ -102,45 +102,6 @@ function TodayPage() {
         </div>
       )}
 
-      {prep.groups.length > 0 ? (
-        <div className="mt-7">
-          <SectionHeading title="Prep today" />
-          <div className="flex flex-col gap-1.5">
-            {prep.groups.map((g) => {
-              const due = [...g.overdue, ...g.dueToday];
-              return (
-                <Link
-                  key={g.eventId}
-                  to="/events/$eventId"
-                  params={{ eventId: g.eventId }}
-                  search={{ s: "plan" }}
-                  className="block border border-ink/15 bg-cream px-3 py-2.5 text-ink"
-                >
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="truncate font-semibold text-[14px] leading-tight">{g.title}</span>
-                    <span className="shrink-0 label-mono text-ink-soft">View Plan →</span>
-                  </div>
-                  <p className={`font-mono text-[11px] ${g.overdue.length ? "text-flame" : "text-ink-soft"}`}>
-                    {due.length > 0
-                      ? `${due.length} ${due.length === 1 ? "task" : "tasks"} due${g.overdue.length ? ` · ${g.overdue.length} overdue` : ""}`
-                      : `${g.upcoming} coming up`}
-                    {fmtMinutes(g.minutes) ? ` · approx. ${fmtMinutes(g.minutes)}` : ""}
-                  </p>
-                  {due.slice(0, 3).map((t) => (
-                    <p key={t.id} className="font-mono text-[11px] text-ink-soft">
-                      {t.name}
-                    </p>
-                  ))}
-                  {due.length > 3 ? (
-                    <p className="font-mono text-[11px] text-ink-soft">+{due.length - 3} more</p>
-                  ) : null}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-
       <div className="mt-7">
         <SectionHeading title="Money" />
         <div className="border border-ink/15 bg-cream">
@@ -161,8 +122,17 @@ function TodayPage() {
 
       <div className="mt-7">
         <SectionHeading title="Operations · next 7 days" />
+        {prep.groups.length > 0 ? (
+          <div className="mb-1.5 flex flex-col gap-1.5">
+            {prep.groups.map((g) => (
+              <PrepGroup key={g.eventId} group={g} />
+            ))}
+          </div>
+        ) : null}
         {ops.shoppingItems === 0 && ops.packingItems === 0 && ops.recipeGaps === 0 ? (
+          prep.groups.length > 0 ? null : (
           <EmptyNote>Nothing outstanding in the next 7 days.</EmptyNote>
+          )
         ) : (
           <div className="border border-ink/15 bg-cream">
             {ops.shoppingItems > 0 ? (
@@ -393,5 +363,50 @@ function RemoveDemoLink() {
         </button>
       )}
     </div>
+  );
+}
+
+function PrepGroup({ group: g }: { group: PrepEventGroup }) {
+  const tasks = [...g.overdue, ...g.dueToday, ...g.upcoming];
+  const shown = tasks.slice(0, 4);
+  const todayKey = format(new Date(), "yyyy-MM-dd");
+  return (
+    <Link
+      to="/events/$eventId"
+      params={{ eventId: g.eventId }}
+      search={{ s: "plan" }}
+      className="block border border-ink/15 bg-cream px-3 py-2.5 text-ink"
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="truncate font-semibold text-[14px] leading-tight">{g.title}</span>
+        <span className="shrink-0 label-mono text-ink-soft">View Plan →</span>
+      </div>
+      <p className={`font-mono text-[11px] ${g.overdue.length ? "text-flame" : "text-ink-soft"}`}>
+        Prep · {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
+        {g.overdue.length ? ` · ${g.overdue.length} overdue` : ""}
+        {fmtMinutes(g.minutes) ? ` · approx. ${fmtMinutes(g.minutes)}` : ""}
+      </p>
+      <div className="mt-1.5 flex flex-col gap-1">
+        {shown.map((t) => {
+          const late = t.scheduled_date !== null && t.scheduled_date < todayKey;
+          return (
+            <div key={t.id} className="flex gap-3">
+              <span className={`w-[62px] shrink-0 label-mono ${late ? "text-flame" : "text-ink-soft"}`}>
+                {t.scheduled_date === todayKey ? "Today" : fmtDate(t.scheduled_date)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] leading-tight">{t.name}</p>
+                <p className="font-mono text-[10px] text-ink-soft">
+                  {[fmtMinutes(t.approximate_minutes), assignmentLabel(t.assignment)].filter(Boolean).join(" · ")}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+        {tasks.length > shown.length ? (
+          <p className="font-mono text-[11px] text-ink-soft">+{tasks.length - shown.length} more</p>
+        ) : null}
+      </div>
+    </Link>
   );
 }
