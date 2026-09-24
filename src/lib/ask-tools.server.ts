@@ -10,6 +10,10 @@ import { computeAnchors, fmtClock, nextItem, ruleLabel, timeline } from "./runsh
  * raw SQL is exposed to the model.
  */
 import { tool } from "ai";
+import { loadCalcGraph } from "./recipe-queries";
+import { scaleVersion, type ScaleResult } from "./recipe-calc";
+import { collectPurchases } from "./shopping";
+import { OPTION_SELECT, normalise, summariseCost, purchaseFromScratch, resolveOption, latestPrice, optionUnitCost, costReason } from "./costing";
 import { buildCloseout } from "./closeout";
 import { z } from "zod";
 import { addDays, format, parseISO, isValid } from "date-fns";
@@ -695,6 +699,120 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
           }),
           note: "Read-only. Never change owned quantities, packed or returned counts, or purchase statuses — direct the user to the kit/packing link.",
         });
+      },
+    }),
+    get_food_costing: tool({
+      description:
+        "Food costing (read-only). Three SEPARATE figures — never add them together or confuse them: (A) ingredient usage cost from recipes = what the ingredients actually used cost; (B) purchase cost from scratch = cash needed buying whole packs with no stock on hand; (C) actual food purchases = receipts recorded for the event. Pass event_id for an event (A, B, C, food cost % of agreed revenue only when costing is complete), recipe_id for recipe batch/portion cost with component roll-up, or ingredient_name to look up purchase options, suppliers, latest prices, purchase unit cost and yield-adjusted usable cost. Incomplete costing must be described as 'known' cost with the missing ingredients listed.",
+      inputSchema: z.object({
+        event_id: z.string().nullable(),
+        recipe_id: z.string().nullable(),
+        ingredient_name: z.string().nullable(),
+      }),
+      execute: async ({ event_id, recipe_id, ingredient_name }) => {
+        const [graph, optsRes, statusRes] = await Promise.all([
+          loadCalcGraph(client),
+          client.from("ingredient_purchase_options").select(OPTION_SELECT),
+          client.from("ingredients").select("id, name, base_unit, yield_percentage, current_unit_cost, cost_status, cost_source"),
+        ]);
+        const options = normalise(optsRes.data ?? []);
+        const status: Record<string, any> = Object.fromEntries((statusRes.data ?? []).map((r: any) => [r.id, r]));
+        const out: Record<string, unknown> = {};
+        if (ingredient_name) {
+          const q = ingredient_name.toLowerCase();
+          out.ingredients = (statusRes.data ?? [])
+            .filter((i: any) => i.name.toLowerCase().includes(q))
+            .slice(0, 5)
+            .map((i: any) => {
+              const opts = options.filter((o) => o.ingredient_id === i.id && o.active);
+              const chosen = resolveOption(opts);
+              const unit = i.current_unit_cost == null ? null : Number(i.current_unit_cost);
+              const y = Number(i.yield_percentage);
+              return {
+                name: i.name,
+                cost_status: i.cost_status === "ok" || unit != null ? "costed" : costReason(i.cost_status),
+                purchase_unit_cost_per_base_unit: unit,
+                usable_cost_per_base_unit: unit == null || !(y > 0) ? null : unit / (y / 100),
+                base_unit: i.base_unit,
+                usable_yield_percentage: y,
+                options: opts.map((o) => ({
+                  supplier: o.supplier?.name,
+                  pack: `${o.pack_quantity} ${o.pack_unit}`,
+                  preferred: o.is_preferred,
+                  used_for_costing: chosen?.id === o.id,
+                  latest_price: latestPrice(o)?.pack_price ?? null,
+                  price_date: latestPrice(o)?.effective_date ?? null,
+                  unit_cost: optionUnitCost(o, i.base_unit),
+                  test_price: o.is_test,
+                })),
+                link: `/library/ingredients/${i.id}`,
+              };
+            });
+        }
+        if (recipe_id) {
+          const r = await client.from("recipes").select("id, name, active_version_id").eq("id", recipe_id).maybeSingle();
+          const v = r.data?.active_version_id ? graph.versions[r.data.active_version_id] : null;
+          if (v) {
+            try {
+              const res = scaleVersion(v.id, v.base_yield_quantity, graph);
+              const s = summariseCost([res], status);
+              const portion = v.default_portion_quantity;
+              out.recipe = {
+                name: v.recipe_name,
+                costing_complete: s.complete,
+                ingredients_costed: `${s.costedCount} of ${s.ingredientCount}`,
+                batch_cost: res.cost,
+                batch_yield: `${v.base_yield_quantity}${v.base_yield_unit}`,
+                cost_per_portion: portion ? (res.cost / res.baseYield) * portion : null,
+                components: res.components.map((c) => ({ name: c.name, cost: c.result.cost, complete: c.result.missingCost.length === 0 })),
+                missing: s.missing,
+                link: `/library/recipes/${recipe_id}`,
+              };
+            } catch (e) {
+              out.recipe = { error: (e as Error).message };
+            }
+          } else out.recipe = { error: "Recipe has no active version or is not accessible." };
+        }
+        if (event_id) {
+          const d = findEvent(ctx, event_id);
+          if (!d) return mark("get_food_costing", { error: "No such event is accessible." });
+          const [menu, bufs, buys] = await Promise.all([
+            client.from("event_menu_items").select("recipe_version_id, quantity_per_guest, recipe:recipes(active_version_id)").eq("event_id", event_id),
+            client.from("recipe_versions").select("id, default_buffer_percentage"),
+            client.from("event_food_purchases").select("amount, purchase_date, notes, is_test, supplier:suppliers(name)").eq("event_id", event_id),
+          ]);
+          const buffer: Record<string, number> = Object.fromEntries((bufs.data ?? []).map((b: any) => [b.id, Number(b.default_buffer_percentage ?? 0)]));
+          const guests = d.event.guest_count ?? 0;
+          const results: ScaleResult[] = [];
+          for (const m of menu.data ?? []) {
+            const vid = m.recipe_version_id ?? m.recipe?.active_version_id;
+            const pg = Number(m.quantity_per_guest ?? 0);
+            if (!vid || guests <= 0 || pg <= 0) continue;
+            try {
+              results.push(scaleVersion(vid, guests * pg * (1 + (buffer[vid] ?? 0) / 100), graph));
+            } catch {
+              /* skip */
+            }
+          }
+          const s = summariseCost(results, status);
+          const lines = new Map();
+          for (const r of results) collectPurchases(r, lines);
+          const scratch = purchaseFromScratch([...lines.values()], options);
+          const fin = financeFor(ctx, d, today) as any;
+          const revenue = fin?.agreed_value ?? fin?.totals?.revenue ?? null;
+          const purchases = (buys.data ?? []).map((b: any) => ({ supplier: b.supplier?.name ?? null, date: b.purchase_date, amount: Number(b.amount), notes: b.notes, test: b.is_test }));
+          out.event = {
+            title: d.event.title,
+            guests,
+            A_ingredient_usage_cost: { amount: s.known, complete: s.complete, ingredients_costed: `${s.costedCount} of ${s.ingredientCount}`, missing: s.missing },
+            B_purchase_cost_from_scratch: { amount: scratch.total, complete: scratch.complete, packs: scratch.priced.map((p) => ({ name: p.name, packs: p.packs, pack: p.packLabel, supplier: p.supplier, cost: p.cost })), no_pack_price: scratch.unavailable.map((u) => u.name) },
+            C_actual_food_purchases: { total: purchases.reduce((a: number, p: any) => a + p.amount, 0), purchases },
+            food_cost_percentage_of_revenue: s.complete && typeof revenue === "number" && revenue > 0 ? Math.round((s.known / revenue) * 1000) / 10 : null,
+            links: { finance: eventLink(event_id, "finance"), shopping: eventLink(event_id, "shopping") },
+          };
+        }
+        out.note = "Read-only. Prices, suppliers and purchases are changed in Library > Ingredients / Suppliers or Event > Finance.";
+        return mark("get_food_costing", out);
       },
     }),
     get_prep_tasks: tool({

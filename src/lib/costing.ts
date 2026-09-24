@@ -66,10 +66,10 @@ export const suppliersQuery = queryOptions({
     unwrap(await supabase.from("suppliers").select("*").order("name")) as unknown as Supplier[],
 });
 
-const OPTION_SELECT =
+export const OPTION_SELECT =
   "id, ingredient_id, supplier_id, pack_quantity, pack_unit, is_preferred, active, notes, is_test, supplier:suppliers(id, name), prices:ingredient_purchase_prices(id, pack_price, effective_date, notes, created_at)";
 
-function normalise(rows: unknown[]): PurchaseOption[] {
+export function normalise(rows: unknown[]): PurchaseOption[] {
   return (rows as Array<Record<string, unknown>>).map((r) => ({
     ...(r as unknown as PurchaseOption),
     pack_quantity: Number(r["pack_quantity"]),
