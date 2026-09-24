@@ -4,8 +4,9 @@ import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, prepSummary, type AttentionItem, type Severity, type PrepEventGroup } from "@/lib/today";
+import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, prepSummary, eventDaySummary, type AttentionItem, type Severity, type PrepEventGroup } from "@/lib/today";
 import { fmtMinutes, assignmentLabel } from "@/lib/prep";
+import { fmtClock } from "@/lib/runsheet";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { statusLabel } from "@/lib/constants";
 import { PageTitle, SectionHeading, StatusPill, EmptyNote } from "@/components/inbtwn/bits";
@@ -68,6 +69,7 @@ function TodayPage() {
       ops: opsSummary(derived),
       money: moneySummary(derived),
       prep: prepSummary(derived, data.data),
+      eventDay: eventDaySummary(derived, data.data),
     };
   }, [data.data]);
 
@@ -75,12 +77,52 @@ function TodayPage() {
   if (data.isError) return <p className="font-mono text-[12px] text-s-lost">{(data.error as Error).message}</p>;
   if (!model) return null;
 
-  const { attention, upcoming, ops, money, prep } = model;
+  const { attention, upcoming, ops, money, prep, eventDay } = model;
   const shown = showAll ? attention : attention.slice(0, 6);
 
   return (
     <div>
       <PageTitle title="Today" aside={format(new Date(), "EEE d MMM")} />
+
+
+      {eventDay.today.length > 0 ? (
+        <div className="mb-7">
+          <SectionHeading title="Event day" />
+          <div className="flex flex-col gap-2">
+            {eventDay.today.map((c) => (
+              <div key={c.eventId} className="border border-ink/15 bg-cream">
+                <div className="px-4 pt-3 font-display text-[20px] leading-none">{c.title}</div>
+                <div className="grid grid-cols-3 gap-2 px-4 py-2 font-mono text-[11px]">
+                  <div><span className="text-ink-soft">Depart </span>{fmtClock(c.anchors.departure)}</div>
+                  <div><span className="text-ink-soft">Arrive </span>{fmtClock(c.anchors.arrival)}</div>
+                  <div><span className="text-ink-soft">Service </span><span className="text-flame">{fmtClock(c.anchors.service)}</span></div>
+                </div>
+                <div className="border-t border-ink/10 px-4 py-2.5">
+                  {c.total === 0 ? (
+                    <span className="font-mono text-[11px] text-ink-soft">No run sheet generated.</span>
+                  ) : c.next ? (
+                    <div className="flex items-baseline gap-3">
+                      <span className="label-mono text-ink-soft">Next</span>
+                      <span className="font-display text-[22px] leading-none">{fmtClock(c.next.time)}</span>
+                      <span className="font-semibold">{c.next.name}</span>
+                    </div>
+                  ) : (
+                    <span className="font-mono text-[11px] text-s-conf">Run sheet complete</span>
+                  )}
+                </div>
+                <Link
+                  to="/events/$eventId"
+                  params={{ eventId: c.eventId }}
+                  search={{ s: "plan" }}
+                  className="block border-t border-ink/10 px-4 py-2.5 font-mono text-[11px] text-flame"
+                >
+                  View Run Sheet →{c.total ? ` (${c.remaining} left)` : ""}
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <SectionHeading
         title="Needs attention"
@@ -122,6 +164,18 @@ function TodayPage() {
 
       <div className="mt-7">
         <SectionHeading title="Operations · next 7 days" />
+        {eventDay.missing.map((m) => (
+          <Link
+            key={m.eventId}
+            to="/events/$eventId"
+            params={{ eventId: m.eventId }}
+            search={{ s: "plan" }}
+            className="mb-1.5 flex items-center justify-between border border-ink/15 bg-cream px-4 py-2.5 font-mono text-[11px]"
+          >
+            <span><span className="font-semibold text-ink">{m.title}</span> <span className="text-ink-soft">· run sheet not generated</span></span>
+            <span className="text-flame">Plan →</span>
+          </Link>
+        ))}
         {prep.groups.length > 0 ? (
           <div className="mb-1.5 flex flex-col gap-1.5">
             {prep.groups.map((g) => (
