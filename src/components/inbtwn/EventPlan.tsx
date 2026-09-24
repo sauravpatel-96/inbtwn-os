@@ -1,3 +1,4 @@
+import { eventKitQuery, kitItemsQuery, kitLines, kitSummary } from "@/lib/kit";
 /**
  * Event Plan — "what work needs doing, and when".
  *
@@ -156,6 +157,8 @@ export function EventPlan({ event }: { event: EventRow }) {
   const packChecks = useQuery(packingChecksQuery(eventId));
   const shiftsQ = useQuery(eventShiftsQuery(eventId));
   const staffQ = useQuery(staffMembersQuery);
+  const kitItemsQ = useQuery(kitItemsQuery);
+  const kitRowsQ = useQuery(eventKitQuery(event.id));
 
   const [filter, setFilter] = useState<Filter>("open");
   const [open, setOpen] = useState(false);
@@ -554,6 +557,17 @@ export function EventPlan({ event }: { event: EventRow }) {
           action="View Packing"
         />
         <SummaryRow
+          label="Event Kit"
+          detail={(() => {
+            const k = kitSummary(kitLines(kitRowsQ.data ?? [], kitItemsQ.data ?? [], event.guest_count ?? 0));
+            if (!k.total) return "No kit added yet";
+            return `${k.total} items · ${k.toBuy} still to buy · ${k.notPacked} not packed${k.missing ? ` · ${k.missing} missing` : ""}`;
+          })()}
+          eventId={eventId}
+          section="more"
+          action="View Kit"
+        />
+        <SummaryRow
           label="Staff"
           detail={staffDetail}
           eventId={eventId}
@@ -672,7 +686,7 @@ function SummaryRow({
   label: string;
   detail: string;
   eventId: string;
-  section: "shopping" | "packing" | "staff";
+  section: "shopping" | "packing" | "staff" | "more";
   action: string;
 }) {
   return (
