@@ -570,6 +570,79 @@ export type Database = {
           },
         ]
       }
+      event_kit_items: {
+        Row: {
+          base_quantity: number | null
+          created_at: string
+          event_id: string
+          id: string
+          kit_item_id: string
+          notes: string | null
+          organisation_id: string
+          packed_quantity: number
+          purchase_status: string
+          quantity_override: number | null
+          returned_quantity: number | null
+          sort_order: number
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          base_quantity?: number | null
+          created_at?: string
+          event_id: string
+          id?: string
+          kit_item_id: string
+          notes?: string | null
+          organisation_id?: string
+          packed_quantity?: number
+          purchase_status?: string
+          quantity_override?: number | null
+          returned_quantity?: number | null
+          sort_order?: number
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          base_quantity?: number | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          kit_item_id?: string
+          notes?: string | null
+          organisation_id?: string
+          packed_quantity?: number
+          purchase_status?: string
+          quantity_override?: number | null
+          returned_quantity?: number | null
+          sort_order?: number
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_kit_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_kit_items_kit_item_id_fkey"
+            columns: ["kit_item_id"]
+            isOneToOne: false
+            referencedRelation: "kit_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_kit_items_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_menu_items: {
         Row: {
           created_at: string
@@ -2116,6 +2189,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "ingredients_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kit_items: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          organisation_id: string
+          owned_quantity: number | null
+          per_guest: number | null
+          sort_order: number
+          template_buffet: number | null
+          template_drop_off: number | null
+          template_table: number | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          organisation_id?: string
+          owned_quantity?: number | null
+          per_guest?: number | null
+          sort_order?: number
+          template_buffet?: number | null
+          template_drop_off?: number | null
+          template_table?: number | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          organisation_id?: string
+          owned_quantity?: number | null
+          per_guest?: number | null
+          sort_order?: number
+          template_buffet?: number | null
+          template_drop_off?: number | null
+          template_table?: number | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kit_items_organisation_id_fkey"
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
