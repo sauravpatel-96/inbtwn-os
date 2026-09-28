@@ -371,7 +371,7 @@ export function EventShopping({ eventId, guestCount }: { eventId: string; guestC
                     <span className="block font-mono text-[10px] text-flame">No longer required · already collected</span>
                   </span>
                   <span className="shrink-0 font-mono text-[13px] text-ink-soft">
-                    {c.collected_quantity != null && ing ? fmtShopQty(c.collected_quantity, ing.baseUnit as BaseUnit) : "✓"}
+                    {c.collected_quantity != null && ing ? fmtShopQty(c.collected_quantity, ing.base_unit) : "✓"}
                   </span>
                 </div>
               );
