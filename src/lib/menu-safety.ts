@@ -103,7 +103,7 @@ export async function reconcileMenuRemoval(args: {
 
   // Shopping: collected ingredients no longer needed by any remaining dish
   if (args.removedVersionId && (shop.data ?? []).length) {
-    const graph = await loadCalcGraph();
+    const graph = await loadCalcGraph(supabase);
     const removed = ingredientsFor([args.removedVersionId], graph);
     const remaining = ingredientsFor(menuVersions, graph);
     preserved += (shop.data ?? []).filter(
