@@ -1,3 +1,4 @@
+import { versionNamesQuery } from "@/lib/menu-safety";
 import { useMemo, useRef, useState } from "react";
 import { usePersistentState } from "@/lib/tab-memory";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -141,6 +142,12 @@ export function EventPacking({ eventId, guestCount }: { eventId: string; guestCo
     return rows;
   }, [menu.data, graph.data, buffers.data, guests]);
 
+  const versionNames = useQuery(versionNamesQuery);
+  // Packed food for dishes no longer on the menu: preserved, not outstanding.
+  const orphanPacked = useMemo(() => {
+    const current = new Set(food.map((r) => r.key));
+    return (checks.data ?? []).filter((k) => k.startsWith("food:") && !current.has(k));
+  }, [food, checks.data]);
   const manualRows = manual.data ?? [];
   const packedSet = useMemo(() => new Set(checks.data ?? []), [checks.data]);
 
@@ -354,6 +361,23 @@ export function EventPacking({ eventId, guestCount }: { eventId: string; guestCo
           ))
         )}
       </div>
+
+      {orphanPacked.length ? (
+        <div className="mt-4">
+          <SectionHeading title="No longer required" />
+          <TornCard className="px-4 py-2 opacity-80 shadow-card">
+            {orphanPacked.map((k) => (
+              <div key={k} className="flex items-baseline justify-between gap-3 border-b border-ink/10 py-2 last:border-0">
+                <span className="text-[14px]">
+                  {versionNames.data?.[k.slice(5)] ?? "Removed dish"}
+                  <span className="block font-mono text-[10px] text-flame">Removed menu item · already packed</span>
+                </span>
+                <span className="font-mono text-[13px] text-ink-soft">✓</span>
+              </div>
+            ))}
+          </TornCard>
+        </div>
+      ) : null}
 
       <Drawer
         open={open}

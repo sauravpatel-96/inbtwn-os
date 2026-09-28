@@ -1838,6 +1838,7 @@ export type Database = {
       }
       event_shopping_checks: {
         Row: {
+          collected_quantity: number | null
           created_at: string
           event_id: string
           id: string
@@ -1845,6 +1846,7 @@ export type Database = {
           organisation_id: string
         }
         Insert: {
+          collected_quantity?: number | null
           created_at?: string
           event_id: string
           id?: string
@@ -1852,6 +1854,7 @@ export type Database = {
           organisation_id?: string
         }
         Update: {
+          collected_quantity?: number | null
           created_at?: string
           event_id?: string
           id?: string

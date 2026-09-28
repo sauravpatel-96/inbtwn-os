@@ -817,7 +817,7 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
     }),
     get_prep_tasks: tool({
       description:
-        "Prep plan tasks across events: name, scheduled date, status, assignment, approximate minutes, whether the task came from a recipe prep step or was added manually, and the event it belongs to. Use for 'what do I need to do today', 'what prep is on Friday', 'what is left for Y11 Banquet'. Read-only: tasks can only be changed on the event's Plan tab.",
+        "Prep plan tasks across events: name, scheduled date, status, assignment, approximate minutes, whether the task came from a recipe prep step or was added manually, and the event it belongs to. Use for 'what do I need to do today', 'what prep is on Friday', 'what is left for Y11 Banquet'. Only tasks for dishes on the current menu (plus manual tasks) are returned as current work; recorded prep for removed dishes is listed separately as no_longer_required. Read-only: tasks can only be changed on the event's Plan tab.",
       inputSchema: z.object({
         event_id: z.string().nullable().describe("Limit to one event, or null for all events"),
         from: z.string().nullable().describe("Inclusive start date yyyy-mm-dd"),
@@ -826,8 +826,9 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
       }),
       execute: async ({ event_id, from, to, outstanding_only }) => {
         const byEvent = new Map(ctx.derived.map((d) => [d.event.id, d]));
-        const rows = ctx.data.tasks
-          .filter((t) => (event_id ? t.event_id === event_id : true))
+        const scoped = ctx.data.tasks.filter((t) => (event_id ? t.event_id === event_id : true));
+        const rows = scoped
+          .filter((t) => !t.orphaned)
           .filter((t) => (outstanding_only === false ? true : t.status !== "done"))
           .filter((t) => (from || to ? inRange(t.scheduled_date, from, to) : true))
           .filter((t) => byEvent.has(t.event_id))
@@ -855,7 +856,17 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
           count: rows.length,
           total_approximate_minutes: minutes,
           tasks: rows,
-          note: "Prep tasks are scheduled work only. Completing one never changes production, shopping, packing, event status or finance. Tasks are edited on the event's Plan tab.",
+          no_longer_required: scoped
+            .filter((t) => t.orphaned && t.status !== "todo")
+            .filter((t) => byEvent.has(t.event_id))
+            .map((t) => ({
+              task: t.name,
+              dish: t.recipe_name,
+              event: byEvent.get(t.event_id)!.event.title,
+              status: t.status,
+              link: eventLink(t.event_id, "plan"),
+            })),
+          note: "tasks = CURRENT required prep only. no_longer_required = recorded prep (done/in progress) for dishes since removed from the menu; mention it briefly if relevant, never as outstanding work. Prep tasks are scheduled work only. Completing one never changes production, shopping, packing, event status or finance. Tasks are edited on the event's Plan tab.",
         });
       },
     }),

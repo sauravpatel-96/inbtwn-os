@@ -48,6 +48,7 @@ import {
   type TaskStatus,
 } from "@/lib/prep";
 import { fmtDateLong, todayISO } from "@/lib/format";
+import { isOrphanTask } from "@/lib/menu-safety";
 import type { BaseUnit } from "@/lib/units";
 import type { EventRow } from "@/lib/queries";
 import { EventRunSheet } from "@/components/inbtwn/EventRunSheet";
@@ -219,7 +220,11 @@ export function EventPlan({ event }: { event: EventRow }) {
     },
   });
 
-  const allTasks = tasks.data ?? [];
+  const everyTask = tasks.data ?? [];
+  const recipeSet = new Set(menuRecipeIds);
+  // Current prep = manual tasks + generated tasks for dishes still on the menu.
+  const allTasks = everyTask.filter((t) => !isOrphanTask(t, recipeSet));
+  const orphanTasks = everyTask.filter((t) => isOrphanTask(t, recipeSet));
   const outstanding = allTasks.filter((t) => t.status !== "done").length;
 
   const visible = allTasks.filter((t) =>
@@ -262,7 +267,7 @@ export function EventPlan({ event }: { event: EventRow }) {
       eventId,
       eventDate: event.event_date,
       steps: stepRows.map((step) => ({ step, recipeId: step.recipe_id })),
-      existing: allTasks,
+      existing: everyTask,
     });
     if (inserts.length === 0) {
       toast.success("Prep plan is already up to date");
@@ -339,7 +344,7 @@ export function EventPlan({ event }: { event: EventRow }) {
           ...patch,
           event_id: eventId,
           source: "manual",
-          sort_order: allTasks.length + 1,
+          sort_order: everyTask.length + 1,
         });
     setSaving(false);
     if (error) {
@@ -548,6 +553,32 @@ export function EventPlan({ event }: { event: EventRow }) {
           )}
         </div>
       </div>
+
+      {orphanTasks.length > 0 ? (
+        <div className="mt-6" id="preserved-work">
+          <SectionHeading title="No longer required" />
+          <p className="mb-2 font-mono text-[11px] leading-relaxed text-ink-soft">
+            Recorded prep for dishes removed from the menu. Kept for your records; not counted as outstanding.
+          </p>
+          <TornCard className="px-4 pb-3 pt-1 opacity-80 shadow-card">
+            {orphanTasks.map((t) => (
+              <div key={t.id}>
+                <TaskRow
+                  task={t}
+                  quantity={null}
+                  recipeId={t.recipe_id}
+                  onToggle={() => cycle(t)}
+                  onEdit={() => openSheet(t)}
+                />
+                <div className="-mt-1 mb-1 pl-9 font-mono text-[10px] text-flame">
+                  Removed menu item · {statusTaskLabel(t.status)}
+                  {t.scheduled_date ? ` · ${fmtDateLong(t.scheduled_date)}` : ""}
+                </div>
+              </div>
+            ))}
+          </TornCard>
+        </div>
+      ) : null}
 
       {/* Other operational systems — summarised, not duplicated */}
       <div className="mt-7 space-y-2">

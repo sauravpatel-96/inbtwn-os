@@ -53,6 +53,10 @@ export type TaskLite = {
   approximate_minutes: number | null;
   assignment: string;
   source: string;
+  recipe_id?: string | null;
+  recipe_name?: string | null;
+  /** Generated task whose dish is no longer on the confirmed menu. */
+  orphaned?: boolean;
 };
 
 export type TodayData = {
@@ -141,7 +145,7 @@ export async function fetchTodayData(client: ReadClient = supabase as unknown as
       supabase.from("recipe_components").select("parent_recipe_version_id, child_recipe_version_id"),
       supabase
         .from("event_tasks")
-        .select("id, event_id, name, scheduled_date, status, approximate_minutes, assignment, source"),
+        .select("id, event_id, name, scheduled_date, status, approximate_minutes, assignment, source, recipe_id, recipe:recipes!event_tasks_recipe_id_fkey(name)"),
       supabase.from("event_run_sheet_items").select("*"),
       supabase.from("event_staff_shifts").select("*"),
       supabase.from("staff_members").select("*"),
@@ -174,7 +178,19 @@ export async function fetchTodayData(client: ReadClient = supabase as unknown as
       ingredients: unwrap<IngredientLite[]>(ingredients),
       recipeIngredients: unwrap<RecipeIngredientLite[]>(recipeIngredients),
       recipeComponents: unwrap<RecipeComponentLite[]>(recipeComponents),
-      tasks: unwrap<TaskLite[]>(tasks),
+      tasks: (() => {
+        const menuByEvent = new Map<string, Set<string>>();
+        for (const m of unwrap<{ event_id: string; recipe_id: string | null }[]>(menu)) {
+          if (!m.recipe_id) continue;
+          if (!menuByEvent.has(m.event_id)) menuByEvent.set(m.event_id, new Set());
+          menuByEvent.get(m.event_id)!.add(m.recipe_id);
+        }
+        return unwrap<(TaskLite & { recipe?: { name: string } | null })[]>(tasks).map(({ recipe, ...t }) => ({
+          ...t,
+          recipe_name: recipe?.name ?? null,
+          orphaned: t.source === "recipe" && !!t.recipe_id && !(menuByEvent.get(t.event_id)?.has(t.recipe_id) ?? false),
+        }));
+      })(),
       runSheet: unwrap<RunSheetItemRow[]>(runSheet),
       shifts: unwrap<ShiftRow[]>(shifts),
       staff: unwrap<StaffMemberRow[]>(staff),
@@ -686,7 +702,7 @@ export function prepSummary(derived: EventDerived[], data: TodayData, today = ne
   for (const d of derived) {
     const st = d.event.status;
     if (st === "completed" || st === "cancelled" || st === "lost" || d.closed) continue;
-    const open = data.tasks.filter((t) => t.event_id === d.event.id && t.status !== "done");
+    const open = data.tasks.filter((t) => t.event_id === d.event.id && t.status !== "done" && !t.orphaned);
     if (open.length === 0) continue;
     const overdue = open.filter((t) => t.scheduled_date !== null && t.scheduled_date < todayKey).sort(byDate);
     const dueToday = open.filter((t) => t.scheduled_date === todayKey);

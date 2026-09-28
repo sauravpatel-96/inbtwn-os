@@ -78,3 +78,22 @@ export const shoppingChecksQuery = (eventId: string) =>
       return (res.data ?? []).map((r) => r.ingredient_id);
     },
   });
+
+export type ShoppingCheck = { ingredient_id: string; collected_quantity: number | null };
+
+/** Ticked-off ingredients with the quantity recorded when collected. */
+export const shoppingCheckDetailsQuery = (eventId: string) =>
+  queryOptions({
+    queryKey: ["event-shopping-checks", eventId, "detail"],
+    queryFn: async () => {
+      const res = await supabase
+        .from("event_shopping_checks")
+        .select("ingredient_id, collected_quantity")
+        .eq("event_id", eventId);
+      if (res.error) throw new Error(res.error.message);
+      return (res.data ?? []).map((r) => ({
+        ingredient_id: r.ingredient_id,
+        collected_quantity: r.collected_quantity == null ? null : Number(r.collected_quantity),
+      })) as ShoppingCheck[];
+    },
+  });
