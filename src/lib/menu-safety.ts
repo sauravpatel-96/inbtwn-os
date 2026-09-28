@@ -131,7 +131,7 @@ export function invalidateMenuDownstream(qc: QueryClient, eventId: string) {
 export const versionNamesQuery = queryOptions({
   queryKey: ["version-recipe-names"],
   queryFn: async () => {
-    const res = await supabase.from("recipe_versions").select("id, recipe:recipes(name)");
+    const res = await supabase.from("recipe_versions").select("id, recipe:recipes!recipe_versions_recipe_id_fkey(name)");
     if (res.error) throw new Error(res.error.message);
     const map: Record<string, string> = {};
     for (const r of (res.data ?? []) as unknown as { id: string; recipe: { name: string } | null }[])
