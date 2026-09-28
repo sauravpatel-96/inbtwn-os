@@ -97,18 +97,6 @@ export function DocumentPreview({ doc }: { doc: AnyDoc }) {
               </ul>
             </div>
           ))}
-          <Head>Pricing</Head>
-          {doc.lines.map((l, i) => (
-            <div key={i}>
-              <Row label={l.label} value={m(l.amount)} />
-              {l.detail ? <div className="-mt-1 font-mono text-[10px] text-ink-soft">{l.detail}</div> : null}
-            </div>
-          ))}
-          <div className="mt-2 border-t border-ink/20 pt-1.5">
-            <Row label="Subtotal" value={m(doc.subtotal)} />
-            {doc.vatEnabled ? <Row label={`VAT ${doc.vatRate}%`} value={m(doc.vat)} /> : null}
-            <Row label="Total" value={m(doc.total)} bold />
-          </div>
           {doc.whatsIncluded.length ? (
             <>
               <Head>What&apos;s included</Head>
@@ -121,6 +109,18 @@ export function DocumentPreview({ doc }: { doc: AnyDoc }) {
               </ul>
             </>
           ) : null}
+          <Head>Pricing</Head>
+          {doc.lines.map((l, i) => (
+            <div key={i}>
+              <Row label={l.label} value={m(l.amount)} />
+              {l.detail ? <div className="-mt-1 font-mono text-[10px] text-ink-soft">{l.detail}</div> : null}
+            </div>
+          ))}
+          <div className="mt-2 border-t border-ink/20 pt-1.5">
+            <Row label="Subtotal" value={m(doc.subtotal)} />
+            {doc.vatEnabled ? <Row label={`VAT ${doc.vatRate}%`} value={m(doc.vat)} /> : null}
+            <Row label="Total" value={m(doc.total)} bold />
+          </div>
           {doc.notes ? (
             <>
               <Head>Notes</Head>
