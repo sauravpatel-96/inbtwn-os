@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { EventWithClient } from "@/lib/queries";
 import { dateParts, fmtMoney, clientDisplayName } from "@/lib/format";
-import { StatusPill, SourceBadge, DemoTag } from "./bits";
+import { StatusPill, SourceBadge, DemoTag, ArchivedTag } from "./bits";
 import { attentionFor } from "@/lib/attention";
 
 export function EventCard({ event, tilt = 0 }: { event: EventWithClient; tilt?: -1 | 0 | 1 }) {
@@ -25,6 +25,7 @@ export function EventCard({ event, tilt = 0 }: { event: EventWithClient; tilt?: 
           <StatusPill status={event.status} />
           <SourceBadge source={event.source} />
           {event.is_demo ? <DemoTag /> : null}
+          {event.archived_at ? <ArchivedTag /> : null}
         </div>
         <div className="flex items-center gap-2">
           {issues.length > 0 ? (

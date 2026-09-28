@@ -52,6 +52,12 @@ export function DemoTag() {
   );
 }
 
+export function ArchivedTag() {
+  return (
+    <span className="label-mono border border-ink/40 bg-panel px-1.5 py-0.5 text-ink">Archived</span>
+  );
+}
+
 /* ---------- Layout ---------- */
 
 export function TornCard({

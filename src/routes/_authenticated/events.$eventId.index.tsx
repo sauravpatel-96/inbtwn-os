@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { eventQuery, type EventRow, type ClientRow } from "@/lib/queries";
 import { EVENT_STATUSES, GUEST_COUNT_STATUSES, type EventStatus } from "@/lib/constants";
 import { fmtDateLong, fmtTime, fmtMoney, clientDisplayName, clientContactName } from "@/lib/format";
-import { PageTitle, SectionHeading, StatusPill, SourceBadge, DemoTag, EmptyNote, Chip } from "@/components/inbtwn/bits";
+import { PageTitle, SectionHeading, StatusPill, SourceBadge, DemoTag, ArchivedTag, EmptyNote, Chip } from "@/components/inbtwn/bits";
 import { Dietaries } from "@/components/inbtwn/Dietaries";
 import { EventMenu } from "@/components/inbtwn/EventMenu";
 import { EventProduction } from "@/components/inbtwn/EventProduction";
@@ -112,6 +112,7 @@ function EventDetailPage() {
   const event = useQuery(eventQuery(eventId));
   const [pendingStatus, setPendingStatus] = useState<EventStatus | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
 
   // Keep the active tab visible in the scrollable tab row.
@@ -156,6 +157,21 @@ function EventDetailPage() {
     qc.invalidateQueries({ queryKey: ["today-data"] });
   };
 
+  // Archive is a visibility state only: it never touches status, close-out or money.
+  const setArchived = async (archived: boolean) => {
+    const { error } = await supabase
+      .from("events")
+      .update({ archived_at: archived ? new Date().toISOString() : null })
+      .eq("id", e.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(archived ? "Event archived" : "Event restored");
+    qc.invalidateQueries({ queryKey: ["events"] });
+    qc.invalidateQueries({ queryKey: ["today-data"] });
+  };
+
   const changeStatus = (status: EventStatus) => {
     if (status === e.status) return;
     if (status === "lost" || status === "cancelled") setPendingStatus(status);
@@ -183,6 +199,15 @@ function EventDetailPage() {
         </Link>
       </div>
 
+      {e.archived_at ? (
+        <div className="mb-3 flex items-center justify-between gap-3 border border-ink/25 bg-panel px-4 py-2.5">
+          <span className="font-mono text-[11px] text-ink-soft">Archived — kept for reference, hidden from Today.</span>
+          <button onClick={() => setArchived(false)} className="shrink-0 font-mono text-[11px] text-flame underline">
+            Restore event
+          </button>
+        </div>
+      ) : null}
+
       {/* Header */}
       <div className="torn bg-cream px-4 py-4">
         <div className="flex flex-wrap items-center gap-1.5">
@@ -190,6 +215,7 @@ function EventDetailPage() {
           <SourceBadge source={e.source} />
           {e.source_reference ? <span className="font-mono text-[10px] text-ink-soft">{e.source_reference}</span> : null}
           {e.is_demo ? <DemoTag /> : null}
+          {e.archived_at ? <ArchivedTag /> : null}
           {e.status === "completed" ? (
             <span className="label-mono text-ink-soft">
               Close-out: {isClosed(e) ? "Complete" : "Open"}
@@ -383,7 +409,21 @@ function EventDetailPage() {
         ) : s === "staff" ? (
           <EventStaff event={e} />
         ) : s === "more" ? (
-          <EventKit event={e} />
+          <>
+            <EventKit event={e} />
+            <div className="mt-8 border-t border-ink/15 pt-4">
+              <SectionHeading title="Event actions" />
+              {e.archived_at ? (
+                <button onClick={() => setArchived(false)} className="border border-ink/25 bg-cream px-4 py-2.5 label-mono text-ink">
+                  Restore event
+                </button>
+              ) : (
+                <button onClick={() => setArchiving(true)} className="border border-ink/25 bg-cream px-4 py-2.5 label-mono text-ink">
+                  Archive event
+                </button>
+              )}
+            </div>
+          </>
         ) : (
           <div className="torn bg-cream px-5 py-8 text-center">
             <div className="font-display text-[22px] leading-none">{SECTION_LABEL[s]}</div>
@@ -391,6 +431,29 @@ function EventDetailPage() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={archiving} onOpenChange={(o) => !o && setArchiving(false)}>
+        <AlertDialogContent className="bg-paper">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-[22px] font-normal">Archive this event?</AlertDialogTitle>
+            <AlertDialogDescription>
+              It will be removed from Today and active workload views, but all event data will be kept.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-ink text-cream"
+              onClick={() => {
+                setArchiving(false);
+                setArchived(true);
+              }}
+            >
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={Boolean(pendingStatus)} onOpenChange={(o) => !o && setPendingStatus(null)}>
         <AlertDialogContent className="bg-paper">
