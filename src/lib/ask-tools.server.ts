@@ -20,6 +20,7 @@ import { addDays, format, parseISO, isValid } from "date-fns";
 import {
   fetchTodayData,
   buildToday,
+  activeOnly,
   upcomingEvents,
   opsSummary,
   moneySummary,
@@ -541,7 +542,7 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
       execute: async ({ event_id, date }) => {
         const from = iso(today);
         const to = iso(addDays(today, 7));
-        const events = ctx.derived
+        const events = (event_id ? ctx.derived : ctx.active)
           .filter((d) => (event_id ? d.event.id === event_id : date ? d.event.event_date === date : inRange(d.event.event_date, from, to)))
           .filter((d) => !["cancelled", "lost"].includes(d.event.status));
         return mark("get_run_sheet", {
@@ -590,7 +591,7 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
         unpaid_only: z.boolean().nullable(),
       }),
       execute: async ({ event_id, from, to, unpaid_only }) => {
-        const byEvent = new Map(ctx.derived.map((d) => [d.event.id, d]));
+        const byEvent = new Map((event_id ? ctx.derived : ctx.active).map((d) => [d.event.id, d]));
         const shifts = ctx.data.shifts
           .filter((sh) => byEvent.has(sh.event_id))
           .filter((sh) => (event_id ? sh.event_id === event_id : true))
@@ -653,7 +654,7 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
         to: z.string().nullable().describe("Inclusive event date yyyy-mm-dd"),
       }),
       execute: async ({ event_id, from, to }) => {
-        const byEvent = new Map(ctx.derived.map((d) => [d.event.id, d]));
+        const byEvent = new Map((event_id ? ctx.derived : ctx.active).map((d) => [d.event.id, d]));
         const eventIds = [...new Set(ctx.data.eventKit.map((r) => r.event_id))]
           .filter((id) => byEvent.has(id))
           .filter((id) => (event_id ? id === event_id : true))
@@ -829,7 +830,7 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
         outstanding_only: z.boolean().nullable().describe("Default true: exclude completed tasks"),
       }),
       execute: async ({ event_id, from, to, outstanding_only }) => {
-        const byEvent = new Map(ctx.derived.map((d) => [d.event.id, d]));
+        const byEvent = new Map((event_id ? ctx.derived : ctx.active).map((d) => [d.event.id, d]));
         const scoped = ctx.data.tasks.filter((t) => (event_id ? t.event_id === event_id : true));
         const rows = scoped
           .filter((t) => !t.orphaned)
