@@ -15,6 +15,8 @@ import {
   type MenuItem,
 } from "@/lib/menu-queries";
 import type { BaseUnit } from "@/lib/units";
+import { useNavigate } from "@tanstack/react-router";
+import { invalidateMenuDownstream, reconcileMenuRemoval } from "@/lib/menu-safety";
 
 function standardOf(r: RecipeWithVersion): { portion: number | null; base: BaseUnit } {
   const v = r.active_version;
@@ -26,6 +28,7 @@ function standardOf(r: RecipeWithVersion): { portion: number | null; base: BaseU
 
 export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount: number | null }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const items = useQuery(menuItemsQuery(eventId));
   const recipes = useQuery(recipesQuery);
 
@@ -136,9 +139,32 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
       toast.error(error.message);
       return;
     }
-    await qc.invalidateQueries({ queryKey: ["event-menu", eventId] });
-    toast.success("Removed from menu");
     setEditing(null);
+    // Menu change is never blocked: reconcile downstream work afterwards.
+    let summary = null;
+    try {
+      summary = await reconcileMenuRemoval({
+        eventId,
+        dishName: item.recipe?.name ?? "Dish",
+        removedRecipeId: item.recipe_id,
+        removedVersionId: item.recipe_version_id ?? item.recipe?.active_version_id ?? null,
+      });
+    } catch {
+      summary = null;
+    }
+    invalidateMenuDownstream(qc, eventId);
+    if (summary && summary.preserved > 0) {
+      toast("Menu updated", {
+        description: `${summary.dish} was removed. Production, Shopping, Prep and Packing recalculated. ${summary.preserved} recorded ${summary.preserved === 1 ? "item was" : "items were"} preserved.`,
+        duration: 10000,
+        action: {
+          label: "Review preserved work →",
+          onClick: () => navigate({ to: "/events/$eventId", params: { eventId }, search: { s: "plan" } as never, replace: true }),
+        },
+      });
+    } else {
+      toast.success("Removed from menu");
+    }
   };
 
   const preview = selected ? standardOf(selected) : null;
