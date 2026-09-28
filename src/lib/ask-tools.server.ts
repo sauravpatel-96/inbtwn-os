@@ -62,8 +62,11 @@ function inRange(date: string | null, from: string | null, to: string | null) {
 /** Loads the org-wide read once per Ask request and derives every event. */
 export async function loadAskContext(client: ReadClient, today: Date) {
   const data: TodayData = await fetchTodayData(client);
-  const { attention, derived } = buildToday(data, today);
-  return { data, attention, derived };
+  // `derived` covers every event (archived included) for historical questions;
+  // `active` + `attention` exclude archived events for current-work questions.
+  const { derived } = buildToday(data, today);
+  const { attention, derived: active } = buildToday(activeOnly(data), today);
+  return { data, attention, derived, active };
 }
 
 export type AskContext = Awaited<ReturnType<typeof loadAskContext>>;
@@ -74,6 +77,7 @@ function eventSummary(d: EventDerived) {
     title: d.event.title,
     date: d.event.event_date,
     status: statusLabel(d.event.status),
+    archived: !!d.event.archived_at,
     completed: d.event.status === "completed",
     closeout_state: d.closed ? "closed" : "open",
     needs_marking_completed: d.needsCompletion,
@@ -221,9 +225,9 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
             severity: a.severity,
             link: eventLink(a.eventId, a.section),
           })),
-          money: moneySummary(ctx.derived, today),
-          operations_next_7_days: opsSummary(ctx.derived),
-          upcoming_7_days: upcomingEvents(ctx.derived).map(eventSummary),
+          money: moneySummary(ctx.active, today),
+          operations_next_7_days: opsSummary(ctx.active),
+          upcoming_7_days: upcomingEvents(ctx.active).map(eventSummary),
         }),
     }),
 
@@ -352,7 +356,7 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
             link: eventLink(d.event.id, "finance"),
           }))
           .filter((r) => (overdue_only ? r.overdue > 0 : (r.outstanding ?? 0) > 0 || r.overdue > 0));
-        const m = moneySummary(ctx.derived, today);
+        const m = moneySummary(ctx.active, today);
         return mark("get_outstanding_payments", {
           events: rows,
           total_outstanding: m.outstanding,
@@ -507,7 +511,7 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
       execute: async ({ event_id }) => {
         const list = event_id
           ? ctx.derived.filter((d) => d.event.id === event_id)
-          : ctx.derived.filter((d) => d.event.status === "completed" && !d.closed);
+          : ctx.active.filter((d) => d.event.status === "completed" && !d.closed);
         return mark("get_closeout", {
           jobs: list.map((d) => {
             const co = buildCloseout(d, ctx.data, today);
