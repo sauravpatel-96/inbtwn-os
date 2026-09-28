@@ -795,3 +795,11 @@ export function eventDaySummary(derived: EventDerived[], data: TodayData, today 
   }
   return out;
 }
+
+/** Archived events are kept intact but excluded from operational workload views. */
+export function isArchived(e: { archived_at?: string | null }): boolean {
+  return !!e.archived_at;
+}
+export function activeOnly(data: TodayData): TodayData {
+  return { ...data, events: data.events.filter((e) => !isArchived(e)) };
+}

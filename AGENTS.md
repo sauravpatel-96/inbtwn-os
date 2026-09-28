@@ -8,3 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- Event archive is `events.archived_at` (null = active), independent of status/close-out/money; Today and Ask current-work use `activeOnly()` from src/lib/today.ts. Why: archive must hide workload without erasing records.

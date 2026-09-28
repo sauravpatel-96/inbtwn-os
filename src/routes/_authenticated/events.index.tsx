@@ -20,7 +20,7 @@ const FILTER_LABEL: Record<Filter, string> = {
 };
 
 export const Route = createFileRoute("/_authenticated/events/")({
-  validateSearch: z.object({ f: z.enum(FILTERS).optional() }),
+  validateSearch: z.object({ f: z.enum(FILTERS).optional(), a: z.enum(["active", "archived", "all"]).optional() }),
   head: () => ({
     meta: [
       { title: "Events — INBTWN OS" },
@@ -54,7 +54,7 @@ function matches(e: EventWithClient, f: Filter): boolean {
 }
 
 function EventsPage() {
-  const { f = "all" } = Route.useSearch();
+  const { f = "all", a = "active" } = Route.useSearch();
   const navigate = useNavigate({ from: "/events/" });
   const events = useQuery(eventsQuery);
   const [q, setQ] = useState("");
@@ -63,6 +63,8 @@ function EventsPage() {
     const all = events.data ?? [];
     const needle = q.trim().toLowerCase();
     return all.filter((e) => {
+      if (a === "active" && e.archived_at) return false;
+      if (a === "archived" && !e.archived_at) return false;
       if (!matches(e, f)) return false;
       if (!needle) return true;
       const hay = [
@@ -80,11 +82,11 @@ function EventsPage() {
         .toLowerCase();
       return hay.includes(needle);
     });
-  }, [events.data, f, q]);
+  }, [events.data, f, a, q]);
 
   return (
     <div>
-      <PageTitle title="Events" aside={events.data ? `${events.data.length} on the board` : undefined} />
+      <PageTitle title="Events" aside={events.data ? `${events.data.filter((e) => !e.archived_at).length} on the board` : undefined} />
 
       <div className="torn mb-3 flex items-center gap-2.5 bg-cream px-3.5 py-1">
         <span className="font-display text-[18px] leading-none text-ink-soft">?</span>
@@ -97,9 +99,21 @@ function EventsPage() {
         />
       </div>
 
+      <div className="mb-2 flex gap-3 font-mono text-[11px]">
+        {(["active", "archived", "all"] as const).map((key) => (
+          <button
+            key={key}
+            onClick={() => navigate({ search: (p) => ({ ...p, a: key }) })}
+            className={a === key ? "text-ink underline underline-offset-4" : "text-ink-soft"}
+          >
+            {key === "active" ? "Active" : key === "archived" ? "Archived" : "All"}
+          </button>
+        ))}
+      </div>
+
       <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map((key) => (
-          <Chip key={key} active={f === key} onClick={() => navigate({ search: { f: key } })}>
+          <Chip key={key} active={f === key} onClick={() => navigate({ search: (p) => ({ ...p, f: key }) })}>
             {FILTER_LABEL[key]}
           </Chip>
         ))}
