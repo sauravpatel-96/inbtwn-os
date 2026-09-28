@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, prepSummary, eventDaySummary, staffLine, kitTodayLine, type AttentionItem, type Severity, type PrepEventGroup } from "@/lib/today";
+import { todayDataQuery, buildToday, upcomingEvents, opsSummary, moneySummary, prepSummary, eventDaySummary, staffLine, kitTodayLine, activeOnly, type AttentionItem, type Severity, type PrepEventGroup } from "@/lib/today";
 import { fmtMinutes, assignmentLabel } from "@/lib/prep";
 import { fmtClock } from "@/lib/runsheet";
 import { fmtDate, fmtMoney } from "@/lib/format";
@@ -40,7 +40,9 @@ const SEV_CLASS: Record<Severity, string> = {
 };
 
 function TodayPage() {
-  const data = useQuery(todayDataQuery);
+  const raw = useQuery(todayDataQuery);
+  // Archived events are excluded from every Today calculation, not just hidden.
+  const data = useMemo(() => ({ ...raw, data: raw.data ? activeOnly(raw.data) : undefined }), [raw]);
   const qc = useQueryClient();
   const [showAll, setShowAll] = useState(false);
   const [completing, setCompleting] = useState<AttentionItem | null>(null);
