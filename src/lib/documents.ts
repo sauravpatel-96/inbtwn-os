@@ -112,6 +112,13 @@ const splitLines = (v: string | null | undefined) =>
     .map((l) => l.replace(/^[-•]\s*/, "").trim())
     .filter(Boolean);
 
+/** Keep a separate payment footer only when its wording isn't already a Terms line. */
+function quoteFooterNote(terms: string[], footer: string | null): string | null {
+  if (!footer) return null;
+  const normalize = (line: string) => line.replace(/\s+/g, " ").trim().toLocaleLowerCase();
+  return terms.some((line) => normalize(line) === normalize(footer)) ? null : footer;
+}
+
 /* ---------- Quote ---------- */
 
 export function buildQuoteDoc(args: {
@@ -172,6 +179,9 @@ export function buildQuoteDoc(args: {
   if (quote.valid_until) meta.push({ label: "Valid until", value: documentDate(quote.valid_until) });
   if ((quote.revision ?? 1) > 1) meta.push({ label: "Revision", value: String(quote.revision) });
 
+  const terms = quote.terms?.trim() ? splitLines(quote.terms) : quoteTermsLines(settings, platform);
+  const cardWording = !platform && settings.card_payments_available ? settings.card_wording?.trim() || null : null;
+
   return {
     kind: "quote",
     documentTitle: "CATERING PROPOSAL",
@@ -196,13 +206,9 @@ export function buildQuoteDoc(args: {
         : null,
     whatsIncluded: splitLines(quote.whats_included),
     notes: quote.client_notes?.trim() || null,
-    terms: quote.terms?.trim() ? splitLines(quote.terms) : quoteTermsLines(settings, platform),
+    terms,
     bank: !platform && settings.bank_details_on_quotes ? bankDetailsOf(settings) : null,
-    footerNote: platform
-      ? null
-      : settings.card_payments_available
-        ? settings.card_wording?.trim() || null
-        : null,
+    footerNote: quoteFooterNote(terms, cardWording),
     platform,
   };
 }
@@ -294,6 +300,7 @@ export function snapshotOf<T extends AnyDoc>(stored: unknown, live: T): T {
       }));
       normalized.perHeadNote = normalized.perHeadNote?.replace(/per head/g, "per person") ?? null;
       if (normalized.platform) normalized.terms = live.kind === "quote" ? live.terms : normalized.terms;
+      normalized.footerNote = quoteFooterNote(normalized.terms, normalized.footerNote);
     }
     return normalized;
   }

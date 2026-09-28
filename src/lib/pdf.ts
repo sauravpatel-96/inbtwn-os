@@ -243,13 +243,13 @@ export async function renderDocumentPdf(doc: AnyDoc): Promise<Uint8Array> {
         d.text(`·  ${item}`, { size: 10, lineGap: 4, width: CONTENT - 12 });
       }
     }
-    d.heading("Pricing");
-    for (const line of q.lines) d.amountRow(line.label, docMoney(line.amount, q.currency), { detail: line.detail ?? null });
-    totalsBlock(d, q);
     if (q.whatsIncluded.length) {
       d.heading("What's included");
       for (const item of q.whatsIncluded) d.text(`·  ${item}`, { size: 10, lineGap: 4 });
     }
+    d.heading("Pricing");
+    for (const line of q.lines) d.amountRow(line.label, docMoney(line.amount, q.currency), { detail: line.detail ?? null });
+    totalsBlock(d, q);
     if (q.notes) {
       d.heading("Notes");
       d.text(q.notes, { size: 10, lineGap: 4 });
