@@ -42,7 +42,8 @@ const SEV_CLASS: Record<Severity, string> = {
 function TodayPage() {
   const raw = useQuery(todayDataQuery);
   // Archived events are excluded from every Today calculation, not just hidden.
-  const data = useMemo(() => ({ ...raw, data: raw.data ? activeOnly(raw.data) : undefined }), [raw]);
+  const activeData = useMemo(() => (raw.data ? activeOnly(raw.data) : undefined), [raw.data]);
+  const data = { ...raw, data: activeData };
   const qc = useQueryClient();
   const [showAll, setShowAll] = useState(false);
   const [completing, setCompleting] = useState<AttentionItem | null>(null);
