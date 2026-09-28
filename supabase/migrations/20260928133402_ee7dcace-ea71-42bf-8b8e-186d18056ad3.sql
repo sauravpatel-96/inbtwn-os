@@ -1,0 +1,1 @@
+ALTER TABLE public.event_shopping_checks ADD COLUMN IF NOT EXISTS collected_quantity numeric NULL;
