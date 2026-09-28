@@ -2083,6 +2083,7 @@ export type Database = {
       }
       events: {
         Row: {
+          archived_at: string | null
           arrival_lead_minutes: number | null
           arrival_time: string | null
           budget: number | null
@@ -2125,6 +2126,7 @@ export type Database = {
           water_access: string | null
         }
         Insert: {
+          archived_at?: string | null
           arrival_lead_minutes?: number | null
           arrival_time?: string | null
           budget?: number | null
@@ -2167,6 +2169,7 @@ export type Database = {
           water_access?: string | null
         }
         Update: {
+          archived_at?: string | null
           arrival_lead_minutes?: number | null
           arrival_time?: string | null
           budget?: number | null
