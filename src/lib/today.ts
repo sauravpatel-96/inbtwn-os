@@ -33,7 +33,7 @@ import { parseClock } from "./runsheet";
 
 type MenuRow = {
   event_id: string;
-  recipe_id: string;
+  recipe_id: string | null;
   recipe_version_id: string | null;
   recipe: { id: string; name: string; active_version_id: string | null } | null;
 };
