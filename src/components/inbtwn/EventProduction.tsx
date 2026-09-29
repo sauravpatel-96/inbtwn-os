@@ -90,8 +90,14 @@ function DishCard({ dish, guests }: { dish: Dish; guests: number }) {
     <TornCard className="mb-3 px-4 py-4 pb-5 shadow-card">
       <div className="font-display text-[22px] leading-none uppercase">{dish.name}</div>
       <div className="mt-1 font-mono text-[11px] text-ink-soft">
-        {portionLabel(dish.item.portion_size as PortionSize)} ·{" "}
-        {fmtPortion(dish.perGuest, dish.base)}/person
+        {dish.item.recipe_id ? (
+          <>
+            {portionLabel(dish.item.portion_size as PortionSize)} ·{" "}
+            {fmtPortion(dish.perGuest, dish.base)}/person
+          </>
+        ) : (
+          "No quantities until a recipe is linked"
+        )}
       </div>
 
       {dish.error ? (
