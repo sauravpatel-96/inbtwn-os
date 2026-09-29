@@ -13,6 +13,9 @@ import {
   PORTION_SIZES,
   type PortionSize,
   type MenuItem,
+  menuDishName,
+  acceptedQuoteDishesQuery,
+  importAcceptedDishes,
 } from "@/lib/menu-queries";
 import type { BaseUnit } from "@/lib/units";
 import { useNavigate } from "@tanstack/react-router";
@@ -31,6 +34,9 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
   const navigate = useNavigate();
   const items = useQuery(menuItemsQuery(eventId));
   const recipes = useQuery(recipesQuery);
+  const accepted = useQuery(acceptedQuoteDishesQuery(eventId));
+  const [linking, setLinking] = useState<MenuItem | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -44,22 +50,29 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
   const filtered = useMemo(() => {
     const candidates = list.filter((r) => r.category !== "Component");
     const q = search.trim().toLowerCase();
-    if (!q) return candidates;
+    if (!q) {
+      if (!linking) return candidates;
+      // Surface likely name matches first; the user still chooses explicitly.
+      const words = menuDishName(linking).toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+      const score = (r: RecipeWithVersion) => words.filter((w) => r.name.toLowerCase().includes(w)).length;
+      return [...candidates].sort((a, b) => score(b) - score(a));
+    }
     return candidates.filter(
       (r) => r.name.toLowerCase().includes(q) || (r.category ?? "").toLowerCase().includes(q),
     );
-  }, [list, search]);
+  }, [list, search, linking]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, MenuItem[]>();
     for (const it of items.data ?? []) {
-      const cat = it.recipe?.category || "Other";
+      const cat = it.recipe ? it.recipe.category || "Other" : "Recipe not linked";
       map.set(cat, [...(map.get(cat) ?? []), it]);
     }
     return [...map.entries()];
   }, [items.data]);
 
-  const openSheet = () => {
+  const openSheet = (link: MenuItem | null = null) => {
+    setLinking(link);
     scrollY.current = window.scrollY;
     setSearch("");
     setSelected(null);
@@ -75,6 +88,7 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
 
   const closeSheet = () => {
     setOpen(false);
+    setLinking(null);
     restoreScroll();
   };
 
@@ -85,6 +99,25 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
     }
     const { portion, base } = standardOf(selected);
     setSaving(true);
+    if (linking) {
+      const { error: linkErr } = await supabase
+        .from("event_menu_items")
+        .update({
+          recipe_id: selected.id,
+          recipe_version_id: selected.active_version_id,
+          portion_size: size,
+          quantity_per_guest: portionQuantity(portion, size),
+          quantity_unit: base,
+        })
+        .eq("id", linking.id);
+      setSaving(false);
+      if (linkErr) return void toast.error(linkErr.message);
+      invalidateMenuDownstream(qc, eventId);
+      await qc.invalidateQueries({ queryKey: ["event-menu", eventId] });
+      toast.success(`${menuDishName(linking)} linked to ${selected.name}`);
+      closeSheet();
+      return;
+    }
     const { error } = await supabase.from("event_menu_items").insert({
       event_id: eventId,
       recipe_id: selected.id,
@@ -145,7 +178,7 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
     try {
       summary = await reconcileMenuRemoval({
         eventId,
-        dishName: item.recipe?.name ?? "Dish",
+        dishName: menuDishName(item),
         removedRecipeId: item.recipe_id,
         removedVersionId: item.recipe_version_id ?? item.recipe?.active_version_id ?? null,
       });
@@ -167,6 +200,24 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
     }
   };
 
+  const setupFromProposal = async () => {
+    if (!accepted.data) return;
+    setImporting(true);
+    try {
+      const n = await importAcceptedDishes(eventId, accepted.data.dishes, items.data ?? []);
+      await qc.invalidateQueries({ queryKey: ["event-menu", eventId] });
+      toast.success(n ? `${n} ${n === 1 ? "dish" : "dishes"} added from the accepted proposal` : "Menu already set up");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not set up menu");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const canImport =
+    !items.isLoading && (items.data?.length ?? 0) === 0 && (accepted.data?.dishes.length ?? 0) > 0;
+  const unlinkedCount = (items.data ?? []).filter((i) => !i.recipe_id).length;
+
   const preview = selected ? standardOf(selected) : null;
 
   return (
@@ -178,9 +229,32 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
         </div>
       </div>
 
+      {canImport ? (
+        <div className="mt-3 border border-flame bg-cream px-4 py-4">
+          <div className="font-semibold">Accepted proposal{accepted.data?.quoteNumber ? ` · ${accepted.data.quoteNumber}` : ""}</div>
+          <div className="mt-1 font-mono text-[11px] text-ink-soft">
+            {accepted.data!.dishes.length} dishes. They'll be copied here as dishes needing a recipe — the quote stays as it is.
+          </div>
+          <button
+            type="button"
+            disabled={importing}
+            onClick={setupFromProposal}
+            className="tap mt-3 w-full border border-flame bg-flame px-4 py-3 text-center font-semibold text-cream disabled:opacity-60"
+          >
+            {importing ? "Setting up…" : "Set up menu from accepted proposal"}
+          </button>
+        </div>
+      ) : null}
+
+      {unlinkedCount > 0 ? (
+        <p className="mt-3 border border-flame/50 px-3 py-2 font-mono text-[11px] text-flame">
+          {unlinkedCount} {unlinkedCount === 1 ? "dish needs" : "dishes need"} a recipe before Production, Shopping and Prep are complete.
+        </p>
+      ) : null}
+
       <button
         type="button"
-        onClick={openSheet}
+        onClick={() => openSheet()}
         className="tap mt-3 w-full border border-ink bg-ink px-4 py-3 text-center font-semibold text-cream"
       >
         + Add dish
@@ -198,12 +272,32 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
             <div className="space-y-2">
               {rows.map((it) => {
                 const base = (it.quantity_unit as BaseUnit) ?? "g";
+                if (!it.recipe_id) {
+                  return (
+                    <div key={it.id} className="border border-flame/50 bg-cream px-4 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="font-semibold">{menuDishName(it)}</div>
+                          <div className="mt-0.5 font-mono text-[11px] text-flame">Recipe not linked</div>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1.5">
+                          <button type="button" onClick={() => openSheet(it)} className="font-mono text-[11px] text-flame underline">
+                            Link recipe
+                          </button>
+                          <button type="button" onClick={() => removeItem(it)} className="font-mono text-[11px] text-ink-soft underline">
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
                 const isEditing = editing?.id === it.id;
                 return (
                   <div key={it.id} className="border border-ink/15 bg-cream px-4 py-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="font-semibold">{it.recipe?.name ?? "Recipe"}</div>
+                        <div className="font-semibold">{menuDishName(it)}</div>
                         <div className="mt-0.5 font-mono text-[11px] text-ink-soft">
                           {(it.recipe?.category ?? "Other") +
                             " · " +
@@ -275,7 +369,9 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
       >
         <DrawerContent className="bg-paper border-ink/10">
           <div className="mx-auto flex max-h-[88vh] w-full max-w-md flex-col px-5 pb-safe pt-2">
-            <DrawerTitle className="font-display text-[24px] leading-none">Add dish</DrawerTitle>
+            <DrawerTitle className="font-display text-[24px] leading-none">
+              {linking ? `Link recipe · ${menuDishName(linking)}` : "Add dish"}
+            </DrawerTitle>
             <div className="mt-3 space-y-3 overflow-y-auto pb-3">
               <Field label="Recipe">
                 <TextInput
@@ -355,16 +451,16 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
                 Cancel
               </GhostButton>
               <PrimaryButton type="button" disabled={saving} onClick={() => addDish("close")}>
-                Add to menu
+                {linking ? "Link recipe" : "Add to menu"}
               </PrimaryButton>
-              <GhostButton
+              {linking ? null : <GhostButton
                 type="button"
                 disabled={saving}
                 onClick={() => addDish("another")}
                 className="col-span-2"
               >
                 Add &amp; add another
-              </GhostButton>
+              </GhostButton>}
             </div>
           </div>
         </DrawerContent>
