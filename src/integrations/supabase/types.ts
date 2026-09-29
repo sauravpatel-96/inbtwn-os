@@ -793,6 +793,7 @@ export type Database = {
       event_menu_items: {
         Row: {
           created_at: string
+          dish_name: string | null
           event_id: string
           id: string
           notes: string | null
@@ -800,13 +801,15 @@ export type Database = {
           portion_size: string
           quantity_per_guest: number | null
           quantity_unit: Database["public"]["Enums"]["base_unit"]
-          recipe_id: string
+          recipe_id: string | null
           recipe_version_id: string | null
           sort_order: number
+          source_quote_item_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          dish_name?: string | null
           event_id: string
           id?: string
           notes?: string | null
@@ -814,13 +817,15 @@ export type Database = {
           portion_size?: string
           quantity_per_guest?: number | null
           quantity_unit?: Database["public"]["Enums"]["base_unit"]
-          recipe_id: string
+          recipe_id?: string | null
           recipe_version_id?: string | null
           sort_order?: number
+          source_quote_item_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          dish_name?: string | null
           event_id?: string
           id?: string
           notes?: string | null
@@ -828,9 +833,10 @@ export type Database = {
           portion_size?: string
           quantity_per_guest?: number | null
           quantity_unit?: Database["public"]["Enums"]["base_unit"]
-          recipe_id?: string
+          recipe_id?: string | null
           recipe_version_id?: string | null
           sort_order?: number
+          source_quote_item_id?: string | null
           updated_at?: string
         }
         Relationships: [

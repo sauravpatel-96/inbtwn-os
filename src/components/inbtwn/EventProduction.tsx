@@ -90,8 +90,14 @@ function DishCard({ dish, guests }: { dish: Dish; guests: number }) {
     <TornCard className="mb-3 px-4 py-4 pb-5 shadow-card">
       <div className="font-display text-[22px] leading-none uppercase">{dish.name}</div>
       <div className="mt-1 font-mono text-[11px] text-ink-soft">
-        {portionLabel(dish.item.portion_size as PortionSize)} ·{" "}
-        {fmtPortion(dish.perGuest, dish.base)}/person
+        {dish.item.recipe_id ? (
+          <>
+            {portionLabel(dish.item.portion_size as PortionSize)} ·{" "}
+            {fmtPortion(dish.perGuest, dish.base)}/person
+          </>
+        ) : (
+          "No quantities until a recipe is linked"
+        )}
       </div>
 
       {dish.error ? (
@@ -202,7 +208,7 @@ export function EventProduction({ eventId, guestCount }: { eventId: string; gues
       const target = service * (1 + buffer / 100);
       let result: ScaleResult | null = null;
       let error: string | null = null;
-      if (!versionId) error = "This dish has no recipe version to calculate from.";
+      if (!versionId) error = item.recipe_id ? "This dish has no recipe version to calculate from." : "Recipe not linked — link a recipe on the Menu to calculate this dish.";
       else if (guests > 0 && perGuest > 0) {
         try {
           result = scaleVersion(versionId, target, graph.data!);
@@ -212,7 +218,7 @@ export function EventProduction({ eventId, guestCount }: { eventId: string; gues
       }
       return {
         item,
-        name: item.recipe?.name ?? "Recipe",
+        name: item.recipe?.name ?? item.dish_name ?? "Dish",
         base,
         perGuest,
         service,
