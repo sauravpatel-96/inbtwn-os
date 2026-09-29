@@ -83,8 +83,7 @@ export const acceptedQuoteDishesQuery = (eventId: string) =>
           return { id: i.id, name: i.name.trim(), section: s?.name ?? "", sort: (s?.sort_order ?? 0) * 1000 + i.sort_order };
         })
         .sort((a, b) => a.sort - b.sort);
-      const qd = q.data as unknown as { quote_number?: string | null };
-      return { quoteNumber: qd.quote_number ?? null, dishes };
+      return { quoteNumber: q.data.quote_number ?? null, dishes };
     },
   });
 
@@ -118,7 +117,7 @@ export async function importAcceptedDishes(eventId: string, dishes: AcceptedDish
   if (!rows.length) return 0;
   const { error } = await supabase
     .from("event_menu_items")
-    .upsert(rows, { onConflict: "event_id,source_quote_item_id", ignoreDuplicates: true });
+    .insert(rows);
   if (error) throw new Error(error.message);
   return rows.length;
 }
