@@ -37,6 +37,8 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
   const accepted = useQuery(acceptedQuoteDishesQuery(eventId));
   const [linking, setLinking] = useState<MenuItem | null>(null);
   const [importing, setImporting] = useState(false);
+  const [mode, setMode] = useState<"library" | "custom">("library");
+  const [dishName, setDishName] = useState("");
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -73,6 +75,8 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
 
   const openSheet = (link: MenuItem | null = null) => {
     setLinking(link);
+    setMode("library");
+    setDishName("");
     scrollY.current = window.scrollY;
     setSearch("");
     setSelected(null);
@@ -92,7 +96,31 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
     restoreScroll();
   };
 
-  const addDish = async (mode: "close" | "another") => {
+  const addDish = async (after: "close" | "another") => {
+    if (!linking && mode === "custom") {
+      const name = dishName.trim().replace(/\s+/g, " ");
+      if (!name) return void toast.error("Enter a dish name");
+      const dup = (items.data ?? []).some((m) => menuDishName(m).trim().toLowerCase() === name.toLowerCase());
+      if (dup) return void toast.error(`${name} is already on this menu`);
+      setSaving(true);
+      const { error } = await supabase.from("event_menu_items").insert({
+        event_id: eventId,
+        recipe_id: null,
+        recipe_version_id: null,
+        dish_name: name,
+        portion_size: "medium",
+        quantity_per_guest: null,
+        quantity_unit: "g",
+        sort_order: (items.data?.length ?? 0) + 1,
+      });
+      setSaving(false);
+      if (error) return void toast.error(error.message);
+      await qc.invalidateQueries({ queryKey: ["event-menu", eventId] });
+      toast.success(`${name} added · recipe not linked`);
+      if (after === "another") setDishName("");
+      else closeSheet();
+      return;
+    }
     if (!selected) {
       toast.error("Pick a recipe first");
       return;
@@ -134,7 +162,7 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
     }
     await qc.invalidateQueries({ queryKey: ["event-menu", eventId] });
     toast.success(`${selected.name} added`);
-    if (mode === "another") {
+    if (after === "another") {
       setSelected(null);
       setSearch("");
       setSize("medium");
@@ -372,6 +400,40 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
             <DrawerTitle className="font-display text-[24px] leading-none">
               {linking ? `Link recipe · ${menuDishName(linking)}` : "Add dish"}
             </DrawerTitle>
+            {!linking ? (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {([
+                  ["library", "From Recipe Library"],
+                  ["custom", "Without recipe"],
+                ] as const).map(([v, l]) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setMode(v)}
+                    className={`tap border px-2 py-2 text-center font-mono text-[12px] ${
+                      mode === v ? "border-ink bg-ink text-cream" : "border-ink/20 bg-paper text-ink"
+                    }`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {!linking && mode === "custom" ? (
+              <div className="mt-3 space-y-2 pb-3">
+                <Field label="Dish name">
+                  <TextInput
+                    placeholder="e.g. Chicken Katsu Curry"
+                    value={dishName}
+                    onChange={(e) => setDishName(e.target.value)}
+                    autoFocus
+                  />
+                </Field>
+                <p className="font-mono text-[11px] text-ink-soft">
+                  Added as "Recipe not linked". No quantities, shopping or prep until you link a recipe.
+                </p>
+              </div>
+            ) : (
             <div className="mt-3 space-y-3 overflow-y-auto pb-3">
               <Field label="Recipe">
                 <TextInput
@@ -446,6 +508,7 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
                 </div>
               ) : null}
             </div>
+            )}
             <div className="-mx-5 mt-auto grid grid-cols-2 gap-2 border-t border-ink/10 bg-paper/95 px-5 py-3">
               <GhostButton type="button" onClick={closeSheet}>
                 Cancel
