@@ -795,10 +795,12 @@ export type Database = {
           created_at: string
           dish_name: string | null
           event_id: string
+          fixed_quantity: number | null
           id: string
           notes: string | null
           organisation_id: string
           portion_size: string
+          quantity_mode: string
           quantity_per_guest: number | null
           quantity_unit: Database["public"]["Enums"]["base_unit"]
           recipe_id: string | null
@@ -811,10 +813,12 @@ export type Database = {
           created_at?: string
           dish_name?: string | null
           event_id: string
+          fixed_quantity?: number | null
           id?: string
           notes?: string | null
           organisation_id?: string
           portion_size?: string
+          quantity_mode?: string
           quantity_per_guest?: number | null
           quantity_unit?: Database["public"]["Enums"]["base_unit"]
           recipe_id?: string | null
@@ -827,10 +831,12 @@ export type Database = {
           created_at?: string
           dish_name?: string | null
           event_id?: string
+          fixed_quantity?: number | null
           id?: string
           notes?: string | null
           organisation_id?: string
           portion_size?: string
+          quantity_mode?: string
           quantity_per_guest?: number | null
           quantity_unit?: Database["public"]["Enums"]["base_unit"]
           recipe_id?: string | null
@@ -2867,6 +2873,9 @@ export type Database = {
           id: string
           method: string | null
           organisation_id: string
+          portion_large: number | null
+          portion_medium: number | null
+          portion_small: number | null
           recipe_id: string
           version_number: number
         }
@@ -2881,6 +2890,9 @@ export type Database = {
           id?: string
           method?: string | null
           organisation_id?: string
+          portion_large?: number | null
+          portion_medium?: number | null
+          portion_small?: number | null
           recipe_id: string
           version_number?: number
         }
@@ -2895,6 +2907,9 @@ export type Database = {
           id?: string
           method?: string | null
           organisation_id?: string
+          portion_large?: number | null
+          portion_medium?: number | null
+          portion_small?: number | null
           recipe_id?: string
           version_number?: number
         }
