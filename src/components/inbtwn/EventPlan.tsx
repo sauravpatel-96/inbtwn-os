@@ -178,7 +178,6 @@ export function EventPlan({ event }: { event: EventRow }) {
     const out: { recipeId: string; base: BaseUnit; result: ScaleResult }[] = [];
     for (const item of menu.data) {
       const versionId = item.recipe_version_id ?? item.recipe?.active_version_id ?? null;
-      const perGuest = Number(item.quantity_per_guest ?? 0);
       if (!versionId || !item.recipe_id ) continue;
       const dt = dishTarget(item, guests, dishBuffer(item, buffers.data));
       if (!dt) continue;

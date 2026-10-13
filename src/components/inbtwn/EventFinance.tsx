@@ -168,7 +168,6 @@ export function EventFinance({ event }: { event: Ev }) {
     const results: ScaleResult[] = [];
     const recipes: { name: string; cost: number; complete: boolean }[] = [];
     for (const item of menu.data) {
-      const perGuest = Number(item.quantity_per_guest ?? 0);
       const versionId = item.recipe_version_id ?? item.recipe?.active_version_id ?? null;
       if (!versionId ) continue;
       const dt = dishTarget(item, guests, dishBuffer(item, buffers.data));
