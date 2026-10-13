@@ -7,6 +7,7 @@ import { menuItemsQuery, portionLabel, fmtPortion, type MenuItem, type PortionSi
 import {
   versionBuffersQuery,
   dishBuffer,
+  dishTarget,
   fmtProdQty,
   bigProdQty,
   collectIngredients,
@@ -23,6 +24,7 @@ type Dish = {
   service: number;
   buffer: number;
   target: number;
+  fixed: boolean;
   result: ScaleResult | null;
   error: string | null;
 };
@@ -78,11 +80,13 @@ function DishCard({ dish, guests }: { dish: Dish; guests: number }) {
 
   const trace = useMemo(() => {
     if (!r) return [];
-    const lines = [
+    const lines = dish.fixed
+      ? [`Fixed quantity: ${num(dish.target)}${dish.base} = ${fmtQty(dish.target, dish.base)} production target (no buffer, ignores guest count)`]
+      : [
       `${guests} guests × ${num(dish.perGuest)}${dish.base}/person`,
       `= ${num(dish.service)}${dish.base} = ${fmtQty(dish.service, dish.base)} service requirement`,
       `${fmtQty(dish.service, dish.base)} × ${num(1 + dish.buffer / 100)} buffer (${num(dish.buffer)}%)`,
-      `= ${num(dish.target)}${dish.base} = ${fmtQty(dish.target, dish.base)} production target`,
+      `= ${num(dish.target)}${dish.base} = ${fmtQty(dish.target, dish.base)} production target${dish.base === "each" ? " (rounded up to whole items)" : ""}`,
     ];
     return [...lines, ...buildTrace(r, { mode: "target" }).slice(1)];
   }, [r, guests, dish]);
@@ -91,7 +95,9 @@ function DishCard({ dish, guests }: { dish: Dish; guests: number }) {
     <TornCard className="mb-3 px-4 py-4 pb-5 shadow-card">
       <div className="font-display text-[22px] leading-none uppercase">{dish.name}</div>
       <div className="mt-1 font-mono text-[11px] text-ink-soft">
-        {dish.item.recipe_id ? (
+        {dish.item.recipe_id && dish.fixed ? (
+          "Fixed quantity · Does not automatically scale with guest count"
+        ) : dish.item.recipe_id ? (
           <>
             {portionLabel(dish.item.portion_size as PortionSize)} ·{" "}
             {fmtPortion(dish.perGuest, dish.base)}/person
@@ -109,6 +115,7 @@ function DishCard({ dish, guests }: { dish: Dish; guests: number }) {
         </div>
       ) : (
         <>
+          {dish.fixed ? null : (<>
           <div className="mt-4 flex items-baseline justify-between gap-3 border-b border-ink/10 pb-2">
             <span className="label-mono text-ink-soft">Service requirement</span>
             <span className="font-mono text-[15px]">{fmtProdQty(dish.service, dish.base)}</span>
@@ -117,6 +124,7 @@ function DishCard({ dish, guests }: { dish: Dish; guests: number }) {
             <span className="label-mono text-ink-soft">Buffer</span>
             <span className="font-mono text-[13px]">+{num(dish.buffer)}%</span>
           </div>
+          </>)}
 
           <div className="mt-2 bg-ink px-4 py-5 text-center text-cream">
             <div className="label-mono text-cream/70">Make</div>
@@ -125,7 +133,7 @@ function DishCard({ dish, guests }: { dish: Dish; guests: number }) {
               <span className="ml-2 text-[24px]">{big?.unit}</span>
             </div>
             <div className="mt-1 font-mono text-[10px] text-cream/70">
-              production target · multiplier {num(r.multiplier)}×
+              {dish.fixed ? "fixed quantity" : "production target"} · multiplier {num(r.multiplier)}×
             </div>
           </div>
 
@@ -203,14 +211,16 @@ export function EventProduction({ eventId, guestCount }: { eventId: string; gues
     return menu.data.map((item) => {
       const base = item.quantity_unit as BaseUnit;
       const perGuest = Number(item.quantity_per_guest ?? 0);
-      const service = guests * perGuest;
       const versionId = item.recipe_version_id ?? item.recipe?.active_version_id ?? null;
-      const buffer = versionId ? dishBuffer(item, buffers.data) : 0;
-      const target = service * (1 + buffer / 100);
+      const dt = dishTarget(item, guests, versionId ? dishBuffer(item, buffers.data) : 0);
+      const fixed = item.quantity_mode === "fixed";
+      const service = dt?.service ?? guests * perGuest;
+      const buffer = dt?.buffer ?? 0;
+      const target = dt?.target ?? 0;
       let result: ScaleResult | null = null;
       let error: string | null = null;
       if (!versionId) error = item.recipe_id ? "This dish has no recipe version to calculate from." : "Recipe not linked — link a recipe on the Menu to calculate this dish.";
-      else if (guests > 0 && perGuest > 0) {
+      else if (dt) {
         try {
           result = scaleVersion(versionId, target, graph.data!);
         } catch (e) {
@@ -225,6 +235,7 @@ export function EventProduction({ eventId, guestCount }: { eventId: string; gues
         service,
         buffer,
         target,
+        fixed,
         result,
         error,
       };

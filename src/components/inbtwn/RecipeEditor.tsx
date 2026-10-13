@@ -122,6 +122,12 @@ export function RecipeEditor({
     version?.default_portion_quantity != null ? String(version.default_portion_quantity) : "",
   );
   const [buffer, setBuffer] = useState(String(version?.default_buffer_percentage ?? 5));
+  const presetStr = (v: number | null | undefined) => (v != null ? String(v) : "");
+  const [presets, setPresets] = useState({
+    small: presetStr(version?.portion_small),
+    medium: presetStr(version?.portion_medium),
+    large: presetStr(version?.portion_large),
+  });
   const [method, setMethod] = useState(version?.method ?? "");
   const [changeNotes, setChangeNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -328,6 +334,8 @@ export function RecipeEditor({
     if (!name.trim()) return void toast.error("Give the recipe a name");
     if (!(yq > 0)) return void toast.error("Base yield must be greater than zero");
     if (Number(buffer) < 0) return void toast.error("Buffer cannot be negative");
+    for (const [k, v] of Object.entries(presets))
+      if (baseUnit === "each" && v !== "" && !(Number(v) > 0)) return void toast.error(`${k} portion must be greater than zero`);
     for (const l of ingLines) {
       if (!(Number(l.qty) > 0)) return void toast.error(`Enter a quantity for ${l.name}`);
     }
@@ -377,6 +385,9 @@ export function RecipeEditor({
         default_portion_quantity: portion === "" ? null : Number(portion),
         default_portion_unit: portion === "" ? null : baseUnit,
         default_buffer_percentage: Number(buffer),
+        portion_small: baseUnit === "each" && presets.small !== "" ? Number(presets.small) : null,
+        portion_medium: baseUnit === "each" && presets.medium !== "" ? Number(presets.medium) : null,
+        portion_large: baseUnit === "each" && presets.large !== "" ? Number(presets.large) : null,
         method: method.trim() || null,
         change_notes: changeNotes.trim() || (nextNumber === 1 ? "Initial version" : null),
       })
@@ -507,6 +518,28 @@ export function RecipeEditor({
             <TextInput type="number" inputMode="decimal" value={buffer} onChange={(e) => setBuffer(e.target.value)} />
           </Field>
         </div>
+        {baseUnit === "each" ? (
+          <div>
+            <div className="label-mono mb-1 text-ink-soft">Portions per guest (items)</div>
+            <div className="grid grid-cols-3 gap-2">
+              {(["small", "medium", "large"] as const).map((k) => (
+                <Field key={k} label={{ small: "Small", medium: "Medium", large: "Large" }[k]}>
+                  <TextInput
+                    type="number"
+                    inputMode="decimal"
+                    step="0.05"
+                    value={presets[k]}
+                    onChange={(e) => setPresets({ ...presets, [k]: e.target.value })}
+                    placeholder={portion !== "" ? String(Math.round(Number(portion) * { small: 0.5, medium: 0.75, large: 1 }[k] * 100) / 100) : "—"}
+                  />
+                </Field>
+              ))}
+            </div>
+            <p className="mt-1 font-mono text-[10px] text-ink-soft">
+              Fractions allowed, e.g. 0.75 sandwiches. Blank uses the standard portion × 0.5 / 0.75 / 1.
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <div>

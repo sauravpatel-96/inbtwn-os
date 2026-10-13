@@ -18,8 +18,20 @@ export const portionFactor = (size: PortionSize) =>
 export const portionLabel = (size: PortionSize) =>
   PORTION_SIZES.find((p) => p.value === size)?.label ?? size;
 
-/** Per-guest quantity in canonical base units for a portion size. */
-export function portionQuantity(standardPortion: number | null | undefined, size: PortionSize) {
+export type PortionPresets = {
+  portion_small?: number | string | null;
+  portion_medium?: number | string | null;
+  portion_large?: number | string | null;
+} | null | undefined;
+
+/**
+ * Per-guest quantity in canonical base units for a portion size.
+ * A recipe version's own preset (e.g. 0.75 sandwiches) wins; otherwise
+ * standard portion × size factor. Full precision — never rounded here.
+ */
+export function portionQuantity(standardPortion: number | null | undefined, size: PortionSize, presets?: PortionPresets) {
+  const preset = presets?.[`portion_${size}` as const];
+  if (preset !== null && preset !== undefined && Number(preset) > 0) return Number(preset);
   if (standardPortion === null || standardPortion === undefined) return null;
   return Number(standardPortion) * portionFactor(size);
 }
@@ -27,7 +39,8 @@ export function portionQuantity(standardPortion: number | null | undefined, size
 /** Display rounding only — never used for storage or calculations. */
 export function fmtPortion(qty: number | null | undefined, base: BaseUnit): string {
   if (qty === null || qty === undefined || Number.isNaN(qty)) return "—";
-  if (base === "each") return `${Math.ceil(qty)} each`;
+  // Per-guest counts can be fractional (0.75 sandwiches) — show them, don't round up.
+  if (base === "each") return `${Math.round(qty * 100) / 100} each`;
   return `${Math.round(qty)}${base}`;
 }
 

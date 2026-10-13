@@ -19,11 +19,13 @@ import {
 } from "@/lib/menu-queries";
 import type { BaseUnit } from "@/lib/units";
 import { useNavigate } from "@tanstack/react-router";
+import { versionBuffersQuery, dishBuffer, dishTarget, fmtProdQty } from "@/lib/production";
 import { invalidateMenuDownstream, reconcileMenuRemoval } from "@/lib/menu-safety";
 
-function standardOf(r: RecipeWithVersion): { portion: number | null; base: BaseUnit } {
+function standardOf(r: RecipeWithVersion): { portion: number | null; base: BaseUnit; presets: RecipeWithVersion["active_version"] } {
   const v = r.active_version;
   return {
+    presets: v,
     portion: v?.default_portion_quantity != null ? Number(v.default_portion_quantity) : null,
     base: ((v?.base_yield_unit as BaseUnit) ?? "g"),
   };
@@ -44,6 +46,16 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<RecipeWithVersion | null>(null);
   const [size, setSize] = useState<PortionSize>("medium");
+  const [qtyMode, setQtyMode] = useState<"per_guest" | "fixed">("per_guest");
+  const [fixedQty, setFixedQty] = useState("");
+  const buffers = useQuery(versionBuffersQuery);
+  const guests = guestCount ?? 0;
+  /** Production target preview using the shared rule. */
+  const targetText = (row: { quantity_unit: string; quantity_per_guest: number | null; quantity_mode: string; fixed_quantity: number | null }, versionLike: { recipe_version_id: string | null; recipe: { active_version_id: string | null } | null }) => {
+    const dt = dishTarget(row, guests, dishBuffer(versionLike, buffers.data));
+    if (!dt) return row.quantity_mode === "fixed" ? "Enter a quantity" : guests > 0 ? "No portion set" : "Set a guest count";
+    return `Make ${fmtProdQty(dt.target, row.quantity_unit as BaseUnit)}${dt.fixed ? "" : ` · ${guests} guests${dt.buffer ? ` + ${Math.round(dt.buffer * 100) / 100}%` : ""}`}`;
+  };
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<MenuItem | null>(null);
   const scrollY = useRef<number | null>(null);
@@ -81,6 +93,8 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
     setSearch("");
     setSelected(null);
     setSize("medium");
+    setQtyMode("per_guest");
+    setFixedQty("");
     setOpen(true);
   };
 
@@ -125,7 +139,13 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
       toast.error("Pick a recipe first");
       return;
     }
-    const { portion, base } = standardOf(selected);
+    const { portion, base, presets } = standardOf(selected);
+    const fixed = base === "each" && qtyMode === "fixed";
+    if (fixed && !(Number(fixedQty) > 0)) return void toast.error("Enter how many to make");
+    const qtyFields = {
+      quantity_mode: fixed ? "fixed" : "per_guest",
+      fixed_quantity: fixed ? Number(fixedQty) : null,
+    };
     setSaving(true);
     if (linking) {
       const { error: linkErr } = await supabase
@@ -134,8 +154,9 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
           recipe_id: selected.id,
           recipe_version_id: selected.active_version_id,
           portion_size: size,
-          quantity_per_guest: portionQuantity(portion, size),
+          quantity_per_guest: portionQuantity(portion, size, presets),
           quantity_unit: base,
+          ...qtyFields,
         })
         .eq("id", linking.id);
       setSaving(false);
@@ -151,8 +172,9 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
       recipe_id: selected.id,
       recipe_version_id: selected.active_version_id,
       portion_size: size,
-      quantity_per_guest: portionQuantity(portion, size),
+      quantity_per_guest: portionQuantity(portion, size, presets),
       quantity_unit: base,
+      ...qtyFields,
       sort_order: (items.data?.length ?? 0) + 1,
     });
     setSaving(false);
@@ -166,6 +188,8 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
       setSelected(null);
       setSearch("");
       setSize("medium");
+      setQtyMode("per_guest");
+      setFixedQty("");
     } else {
       closeSheet();
     }
@@ -174,9 +198,11 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
   const changeSize = async (item: MenuItem, next: PortionSize) => {
     const recipe = list.find((r) => r.id === item.recipe_id);
     const standard = recipe ? standardOf(recipe).portion : null;
+    const presets = recipe ? standardOf(recipe).presets : null;
+    const fromRecipe = recipe ? portionQuantity(standard, next, presets) : null;
     const qty =
-      standard != null
-        ? portionQuantity(standard, next)
+      fromRecipe != null
+        ? fromRecipe
         : item.quantity_per_guest != null
           ? (Number(item.quantity_per_guest) /
               (PORTION_SIZES.find((p) => p.value === (item.portion_size as PortionSize))?.factor ?? 0.75)) *
@@ -184,14 +210,34 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
           : null;
     const { error } = await supabase
       .from("event_menu_items")
-      .update({ portion_size: next, quantity_per_guest: qty })
+      .update({ portion_size: next, quantity_per_guest: qty, quantity_mode: "per_guest" })
       .eq("id", item.id);
     if (error) {
       toast.error(error.message);
       return;
     }
+    invalidateMenuDownstream(qc, eventId);
     await qc.invalidateQueries({ queryKey: ["event-menu", eventId] });
-    setEditing(null);
+  };
+
+  /** Switch an existing dish to fixed quantity (explicit user action only). */
+  const saveFixed = async (item: MenuItem, value: string) => {
+    const n = Number(value);
+    if (value !== "" && !(n > 0)) return void toast.error("Enter how many to make");
+    const { error } = await supabase
+      .from("event_menu_items")
+      .update(value === "" ? { quantity_mode: "fixed" } : { quantity_mode: "fixed", fixed_quantity: n })
+      .eq("id", item.id);
+    if (error) return void toast.error(error.message);
+    invalidateMenuDownstream(qc, eventId);
+    await qc.invalidateQueries({ queryKey: ["event-menu", eventId] });
+    if (value !== "") toast.success(`${menuDishName(item)} · make ${Math.ceil(n)}`);
+  };
+  const usePerGuest = async (item: MenuItem) => {
+    const { error } = await supabase.from("event_menu_items").update({ quantity_mode: "per_guest" }).eq("id", item.id);
+    if (error) return void toast.error(error.message);
+    invalidateMenuDownstream(qc, eventId);
+    await qc.invalidateQueries({ queryKey: ["event-menu", eventId] });
   };
 
   const removeItem = async (item: MenuItem) => {
@@ -327,15 +373,21 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
                       <div>
                         <div className="font-semibold">{menuDishName(it)}</div>
                         <div className="mt-0.5 font-mono text-[11px] text-ink-soft">
-                          {(it.recipe?.category ?? "Other") +
-                            " · " +
-                            portionLabel(it.portion_size as PortionSize) +
+                          {(it.recipe?.category ?? "Other") + " · " + (it.quantity_mode === "fixed"
+                            ? `Fixed quantity · ${Number(it.fixed_quantity)} ${base === "each" ? "items" : base}`
+                            : portionLabel(it.portion_size as PortionSize) +
                             " · " +
                             fmtPortion(
                               it.quantity_per_guest != null ? Number(it.quantity_per_guest) : null,
                               base,
                             ) +
-                            " per guest"}
+                            " per guest")}
+                        </div>
+                        <div className="mt-0.5 font-mono text-[11px] text-ink">
+                          {targetText(it as never, it)}
+                          {it.quantity_mode === "fixed" ? (
+                            <span className="block text-ink-soft">Does not automatically scale with guest count</span>
+                          ) : null}
                         </div>
                       </div>
                       <button
@@ -349,10 +401,23 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
 
                     {isEditing ? (
                       <div className="mt-3 border-t border-ink/10 pt-3">
+                        {base === "each" ? (
+                          <MethodToggle
+                            value={it.quantity_mode === "fixed" ? "fixed" : "per_guest"}
+                            onChange={(v) => {
+                              if (v === "per_guest") void usePerGuest(it);
+                              else void saveFixed(it, String((it.fixed_quantity ?? Math.ceil(guests * Number(it.quantity_per_guest ?? 0))) || ""));
+                            }}
+                          />
+                        ) : null}
+                        {base === "each" && it.quantity_mode === "fixed" ? (
+                          <FixedEditor initial={it.fixed_quantity != null ? String(Number(it.fixed_quantity)) : ""} onSave={(v) => saveFixed(it, v)} />
+                        ) : (
                         <div className="grid grid-cols-3 gap-2">
                           {PORTION_SIZES.map((p) => {
                             const recipe = list.find((r) => r.id === it.recipe_id);
                             const standard = recipe ? standardOf(recipe).portion : null;
+                            const presets = recipe ? standardOf(recipe).presets : null;
                             const active = it.portion_size === p.value;
                             return (
                               <button
@@ -365,12 +430,13 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
                               >
                                 <div className="label-mono">{p.label}</div>
                                 <div className="mt-0.5 font-mono text-[11px] opacity-80">
-                                  {fmtPortion(portionQuantity(standard, p.value), base)}
+                                  {fmtPortion(portionQuantity(standard, p.value, presets), base)}
                                 </div>
                               </button>
                             );
                           })}
                         </div>
+                        )}
                         <button
                           type="button"
                           onClick={() => removeItem(it)}
@@ -483,6 +549,12 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
                       Change
                     </button>
                   </div>
+                  {preview.base === "each" ? <MethodToggle value={qtyMode} onChange={setQtyMode} /> : null}
+                  {preview.base === "each" && qtyMode === "fixed" ? (
+                    <Field label="Total items to make">
+                      <TextInput type="number" inputMode="numeric" min={1} value={fixedQty} onChange={(e) => setFixedQty(e.target.value)} placeholder="34" />
+                    </Field>
+                  ) : (
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     {PORTION_SIZES.map((p) => (
                       <button
@@ -495,10 +567,25 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
                       >
                         <div className="label-mono">{p.label}</div>
                         <div className="mt-0.5 font-mono text-[12px] opacity-80">
-                          {fmtPortion(portionQuantity(preview.portion, p.value), preview.base)}
+                          {fmtPortion(portionQuantity(preview.portion, p.value, preview.presets), preview.base)}
                         </div>
                       </button>
                     ))}
+                  </div>
+                  )}
+                  {preview.base === "each" && qtyMode === "fixed" ? (
+                    <p className="mt-2 font-mono text-[11px] text-ink-soft">Fixed quantity · Does not automatically scale with guest count. No buffer added.</p>
+                  ) : null}
+                  <div className="mt-2 font-mono text-[12px] text-ink">
+                    {targetText(
+                      {
+                        quantity_unit: preview.base,
+                        quantity_per_guest: portionQuantity(preview.portion, size, preview.presets),
+                        quantity_mode: preview.base === "each" && qtyMode === "fixed" ? "fixed" : "per_guest",
+                        fixed_quantity: fixedQty === "" ? null : Number(fixedQty),
+                      },
+                      { recipe_version_id: selected.active_version_id, recipe: { active_version_id: selected.active_version_id } },
+                    )}
                   </div>
                   {preview.portion == null ? (
                     <p className="mt-2 font-mono text-[11px] text-flame">
@@ -528,6 +615,47 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
           </div>
         </DrawerContent>
       </Drawer>
+    </div>
+  );
+}
+
+function MethodToggle({ value, onChange }: { value: "per_guest" | "fixed"; onChange: (v: "per_guest" | "fixed") => void }) {
+  return (
+    <div className="mb-2 mt-3">
+      <div className="label-mono mb-1 text-ink-soft">Quantity method</div>
+      <div className="grid grid-cols-2 gap-2">
+        {([
+          ["per_guest", "Per guest"],
+          ["fixed", "Fixed quantity"],
+        ] as const).map(([v, l]) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => onChange(v)}
+            className={`tap border px-2 py-2 text-center font-mono text-[12px] ${
+              value === v ? "border-ink bg-ink text-cream" : "border-ink/20 bg-paper text-ink"
+            }`}
+          >
+            {l}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FixedEditor({ initial, onSave }: { initial: string; onSave: (v: string) => void }) {
+  const [v, setV] = useState(initial);
+  return (
+    <div className="flex items-end gap-2">
+      <div className="flex-1">
+        <Field label="Total items to make">
+          <TextInput type="number" inputMode="numeric" min={1} value={v} onChange={(e) => setV(e.target.value)} />
+        </Field>
+      </div>
+      <GhostButton type="button" onClick={() => onSave(v)} disabled={v === initial}>
+        Save
+      </GhostButton>
     </div>
   );
 }

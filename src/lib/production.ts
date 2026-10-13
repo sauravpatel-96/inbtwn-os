@@ -15,22 +15,8 @@ export const versionBuffersQuery = queryOptions({
   },
 });
 
-/**
- * Buffer % for a menu dish. Buffer is a production setting, so it follows the
- * recipe's CURRENT active version (the latest saved setting, including an
- * explicit 0%), even when the dish is pinned to an older version's ingredients.
- * Falls back to the pinned version, then 0 — never an assumed default.
- */
-export function dishBuffer(
-  item: { recipe_version_id: string | null; recipe?: { active_version_id: string | null } | null },
-  buffers: Record<string, number> | undefined,
-): number {
-  const active = item.recipe?.active_version_id ?? null;
-  if (active && buffers && active in buffers) return buffers[active] ?? 0;
-  const pinned = item.recipe_version_id;
-  if (pinned && buffers && pinned in buffers) return buffers[pinned] ?? 0;
-  return 0;
-}
+export { dishBuffer, ceilCount, dishTarget, type DishTarget } from "./dish-target";
+import { ceilCount } from "./dish-target";
 
 function trim(n: number, decimalPlaces: number): string {
   if (decimalPlaces === 0) return String(Math.round(n));
@@ -44,7 +30,7 @@ function trim(n: number, decimalPlaces: number): string {
 export function fmtProdQty(baseQty: number | null | undefined, base: BaseUnit): string {
   if (baseQty === null || baseQty === undefined || Number.isNaN(baseQty)) return "—";
   // Strip float noise (e.g. 20 × 1.1 = 22.000000000000004) before rounding up.
-  if (base === "each") return `${Math.ceil(Math.round(baseQty * 1e6) / 1e6)} each`;
+  if (base === "each") return `${ceilCount(baseQty)} each`;
 
   const absolute = Math.abs(baseQty);
   const step = absolute < 100 ? 1 : absolute < 1000 ? 5 : 50;

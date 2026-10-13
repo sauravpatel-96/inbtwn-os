@@ -18,7 +18,7 @@ import {
 } from "@/components/inbtwn/bits";
 import { graphQuery } from "@/lib/recipe-queries";
 import { menuItemsQuery } from "@/lib/menu-queries";
-import { versionBuffersQuery, dishBuffer } from "@/lib/production";
+import { versionBuffersQuery, dishBuffer, dishTarget } from "@/lib/production";
 import {
   PACKING_CATEGORIES,
   packingCategoryLabel,
@@ -120,11 +120,11 @@ export function EventPacking({ eventId, guestCount }: { eventId: string; guestCo
     const rows: Row[] = [];
     const seen = new Set<string>();
     for (const item of menu.data) {
-      const perGuest = Number(item.quantity_per_guest ?? 0);
       const versionId = item.recipe_version_id ?? item.recipe?.active_version_id ?? null;
-      if (!versionId || guests <= 0 || perGuest <= 0) continue;
-      const buffer = dishBuffer(item, buffers.data);
-      const target = guests * perGuest * (1 + buffer / 100);
+      if (!versionId ) continue;
+      const dt = dishTarget(item, guests, dishBuffer(item, buffers.data));
+      if (!dt) continue;
+      const target = dt.target;
       let result: ScaleResult | null = null;
       try {
         result = scaleVersion(versionId, target, graph.data);

@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 - Event archive is `events.archived_at` (null = active), independent of status/close-out/money; Today and Ask current-work use `activeOnly()` from src/lib/today.ts. Why: archive must hide workload without erasing records.
 - Menu dishes may be unlinked (`recipe_id` null, `dish_name` set, `source_quote_item_id` from the accepted quote); unlinked dishes never produce quantities. Why: accepted proposals seed the operational menu without inventing recipes or touching the quote.
+- Dish production targets come only from `dishTarget()` in src/lib/dish-target.ts (per guest × buffer, counts ceiled; fixed mode = final target, no buffer). Why: every screen must agree on quantities.
