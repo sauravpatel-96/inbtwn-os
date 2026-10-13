@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SectionHeading, TornCard, EmptyNote, GhostButton, Chip } from "@/components/inbtwn/bits";
 import { graphQuery } from "@/lib/recipe-queries";
 import { menuItemsQuery } from "@/lib/menu-queries";
-import { versionBuffersQuery, dishBuffer } from "@/lib/production";
+import { versionBuffersQuery, dishBuffer, dishTarget } from "@/lib/production";
 import { collectPurchases, fmtShopQty, shoppingCheckDetailsQuery, type ShoppingCheck, type ShoppingLine } from "@/lib/shopping";
 import { scaleVersion, type ScaleResult } from "@/lib/recipe-calc";
 import { fmtCost, type BaseUnit } from "@/lib/units";
@@ -129,9 +129,10 @@ export function EventShopping({ eventId, guestCount }: { eventId: string; guestC
     for (const item of menu.data) {
       const perGuest = Number(item.quantity_per_guest ?? 0);
       const versionId = item.recipe_version_id ?? item.recipe?.active_version_id ?? null;
-      if (!versionId || guests <= 0 || perGuest <= 0) continue;
-      const buffer = dishBuffer(item, buffers.data);
-      const target = guests * perGuest * (1 + buffer / 100);
+      if (!versionId ) continue;
+      const dt = dishTarget(item, guests, dishBuffer(item, buffers.data));
+      if (!dt) continue;
+      const target = dt.target;
       let result: ScaleResult | null = null;
       try {
         result = scaleVersion(versionId, target, graph.data);

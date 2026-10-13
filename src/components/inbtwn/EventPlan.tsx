@@ -27,7 +27,7 @@ import {
 } from "@/components/inbtwn/bits";
 import { graphQuery } from "@/lib/recipe-queries";
 import { menuItemsQuery } from "@/lib/menu-queries";
-import { versionBuffersQuery, dishBuffer } from "@/lib/production";
+import { versionBuffersQuery, dishBuffer, dishTarget } from "@/lib/production";
 import { packingChecksQuery, packingItemsQuery, manualKey, foodLinesFromProduction } from "@/lib/packing";
 import { collectPurchases, shoppingChecksQuery, type ShoppingLine } from "@/lib/shopping";
 import { scaleVersion, type ScaleResult } from "@/lib/recipe-calc";
@@ -179,9 +179,10 @@ export function EventPlan({ event }: { event: EventRow }) {
     for (const item of menu.data) {
       const versionId = item.recipe_version_id ?? item.recipe?.active_version_id ?? null;
       const perGuest = Number(item.quantity_per_guest ?? 0);
-      if (!versionId || !item.recipe_id || guests <= 0 || perGuest <= 0) continue;
-      const buffer = dishBuffer(item, buffers.data);
-      const target = guests * perGuest * (1 + buffer / 100);
+      if (!versionId || !item.recipe_id ) continue;
+      const dt = dishTarget(item, guests, dishBuffer(item, buffers.data));
+      if (!dt) continue;
+      const target = dt.target;
       try {
         out.push({
           recipeId: item.recipe_id,

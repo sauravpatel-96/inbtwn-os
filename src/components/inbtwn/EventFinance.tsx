@@ -15,7 +15,7 @@ import { clientDisplayName } from "@/lib/format";
 import { quoteQuery, quoteTotals } from "@/lib/quote";
 import { graphQuery } from "@/lib/recipe-queries";
 import { menuItemsQuery } from "@/lib/menu-queries";
-import { versionBuffersQuery, dishBuffer } from "@/lib/production";
+import { versionBuffersQuery, dishBuffer, dishTarget } from "@/lib/production";
 import { ingredientCostStatusQuery, foodPurchasesQuery, summariseCost, suppliersQuery, pct1, type FoodPurchase, type MissingIngredient } from "@/lib/costing";
 import { scaleVersion, type ScaleResult } from "@/lib/recipe-calc";
 import {
@@ -170,11 +170,13 @@ export function EventFinance({ event }: { event: Ev }) {
     for (const item of menu.data) {
       const perGuest = Number(item.quantity_per_guest ?? 0);
       const versionId = item.recipe_version_id ?? item.recipe?.active_version_id ?? null;
-      if (!versionId || guests <= 0 || perGuest <= 0) continue;
-      const buffer = dishBuffer(item, buffers.data);
+      if (!versionId ) continue;
+      const dt = dishTarget(item, guests, dishBuffer(item, buffers.data));
+      if (!dt) continue;
+      const target = dt.target;
       let result: ScaleResult | null = null;
       try {
-        result = scaleVersion(versionId, guests * perGuest * (1 + buffer / 100), graph.data);
+        result = scaleVersion(versionId, target, graph.data);
       } catch {
         result = null;
       }
