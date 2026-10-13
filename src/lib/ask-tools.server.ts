@@ -1,3 +1,4 @@
+import { dishBuffer, dishTarget } from "./production";
 import { isReusable, kitCategoryLabel, kitLines, kitSummary, purchaseLabel } from "./kit";
 import { computeAnchors, fmtClock, nextItem, ruleLabel, timeline } from "./runsheet";
 /**
@@ -782,7 +783,7 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
           const d = findEvent(ctx, event_id);
           if (!d) return mark("get_food_costing", { error: "No such event is accessible." });
           const [menu, bufs, buys] = await Promise.all([
-            client.from("event_menu_items").select("recipe_version_id, quantity_per_guest, recipe:recipes(active_version_id)").eq("event_id", event_id),
+            client.from("event_menu_items").select("recipe_version_id, quantity_per_guest, quantity_unit, quantity_mode, fixed_quantity, recipe:recipes(active_version_id)").eq("event_id", event_id),
             client.from("recipe_versions").select("id, default_buffer_percentage"),
             client.from("event_food_purchases").select("amount, purchase_date, notes, is_test, supplier:suppliers(name)").eq("event_id", event_id),
           ]);
@@ -791,10 +792,11 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
           const results: ScaleResult[] = [];
           for (const m of menu.data ?? []) {
             const vid = m.recipe_version_id ?? m.recipe?.active_version_id;
-            const pg = Number(m.quantity_per_guest ?? 0);
-            if (!vid || guests <= 0 || pg <= 0) continue;
+            if (!vid) continue;
+            const dt = dishTarget(m, guests, dishBuffer(m, buffer));
+            if (!dt) continue;
             try {
-              results.push(scaleVersion(vid, guests * pg * (1 + (buffer[m.recipe?.active_version_id ?? ""] ?? buffer[vid] ?? 0) / 100), graph));
+              results.push(scaleVersion(vid, dt.target, graph));
             } catch {
               /* skip */
             }
