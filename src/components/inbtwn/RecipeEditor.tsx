@@ -523,7 +523,7 @@ export function RecipeEditor({
             <div className="label-mono mb-1 text-ink-soft">Portions per guest (items)</div>
             <div className="grid grid-cols-3 gap-2">
               {(["small", "medium", "large"] as const).map((k) => (
-                <Field key={k} label={k[0].toUpperCase() + k.slice(1)}>
+                <Field key={k} label={{ small: "Small", medium: "Medium", large: "Large" }[k]}>
                   <TextInput
                     type="number"
                     inputMode="decimal"
