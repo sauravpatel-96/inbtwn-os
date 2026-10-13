@@ -56,7 +56,7 @@ function trim(n: number, dp: number): string {
  */
 export function fmtShopQty(baseQty: number | null | undefined, base: BaseUnit): string {
   if (baseQty === null || baseQty === undefined || Number.isNaN(baseQty)) return "—";
-  if (base === "each") return `${Math.ceil(baseQty)} each`;
+  if (base === "each") return `${Math.ceil(Math.round(baseQty * 1e6) / 1e6)} each`;
 
   const abs = Math.abs(baseQty);
   const step = abs < 100 ? 1 : abs < 1000 ? 5 : 50;

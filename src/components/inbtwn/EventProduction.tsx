@@ -6,6 +6,7 @@ import { graphQuery } from "@/lib/recipe-queries";
 import { menuItemsQuery, portionLabel, fmtPortion, type MenuItem, type PortionSize } from "@/lib/menu-queries";
 import {
   versionBuffersQuery,
+  dishBuffer,
   fmtProdQty,
   bigProdQty,
   collectIngredients,
@@ -204,7 +205,7 @@ export function EventProduction({ eventId, guestCount }: { eventId: string; gues
       const perGuest = Number(item.quantity_per_guest ?? 0);
       const service = guests * perGuest;
       const versionId = item.recipe_version_id ?? item.recipe?.active_version_id ?? null;
-      const buffer = versionId ? (buffers.data?.[versionId] ?? 0) : 0;
+      const buffer = versionId ? dishBuffer(item, buffers.data) : 0;
       const target = service * (1 + buffer / 100);
       let result: ScaleResult | null = null;
       let error: string | null = null;

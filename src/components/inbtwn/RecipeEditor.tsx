@@ -433,6 +433,8 @@ export function RecipeEditor({
     qc.invalidateQueries({ queryKey: ["recipes"] });
     qc.invalidateQueries({ queryKey: ["recipe-graph"] });
     qc.invalidateQueries({ queryKey: ["recipe-versions", recipeId] });
+    qc.invalidateQueries({ queryKey: ["recipe-version-buffers"] });
+    qc.invalidateQueries({ queryKey: ["event-menu"] });
     setSaving(false);
     toast.success(editing ? `Saved as v${nextNumber}` : "Recipe created (v1)");
     onSaved(recipeId);
