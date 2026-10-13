@@ -794,7 +794,7 @@ export function buildAskTools(ctx: AskContext, today: Date, client: ReadClient) 
             const pg = Number(m.quantity_per_guest ?? 0);
             if (!vid || guests <= 0 || pg <= 0) continue;
             try {
-              results.push(scaleVersion(vid, guests * pg * (1 + (buffer[vid] ?? 0) / 100), graph));
+              results.push(scaleVersion(vid, guests * pg * (1 + (buffer[m.recipe?.active_version_id ?? ""] ?? buffer[vid] ?? 0) / 100), graph));
             } catch {
               /* skip */
             }

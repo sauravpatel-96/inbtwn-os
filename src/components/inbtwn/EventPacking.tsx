@@ -18,7 +18,7 @@ import {
 } from "@/components/inbtwn/bits";
 import { graphQuery } from "@/lib/recipe-queries";
 import { menuItemsQuery } from "@/lib/menu-queries";
-import { versionBuffersQuery } from "@/lib/production";
+import { versionBuffersQuery, dishBuffer } from "@/lib/production";
 import {
   PACKING_CATEGORIES,
   packingCategoryLabel,
@@ -123,7 +123,7 @@ export function EventPacking({ eventId, guestCount }: { eventId: string; guestCo
       const perGuest = Number(item.quantity_per_guest ?? 0);
       const versionId = item.recipe_version_id ?? item.recipe?.active_version_id ?? null;
       if (!versionId || guests <= 0 || perGuest <= 0) continue;
-      const buffer = buffers.data?.[versionId] ?? 0;
+      const buffer = dishBuffer(item, buffers.data);
       const target = guests * perGuest * (1 + buffer / 100);
       let result: ScaleResult | null = null;
       try {
