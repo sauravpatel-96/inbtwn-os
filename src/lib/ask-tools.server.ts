@@ -1,4 +1,4 @@
-import { dishBuffer, dishTarget } from "./production";
+import { dishBuffer, dishTarget } from "./dish-target";
 import { isReusable, kitCategoryLabel, kitLines, kitSummary, purchaseLabel } from "./kit";
 import { computeAnchors, fmtClock, nextItem, ruleLabel, timeline } from "./runsheet";
 /**
