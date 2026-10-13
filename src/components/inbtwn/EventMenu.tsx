@@ -406,7 +406,7 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
                             value={it.quantity_mode === "fixed" ? "fixed" : "per_guest"}
                             onChange={(v) => {
                               if (v === "per_guest") void usePerGuest(it);
-                              else void saveFixed(it, String(it.fixed_quantity ?? Math.ceil(guests * Number(it.quantity_per_guest ?? 0)) || ""));
+                              else void saveFixed(it, String((it.fixed_quantity ?? Math.ceil(guests * Number(it.quantity_per_guest ?? 0))) || ""));
                             }}
                           />
                         ) : null}
