@@ -26,9 +26,9 @@ export function dishBuffer(
   buffers: Record<string, number> | undefined,
 ): number {
   const active = item.recipe?.active_version_id ?? null;
-  if (active && buffers && active in buffers) return buffers[active];
+  if (active && buffers && active in buffers) return buffers[active] ?? 0;
   const pinned = item.recipe_version_id;
-  if (pinned && buffers && pinned in buffers) return buffers[pinned];
+  if (pinned && buffers && pinned in buffers) return buffers[pinned] ?? 0;
   return 0;
 }
 
