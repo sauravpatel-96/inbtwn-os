@@ -223,15 +223,15 @@ export function EventMenu({ eventId, guestCount }: { eventId: string; guestCount
   /** Switch an existing dish to fixed quantity (explicit user action only). */
   const saveFixed = async (item: MenuItem, value: string) => {
     const n = Number(value);
-    if (!(n > 0)) return void toast.error("Enter how many to make");
+    if (value !== "" && !(n > 0)) return void toast.error("Enter how many to make");
     const { error } = await supabase
       .from("event_menu_items")
-      .update({ quantity_mode: "fixed", fixed_quantity: n })
+      .update(value === "" ? { quantity_mode: "fixed" } : { quantity_mode: "fixed", fixed_quantity: n })
       .eq("id", item.id);
     if (error) return void toast.error(error.message);
     invalidateMenuDownstream(qc, eventId);
     await qc.invalidateQueries({ queryKey: ["event-menu", eventId] });
-    toast.success(`${menuDishName(item)} · make ${Math.ceil(n)}`);
+    if (value !== "") toast.success(`${menuDishName(item)} · make ${Math.ceil(n)}`);
   };
   const usePerGuest = async (item: MenuItem) => {
     const { error } = await supabase.from("event_menu_items").update({ quantity_mode: "per_guest" }).eq("id", item.id);
